@@ -44,9 +44,27 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Export-Package>org.apache.velocity</Export-Package>
-                        <Export-Package>org.apache.velocity.app</Export-Package>
-                        <Export-Package>org.apache.velocity.app.context</Export-Package>
+                        <Export-Package>
+                            org.apache.velocity;
+                            org.apache.velocity.runtime.log;
+                            org.apache.velocity.runtime.resource;
+                            org.apache.velocity.exception;
+                            org.apache.velocity.util.introspection;
+                            org.apache.velocity.app.event;
+                            org.apache.velocity.runtime;
+                            org.apache.velocity.context;
+                            org.apache.velocity.app;
+                            org.apache.velocity.runtime.parser.node;
+                            org.apache.velocity.runtime.parser;
+                            org.apache.log.format;
+                            org.apache.commons.logging;
+                            org.apache.velocity.runtime.resource.loader;
+                            org.apache.velocity.util;
+                            org.apache.log;
+                            org.apache.avalon.framework.logger;
+                            org.apache.velocity.runtime.resource.util;
+                            org.apache.velocity.runtime.directive;
+                        </Export-Package>
                         <Import-Package>
                             !antlr,
                             !antlr.collections.impl,
@@ -64,7 +82,9 @@
                             !sun.rmi.rmic,
                             *
                         </Import-Package>
-                        <Embed-Dependency>artifactId=ant|logkit|avalon-framework|werken-xpath|jdom|oro|commons-logging;inline=true</Embed-Dependency>
+                        <Embed-Dependency>
+                            artifactId=ant|logkit|avalon-framework|werken-xpath|jdom|oro|commons-logging;inline=true
+                        </Embed-Dependency>
                     </instructions>
                 </configuration>
             </plugin>
