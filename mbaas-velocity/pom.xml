@@ -43,8 +43,8 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Private-Package>org.apache.velocity.anakia;org.apache.velocity.runtime.log;org.apache.velocity.texen.ant</Private-Package>
-                        <Export-Package>org.apache.velocity.*;</Export-Package>
+                        <Export-Package>org.apache.velocity.Template</Export-Package>
+                        <Export-Package>org.apache.velocity.app.Velocity</Export-Package>
                         <Import-Package>
                             !antlr,
                             !antlr.collections.impl,
