@@ -35,6 +35,7 @@
     </properties>
 
     <build>
+        <finalName>mbaas-velocity</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.felix</groupId>

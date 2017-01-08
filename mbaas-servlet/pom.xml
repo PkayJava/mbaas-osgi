@@ -35,6 +35,7 @@
     </properties>
 
     <build>
+        <finalName>mbaas-servlet</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.felix</groupId>
