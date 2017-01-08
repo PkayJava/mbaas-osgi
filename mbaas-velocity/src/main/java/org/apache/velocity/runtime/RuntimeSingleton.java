@@ -33,6 +33,8 @@ import org.apache.velocity.runtime.resource.ContentResource;
 import org.apache.velocity.util.introspection.Introspector;
 import org.apache.velocity.util.introspection.Uberspect;
 import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Reader;
 import java.util.Properties;
@@ -87,6 +89,8 @@ import java.util.Properties;
  * @see RuntimeInstance
  */
 public class RuntimeSingleton implements RuntimeConstants {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RuntimeSingleton.class);
     private static RuntimeInstance ri = new RuntimeInstance();
 
     /**
@@ -288,6 +292,7 @@ public class RuntimeSingleton implements RuntimeConstants {
 
     public static Template getTemplate(Bundle bundle, String name)
             throws ResourceNotFoundException, ParseErrorException {
+        LOGGER.info("RuntimeSingleton.getTemplate");
         return ri.getTemplate(bundle, name);
     }
 

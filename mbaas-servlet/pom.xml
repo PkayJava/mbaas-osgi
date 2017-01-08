@@ -47,6 +47,8 @@
                         <Bundle-Activator>org.angkorteam.mbaas.servlet.internal.BundleActivator</Bundle-Activator>
                         <Export-Package>
                             org.angkorteam.mbaas.servlet;
+                            org.angkorteam.mbaas.servlet.block;
+                            org.angkorteam.mbaas.servlet.layout;
                         </Export-Package>
                         <Private-Package>
                             org.angkorteam.mbaas.servlet.internal;

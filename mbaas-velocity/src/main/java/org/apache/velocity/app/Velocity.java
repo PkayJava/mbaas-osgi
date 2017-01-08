@@ -29,6 +29,8 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeSingleton;
 import org.apache.velocity.runtime.log.Log;
 import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Properties;
@@ -60,6 +62,9 @@ import java.util.Properties;
  * @version $Id: Velocity.java 898050 2010-01-11 20:15:31Z nbubna $
  */
 public class Velocity implements RuntimeConstants {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Velocity.class);
+
     /**
      * initialize the Velocity runtime engine, using the default
      * properties of the Velocity distribution
@@ -326,6 +331,7 @@ public class Velocity implements RuntimeConstants {
 
     public static Template getTemplate(Bundle bundle, String name)
             throws ResourceNotFoundException, ParseErrorException {
+        LOGGER.info("Velocity.getTemplate");
         return RuntimeSingleton.getTemplate(bundle, name);
     }
 

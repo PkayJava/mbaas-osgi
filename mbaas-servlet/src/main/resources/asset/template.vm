@@ -3,6 +3,8 @@
     <title>Test</title>
 </head>
 <body>
-    $child
+    <h2>Header</h2>
+        $child
+    <h5>Footer</h5>
 </body>
 </html>

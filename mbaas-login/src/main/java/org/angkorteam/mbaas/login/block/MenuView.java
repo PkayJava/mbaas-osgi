@@ -1,31 +1,29 @@
-package org.angkorteam.mbaas.login;
+package org.angkorteam.mbaas.login.block;
 
 import com.google.common.collect.Maps;
-import org.angkorteam.mbaas.servlet.TemplateView;
 import org.angkorteam.mbaas.servlet.View;
+import org.angkorteam.mbaas.servlet.layout.TemplateView;
 import org.apache.velocity.VelocityContext;
 import org.osgi.framework.Bundle;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Map;
 
 /**
  * Created by socheatkhauv on 1/8/17.
  */
-public class LoginView implements View {
+public class MenuView implements View {
 
-    public static final String TEMPLATE = "/asset/login.vm";
-    public static final String ID = LoginView.class.getName();
+    public static final String TEMPLATE = "/asset/block.vm";
+
+    public static final String ID = MenuView.class.getName();
 
     private final Bundle bundle;
 
     private final Map<String, String> blocks;
 
-    public LoginView(Bundle bundle) {
+    public MenuView(Bundle bundle) {
         this.bundle = bundle;
         this.blocks = Maps.newHashMap();
     }
@@ -57,9 +55,6 @@ public class LoginView implements View {
 
     @Override
     public VelocityContext velocityContext(HttpServletRequest request, HttpServletResponse response) {
-        VelocityContext velocityContext = new VelocityContext();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-ddThh:mm:ssZZ");
-        velocityContext.put("server", dateFormat.format(new Date()));
-        return velocityContext;
+        return null;
     }
 }

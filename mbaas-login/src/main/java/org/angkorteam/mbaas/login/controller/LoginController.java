@@ -1,5 +1,6 @@
-package org.angkorteam.mbaas.login;
+package org.angkorteam.mbaas.login.controller;
 
+import org.angkorteam.mbaas.login.view.LoginView;
 import org.angkorteam.mbaas.servlet.Connection;
 import org.angkorteam.mbaas.servlet.Controller;
 import org.osgi.framework.Bundle;
@@ -28,7 +29,7 @@ public class LoginController implements Controller {
 
     @Override
     public String id() {
-        return "111";
+        return LoginController.class.getName();
     }
 
     @Override

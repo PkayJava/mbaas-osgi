@@ -41,6 +41,11 @@ public class MainServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+
+        Velocity.init();
+    }
+
+    public static void main(String[] args) {
         Velocity.init();
     }
 
@@ -74,7 +79,6 @@ public class MainServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         String path = lookupPath(request);
-        LOGGER.info("path {}", path);
         String[] segments = StringUtils.split(path, "/");
         ControllerMapping requestMapping = lookupRequestMapping(method, path);
         if (requestMapping == null) {
@@ -109,6 +113,10 @@ public class MainServlet extends HttpServlet {
 
                 ViewMapping view = this.viewDictionary.get(viewId);
 
+                if (view == null) {
+                    LOGGER.info("view id {} is not found in the registry", viewId);
+                }
+
                 if (!Strings.isNullOrEmpty(view.getParentId())) {
                     StringWriter writer = processView(view, request, response);
                     response.getWriter().write(writer.getBuffer().toString());
@@ -119,7 +127,8 @@ public class MainServlet extends HttpServlet {
                 }
 
             } catch (Throwable e) {
-                LOGGER.info("{} : {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.path(), e.getMessage());
+                e.printStackTrace();
+                LOGGER.info("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.path(), e.getMessage());
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (SQLException e) {
@@ -129,32 +138,45 @@ public class MainServlet extends HttpServlet {
     }
 
     protected StringWriter processView(ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
+
         ViewMapping parentView = null;
         if (!Strings.isNullOrEmpty(view.getParentId())) {
             parentView = this.viewDictionary.get(view.getParentId());
-
+            if (parentView == null) {
+                LOGGER.info("parent id {} is not found in the registry", view.getParentId());
+            }
             if (!Strings.isNullOrEmpty(parentView.getParentId())) {
                 return processView(this.viewDictionary.get(parentView.getParentId()), request, response);
             }
-
         }
 
         VelocityContext parentVelocityContext = null;
         if (parentView != null) {
             parentVelocityContext = parentView.getView().velocityContext(request, response);
         }
-
         VelocityContext velocityContext = view.getView().velocityContext(request, response);
         StringWriter writer = new StringWriter();
         {
+            if (velocityContext == null) {
+                velocityContext = new VelocityContext();
+            }
+
+            buildBlock(velocityContext, view, request, response);
+
             Template template = Velocity.getTemplate(view.getView().bundle(), view.getTemplate());
             template.merge(velocityContext, writer);
         }
 
         if (parentView != null) {
+            if (parentVelocityContext == null) {
+                parentVelocityContext = new VelocityContext();
+            }
+
+            buildBlock(parentVelocityContext, parentView, request, response);
+
             StringWriter parentWriter = new StringWriter();
             Template template = Velocity.getTemplate(parentView.getView().bundle(), parentView.getTemplate());
-            parentVelocityContext.put("child", writer);
+            parentVelocityContext.put("child", writer.getBuffer());
             template.merge(parentVelocityContext, parentWriter);
             return parentWriter;
         } else {
@@ -162,7 +184,39 @@ public class MainServlet extends HttpServlet {
         }
     }
 
+    protected void buildBlock(VelocityContext velocityContext, ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
+        Map<String, String> blocks = view.getView().blocks();
+        if (blocks != null && !blocks.isEmpty()) {
+            for (Map.Entry<String, String> block : blocks.entrySet()) {
+                String name = block.getKey();
+                String viewId = block.getValue();
+                ViewMapping blockView = this.viewDictionary.get(viewId);
+                if (blockView == null) {
+                    LOGGER.info("block id {} is not found in registry", viewId);
+                } else {
+                    VelocityContext blockVelocityContext = blockView.getView().velocityContext(request, response);
+                    if (blockVelocityContext == null) {
+                        blockVelocityContext = new VelocityContext();
+                    }
+                    StringWriter blockWriter = new StringWriter();
+                    Template blockTemplate = Velocity.getTemplate(blockView.getView().bundle(), blockView.getTemplate());
+                    blockTemplate.merge(blockVelocityContext, blockWriter);
+                    velocityContext.put(name, blockWriter.getBuffer());
+                }
+            }
+        }
+    }
+
     protected ControllerMapping lookupRequestMapping(String method, String path) {
+        if (StringUtils.equalsIgnoreCase(path, "/")) {
+            for (Map.Entry<String, ControllerMapping> item : this.controllerDictionary.entrySet()) {
+                ControllerMapping requestMapping = item.getValue();
+                if (StringUtils.equalsIgnoreCase(requestMapping.getPath(), path) && StringUtils.equalsIgnoreCase(method, requestMapping.getMethod())) {
+                    return requestMapping;
+                }
+            }
+            return null;
+        }
         String[] segments = StringUtils.split(path, "/");
         int segment = StringUtils.countMatches(path, '/');
         List<ControllerMapping> requestMappings = Lists.newArrayList();
@@ -184,7 +238,7 @@ public class MainServlet extends HttpServlet {
                 String[] dbSegment = StringUtils.split(candidate.getPathVariable(), '/');
                 if (StringUtils.equalsIgnoreCase(segments[index], dbSegment[index])) {
                     newNameCandidates.add(candidate);
-                } else if (StringUtils.equalsIgnoreCase(dbSegment[index], BundleActivator.PATH)) {
+                } else if (StringUtils.equalsIgnoreCase(BundleActivator.PATH, dbSegment[index])) {
                     newLikeCandidates.add(candidate);
                 }
             }
@@ -194,13 +248,14 @@ public class MainServlet extends HttpServlet {
                 candidates.addAll(newLikeCandidates);
             }
         }
-        if (requestMappings.isEmpty()) {
+
+        if (candidates.isEmpty()) {
             return null;
         }
-        if (requestMappings.size() > 1) {
+        if (candidates.size() > 1) {
             return null;
         }
-        return requestMappings.get(0);
+        return candidates.get(0);
     }
 
     protected String lookupPath(HttpServletRequest request) {

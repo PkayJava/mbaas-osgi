@@ -31,6 +31,8 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.StringUtils;
 import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -50,6 +52,8 @@ import java.util.Vector;
  */
 public class ResourceManagerImpl
         implements ResourceManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResourceManagerImpl.class);
 
     /**
      * A template resources.
@@ -455,6 +459,7 @@ public class ResourceManagerImpl
     protected Resource loadResource(Bundle bundle, String resourceName, int resourceType, String encoding)
             throws ResourceNotFoundException,
             ParseErrorException {
+        LOGGER.info("ResourceManagerImpl.loadResource(Bundle bundle, String resourceName, int resourceType, String encoding)");
         Resource resource = createResource(bundle, resourceName, resourceType);
         resource.setRuntimeServices(rsvc);
         resource.setName(resourceName);
@@ -662,6 +667,7 @@ public class ResourceManagerImpl
 
     @Override
     public Resource getResource(Bundle bundle, String resourceName, int resourceType, String encoding) throws ResourceNotFoundException, ParseErrorException {
+        LOGGER.info("ResourceManagerImpl.getResource(Bundle bundle, String resourceName, int resourceType, String encoding)");
         /*
          * Check to see if the resource was placed in the cache.
          * If it was placed in the cache then we will use
@@ -673,6 +679,7 @@ public class ResourceManagerImpl
          */
 
         String resourceKey = resourceType + resourceName + bundle.getLastModified();
+        LOGGER.info("resource key {}", resourceKey);
         Resource resource = globalCache.get(resourceKey);
 
         if (resource != null) {

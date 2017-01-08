@@ -7,6 +7,8 @@ import org.angkorteam.mbaas.servlet.Controller;
 import org.angkorteam.mbaas.servlet.ControllerMapping;
 import org.angkorteam.mbaas.servlet.View;
 import org.angkorteam.mbaas.servlet.ViewMapping;
+import org.angkorteam.mbaas.servlet.block.MenuView;
+import org.angkorteam.mbaas.servlet.layout.TemplateView;
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.framework.*;
 import org.osgi.service.jdbc.DataSourceFactory;
@@ -110,6 +112,11 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             props.put("alias", "/");
             props.put("servlet-name", "Main Servlet");
             this.mainServlet = context.registerService(Servlet.class, new MainServlet(this.dataSource, this.controllerDictionary, this.viewDictionary), props);
+        }
+
+        {
+            context.registerService(View.class, new TemplateView(context.getBundle()), new Hashtable<>());
+            context.registerService(View.class, new MenuView(context.getBundle()), new Hashtable<>());
         }
 
         {
@@ -244,6 +251,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
 
         if (eventType == ServiceEvent.REGISTERED) {
             ViewMapping viewMapping = new ViewMapping(view.id(), view.template(), view.parentId(), view.blocks(), view);
+            LOGGER.info("registered view {} template {} parent id {}", view.id(), view.template(), view.parentId());
             this.viewDictionary.put(view.id(), viewMapping);
         }
     }
@@ -253,7 +261,15 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         if (serviceReference == null) {
             return;
         }
-        Object object = this.context.getService(serviceReference);
+
+        Object object = null;
+
+        try {
+            object = this.context.getService(serviceReference);
+        } catch (IllegalStateException e) {
+            LOGGER.info(e.getMessage());
+        }
+
         if (object == null) {
             return;
         }

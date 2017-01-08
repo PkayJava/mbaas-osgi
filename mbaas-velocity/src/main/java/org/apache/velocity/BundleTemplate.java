@@ -1,18 +1,24 @@
 package org.apache.velocity;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URL;
 
 /**
  * Created by socheatkhauv on 1/8/17.
  */
 public class BundleTemplate extends Template {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BundleTemplate.class);
 
     private final Bundle bundle;
 
@@ -22,6 +28,7 @@ public class BundleTemplate extends Template {
 
     @Override
     public boolean process() throws ResourceNotFoundException, ParseErrorException {
+        LOGGER.info("BundleTemplate.process()");
         data = null;
         InputStream is = null;
         errorCondition = null;
@@ -30,7 +37,15 @@ public class BundleTemplate extends Template {
          *  first, try to get the stream from the loader
          */
         try {
-            is = resourceLoader.getResourceStream(this.bundle, name);
+            LOGGER.info("bundle id {} resource {}", this.bundle.getSymbolicName(), name);
+            URL url = this.bundle.getResource(name);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            try (InputStream inputStream = url.openStream()) {
+                IOUtils.copy(inputStream, outputStream);
+                is = new ByteArrayInputStream(outputStream.toByteArray());
+            } catch (IOException e) {
+                is = new ByteArrayInputStream("NULL".getBytes());
+            }
         } catch (ResourceNotFoundException rnfe) {
             /*
              *  remember and re-throw

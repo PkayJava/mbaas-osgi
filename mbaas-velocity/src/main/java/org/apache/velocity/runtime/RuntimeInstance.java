@@ -42,6 +42,8 @@ import org.apache.velocity.util.RuntimeServicesAware;
 import org.apache.velocity.util.StringUtils;
 import org.apache.velocity.util.introspection.*;
 import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -94,6 +96,9 @@ import java.util.*;
  * @version $Id: RuntimeInstance.java 898050 2010-01-11 20:15:31Z nbubna $
  */
 public class RuntimeInstance implements RuntimeConstants, RuntimeServices {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RuntimeInstance.class);
+
     /**
      * VelocimacroFactory object to manage VMs
      */
@@ -1284,6 +1289,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices {
 
     public Template getTemplate(Bundle bundle, String name)
             throws ResourceNotFoundException, ParseErrorException {
+        LOGGER.info("RuntimeSingleton.getTemplate(Bundle bundle, String name)");
         return getTemplate(bundle, name, getDefaultEncoding());
     }
 
@@ -1310,6 +1316,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices {
     public Template getTemplate(Bundle bundle, String name, String encoding)
             throws ResourceNotFoundException, ParseErrorException {
         requireInitialization();
+        LOGGER.info("RuntimeInstance.getTemplate(Bundle bundle, String name, String encoding)");
         return (Template) resourceManager.getResource(bundle, name, ResourceManager.RESOURCE_TEMPLATE, encoding);
     }
 

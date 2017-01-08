@@ -1,1 +1,7 @@
-<div>$server</div>
+<div>
+    <div>$block</div>
+    <div>$blocka</div>
+    <div>
+        <div>$server</div>
+    </div>
+</div>
