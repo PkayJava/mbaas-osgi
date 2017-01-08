@@ -46,10 +46,10 @@
                     <instructions>
                         <Bundle-Activator>org.angkorteam.mbaas.servlet.internal.BundleActivator</Bundle-Activator>
                         <Export-Package>
-                            org.angkorteam.mbaas.servlet.*;
+                            org.angkorteam.mbaas.servlet;
                         </Export-Package>
                         <Private-Package>
-                            org.angkorteam.mbaas.servlet.internal.*;
+                            org.angkorteam.mbaas.servlet.internal;
                         </Private-Package>
                     </instructions>
                 </configuration>
