@@ -29,7 +29,6 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.ExtProperties;
 import org.apache.velocity.util.StringUtils;
-import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;

@@ -30,7 +30,7 @@ public class BundleResourceLoader extends ResourceLoader {
     @Override
     public Reader getResourceReader(String source, String encoding) throws ResourceNotFoundException {
         if (this.bundle == null) {
-            throw new ResourceNotFoundException("getBundle is null");
+            throw new ResourceNotFoundException("bundle is null");
         }
         URL url = this.bundle.getResource(source);
         InputStream inputStream = null;

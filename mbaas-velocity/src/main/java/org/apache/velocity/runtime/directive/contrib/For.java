@@ -39,6 +39,7 @@ import java.util.ArrayList;
  * that tracks the loop iterations. e.g.; #for($user in $users index $i).
  * As $user iterates through $users the index reference $i will be equal to
  * 0, 1, 2, etc..
+ *
  * @see org.apache.velocity.runtime.directive.Foreach
  */
 public class For extends Foreach {

@@ -31,7 +31,6 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.runtime.resource.ContentResource;
 import org.apache.velocity.util.ExtProperties;
 import org.apache.velocity.util.introspection.Uberspect;
-import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 
 import java.io.Reader;

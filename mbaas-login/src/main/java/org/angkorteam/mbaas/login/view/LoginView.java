@@ -3,6 +3,7 @@ package org.angkorteam.mbaas.login.view;
 import org.angkorteam.mbaas.login.block.MenuView;
 import org.angkorteam.mbaas.servlet.HtmlTag;
 import org.angkorteam.mbaas.servlet.View;
+import org.angkorteam.mbaas.servlet.layout.TemplateView;
 import org.apache.velocity.VelocityContext;
 import org.osgi.framework.Bundle;
 
@@ -22,7 +23,7 @@ public class LoginView extends View {
     public static final String ID = LoginView.class.getName();
 
     public LoginView(Bundle bundle) {
-        super(bundle, ID, TEMPLATE);
+        super(TemplateView.ID, bundle, ID, TEMPLATE);
         this.blocks.put("block", MenuView.ID);
         this.blocks.put("blocka", org.angkorteam.mbaas.servlet.block.MenuView.ID);
     }

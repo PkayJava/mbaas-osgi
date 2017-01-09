@@ -105,7 +105,7 @@ public class MainServlet extends HttpServlet {
                     try {
                         closeable.close();
                     } catch (Throwable e) {
-                        LOGGER.info("could not close " + closeable.getClass().getName() + " due to this reason {}", e.getMessage());
+                        LOGGER.debug("could not close " + closeable.getClass().getName() + " due to this reason {}", e.getMessage());
                     }
                 }
 
@@ -114,10 +114,13 @@ public class MainServlet extends HttpServlet {
                 ViewMapping view = this.viewDictionary.get(viewId);
 
                 if (view == null) {
-                    LOGGER.info("view getId {} is not found in the registry", viewId);
+                    LOGGER.debug("view id {} is not found in the registry", viewId);
                 }
 
+                LOGGER.info("view id {}", viewId);
+
                 if (!Strings.isNullOrEmpty(view.getParentId())) {
+                    LOGGER.info("view parent id {}", view.getParentId());
                     StringWriter writer = processView(header, view, request, response);
                     response.getWriter().write(writer.getBuffer().toString());
                 } else {
@@ -128,11 +131,11 @@ public class MainServlet extends HttpServlet {
 
             } catch (Throwable e) {
                 e.printStackTrace();
-                LOGGER.info("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
+                LOGGER.debug("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (SQLException e) {
-            LOGGER.info("could open connection due to this reason {}", e.getMessage());
+            LOGGER.debug("could open connection due to this reason {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -143,7 +146,7 @@ public class MainServlet extends HttpServlet {
         if (!Strings.isNullOrEmpty(view.getParentId())) {
             parentView = this.viewDictionary.get(view.getParentId());
             if (parentView == null) {
-                LOGGER.info("parent getId {} is not found in the registry", view.getParentId());
+                LOGGER.debug("parent id {} is not found in the registry", view.getParentId());
             }
             if (!Strings.isNullOrEmpty(parentView.getParentId())) {
                 return processView(header, this.viewDictionary.get(parentView.getParentId()), request, response);
@@ -175,9 +178,13 @@ public class MainServlet extends HttpServlet {
             buildBlock(header, parentVelocityContext, parentView, request, response);
 
             StringWriter parentWriter = new StringWriter();
+
             Template template = new BundleTemplate(parentView.getView());
+
             parentVelocityContext.put("child", writer.getBuffer());
+
             template.merge(parentVelocityContext, parentWriter);
+
             return parentWriter;
         } else {
             return writer;
@@ -186,14 +193,15 @@ public class MainServlet extends HttpServlet {
 
     protected void buildBlock(Map<String, HtmlTag> header, VelocityContext velocityContext, ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
         Map<String, String> blocks = view.getView().getBlocks();
-        if (blocks != null && !blocks.isEmpty()) {
+        if (!blocks.isEmpty()) {
             for (Map.Entry<String, String> block : blocks.entrySet()) {
                 String name = block.getKey();
                 String viewId = block.getValue();
                 ViewMapping blockView = this.viewDictionary.get(viewId);
                 if (blockView == null) {
-                    LOGGER.info("block getId {} is not found in registry", viewId);
+                    LOGGER.debug("block id {} is not found in registry", viewId);
                 } else {
+                    LOGGER.info("symbolicName {} template {}", blockView.getView().getBundle().getSymbolicName(), blockView.getTemplate());
                     VelocityContext blockVelocityContext = blockView.getView().velocityContext(header, request, response);
                     if (blockVelocityContext == null) {
                         blockVelocityContext = new VelocityContext();

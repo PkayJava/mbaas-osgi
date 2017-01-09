@@ -1,4 +1,4 @@
-package org.angkorteam.mbaas.login.block;
+package org.angkorteam.mbaas.layout;
 
 import org.angkorteam.mbaas.servlet.HtmlTag;
 import org.angkorteam.mbaas.servlet.View;
@@ -10,19 +10,17 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 /**
- * Created by socheatkhauv on 1/8/17.
+ * Created by socheatkhauv on 1/9/17.
  */
-public class MenuView extends View {
+public class LoginLayout extends View {
 
-    public static final String TEMPLATE = "/asset/block.vm";
-    public static final String ID = MenuView.class.getName();
-
-    public MenuView(Bundle bundle) {
-        super(bundle, ID, TEMPLATE);
+    public LoginLayout(Bundle bundle, String id, String template) {
+        super(bundle, id, template);
     }
 
     @Override
     public VelocityContext velocityContext(Map<String, HtmlTag> header, HttpServletRequest request, HttpServletResponse response) {
         return null;
     }
+
 }

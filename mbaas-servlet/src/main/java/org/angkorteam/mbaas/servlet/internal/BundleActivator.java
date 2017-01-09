@@ -227,7 +227,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
                 String pathVariable = "/" + StringUtils.join(newSegments, "/");
                 int segment = StringUtils.countMatches(controller.getPath(), '/');
                 ControllerMapping controllerMapping = new ControllerMapping(segment, controller.getMethod(), controller.getPath(), pathVariable, controller);
-                LOGGER.info("register {} {} {}", controller.getId(), controller.getPath(), controller.getClass().getName());
+                LOGGER.info("registered controller {} {} {}", controller.getId(), controller.getPath(), controller.getClass().getName());
                 this.controllerDictionary.put(controller.getId(), controllerMapping);
             }
         }
@@ -248,7 +248,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
 
         if (eventType == ServiceEvent.REGISTERED) {
             ViewMapping viewMapping = new ViewMapping(view.getId(), view.getTemplate(), view.getParentId(), view.getBlocks(), view);
-            LOGGER.info("registered view {} getTemplate {} parent getId {}", view.getId(), view.getTemplate(), view.getParentId());
+            LOGGER.info("registered view {} template {} parent getId {}", view.getId(), view.getTemplate(), view.getParentId());
             this.viewDictionary.put(view.getId(), viewMapping);
         }
     }
@@ -268,7 +268,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
 
         if (eventType == ServiceEvent.REGISTERED) {
             AssetMapping assetMapping = new AssetMapping(asset.getBundle(), asset.getPath());
-            LOGGER.info("registered bundle {} path {}", asset.getBundle().getSymbolicName(), "/" + asset.getBundle().getBundleId() + asset.getPath());
             this.assetDictionary.put(asset.getId(), assetMapping);
         }
     }
