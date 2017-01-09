@@ -28,7 +28,7 @@ import java.util.Iterator;
  * for the included ResourceManager
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ResourceCache.java 463298 2006-10-12 16:10:32Z henning $
+ * @version $Id$
  */
 public interface ResourceCache {
     /**
@@ -64,6 +64,14 @@ public interface ResourceCache {
      * @return stored under key
      */
     public Resource remove(Object resourceKey);
+
+    /**
+     * Removes all of the resources from this cache.
+     * The cache will be empty after this call returns.
+     *
+     * @since 2.0
+     */
+    public void clear();
 
     /**
      * returns an Iterator of Keys in the cache.

@@ -66,7 +66,7 @@ public abstract class MathUtils {
     /**
      * The <code>Class</code>-object is key, the maximum-value is the value
      */
-    protected static final Map ints = new HashMap();
+    private static final Map ints = new HashMap();
 
     static {
         ints.put(Byte.class, BigDecimal.valueOf(Byte.MAX_VALUE));
@@ -79,7 +79,7 @@ public abstract class MathUtils {
     /**
      * The "size" of the number-types - ascending.
      */
-    protected static final List typesBySize = new ArrayList();
+    private static final List typesBySize = new ArrayList();
 
     static {
         typesBySize.add(Byte.class);
@@ -172,29 +172,25 @@ public abstract class MathUtils {
             if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
                 type = Short.class;
             } else {
-                // TODO: JDK 1.4+ -> valueOf()
-                return new Byte((byte) value);
+                return Byte.valueOf((byte) value);
             }
         }
         if (type == Short.class) {
             if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
                 type = Integer.class;
             } else {
-                // TODO: JDK 1.4+ -> valueOf()
-                return new Short((short) value);
+                return Short.valueOf((short) value);
             }
         }
         if (type == Integer.class) {
             if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
                 type = Long.class;
             } else {
-                // TODO: JDK 1.4+ -> valueOf()
-                return new Integer((int) value);
+                return Integer.valueOf((int) value);
             }
         }
         if (type == Long.class) {
-            // TODO: JDK 1.4+ -> valueOf()
-            return new Long(value);
+            return Long.valueOf(value);
         }
         return BigInteger.valueOf(value);
     }
@@ -239,6 +235,26 @@ public abstract class MathUtils {
         }
 
         if ((op1 instanceof Double) || (op2 instanceof Double)) {
+            return BASE_DOUBLE;
+        }
+        return BASE_FLOAT;
+    }
+
+    /**
+     * Find the Number-type to be used for a single number
+     *
+     * @param op operand
+     * @return constant indicating type of Number to use in calculations
+     */
+    public static int findCalculationBase(Number op) {
+        if (isInteger(op)) {
+            if (op instanceof BigInteger) {
+                return BASE_BIGINTEGER;
+            }
+            return BASE_LONG;
+        } else if (op instanceof BigDecimal) {
+            return BASE_BIGDECIMAL;
+        } else if (op instanceof Double) {
             return BASE_DOUBLE;
         }
         return BASE_FLOAT;
@@ -457,6 +473,36 @@ public abstract class MathUtils {
             // Default is BigDecimal operation
             default:
                 return toBigDecimal(op1).compareTo(toBigDecimal(op2));
+        }
+    }
+
+    /**
+     * Negate a number
+     *
+     * @param op n
+     * @return -n (unary negation of n)
+     */
+    public static Number negate(Number op) {
+        int calcBase = findCalculationBase(op);
+        switch (calcBase) {
+            case BASE_BIGINTEGER:
+                return toBigInteger(op).negate();
+            case BASE_LONG:
+                long l = op.longValue();
+                /* overflow check */
+                if (l == Long.MIN_VALUE) {
+                    return toBigInteger(l).negate();
+                }
+                return wrapPrimitive(-l, op.getClass());
+            case BASE_FLOAT:
+                float f = op.floatValue();
+                return -f;
+            case BASE_DOUBLE:
+                double d = op.doubleValue();
+                return -d;
+            // Default is BigDecimal operation
+            default:
+                return toBigDecimal(op).negate();
         }
     }
 }

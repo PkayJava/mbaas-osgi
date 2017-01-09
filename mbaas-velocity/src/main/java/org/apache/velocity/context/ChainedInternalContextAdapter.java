@@ -43,7 +43,7 @@ public abstract class ChainedInternalContextAdapter implements InternalContextAd
     /**
      * the parent context
      */
-    protected InternalContextAdapter innerContext = null;
+    protected InternalContextAdapter wrappedContext = null;
 
     /**
      * CTOR, wraps an ICA
@@ -51,7 +51,7 @@ public abstract class ChainedInternalContextAdapter implements InternalContextAd
      * @param inner context
      */
     public ChainedInternalContextAdapter(InternalContextAdapter inner) {
-        innerContext = inner;
+        wrappedContext = inner;
     }
 
     /**
@@ -60,14 +60,14 @@ public abstract class ChainedInternalContextAdapter implements InternalContextAd
      * @return The inner / user context.
      */
     public Context getInternalUserContext() {
-        return innerContext.getInternalUserContext();
+        return wrappedContext.getInternalUserContext();
     }
 
     /**
-     * @see InternalWrapperContext#getBaseContext()
+     * @see org.apache.velocity.context.InternalWrapperContext#getBaseContext()
      */
     public InternalContextAdapter getBaseContext() {
-        return innerContext.getBaseContext();
+        return wrappedContext.getBaseContext();
     }
 
     /**
@@ -77,7 +77,7 @@ public abstract class ChainedInternalContextAdapter implements InternalContextAd
      * @return stored object or null
      */
     public Object get(String key) {
-        return innerContext.get(key);
+        return wrappedContext.get(key);
     }
 
     /**
@@ -91,154 +91,147 @@ public abstract class ChainedInternalContextAdapter implements InternalContextAd
         /*
          * just put in the local context
          */
-        return innerContext.put(key, value);
+        return wrappedContext.put(key, value);
     }
 
     /**
-     * @see Context#containsKey(Object)
+     * @see org.apache.velocity.context.Context#containsKey(java.lang.Object)
      */
-    public boolean containsKey(Object key) {
-        return innerContext.containsKey(key);
+    public boolean containsKey(String key) {
+        return wrappedContext.containsKey(key);
     }
 
     /**
-     * @see Context#getKeys()
+     * @see org.apache.velocity.context.Context#getKeys()
      */
-    public Object[] getKeys() {
-        return innerContext.getKeys();
+    public String[] getKeys() {
+        return wrappedContext.getKeys();
     }
 
     /**
-     * @see Context#remove(Object)
+     * @see org.apache.velocity.context.Context#remove(java.lang.Object)
      */
-    public Object remove(Object key) {
-        return innerContext.remove(key);
+    public Object remove(String key) {
+        return wrappedContext.remove(key);
     }
 
     /**
-     * @see InternalHousekeepingContext#pushCurrentTemplateName(String)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#pushCurrentTemplateName(java.lang.String)
      */
     public void pushCurrentTemplateName(String s) {
-        innerContext.pushCurrentTemplateName(s);
+        wrappedContext.pushCurrentTemplateName(s);
     }
 
     /**
-     * @see InternalHousekeepingContext#popCurrentTemplateName()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#popCurrentTemplateName()
      */
     public void popCurrentTemplateName() {
-        innerContext.popCurrentTemplateName();
+        wrappedContext.popCurrentTemplateName();
     }
 
     /**
-     * @see InternalHousekeepingContext#getCurrentTemplateName()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#getCurrentTemplateName()
      */
     public String getCurrentTemplateName() {
-        return innerContext.getCurrentTemplateName();
+        return wrappedContext.getCurrentTemplateName();
     }
 
     /**
-     * @see InternalHousekeepingContext#getTemplateNameStack()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#getTemplateNameStack()
      */
-    public Object[] getTemplateNameStack() {
-        return innerContext.getTemplateNameStack();
+    public String[] getTemplateNameStack() {
+        return wrappedContext.getTemplateNameStack();
     }
 
     /**
-     * @see InternalHousekeepingContext#pushCurrentMacroName(String)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#pushCurrentMacroName(java.lang.String)
      */
     public void pushCurrentMacroName(String s) {
-        innerContext.pushCurrentMacroName(s);
+        wrappedContext.pushCurrentMacroName(s);
     }
 
     /**
-     * @see InternalHousekeepingContext#popCurrentMacroName()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#popCurrentMacroName()
      */
     public void popCurrentMacroName() {
-        innerContext.popCurrentMacroName();
+        wrappedContext.popCurrentMacroName();
     }
 
     /**
-     * @see InternalHousekeepingContext#getCurrentMacroName()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#getCurrentMacroName()
      */
     public String getCurrentMacroName() {
-        return innerContext.getCurrentMacroName();
+        return wrappedContext.getCurrentMacroName();
     }
 
     /**
-     * @see InternalHousekeepingContext#getCurrentMacroCallDepth()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#getCurrentMacroCallDepth()
      */
     public int getCurrentMacroCallDepth() {
-        return innerContext.getCurrentMacroCallDepth();
+        return wrappedContext.getCurrentMacroCallDepth();
     }
 
     /**
-     * @see InternalHousekeepingContext#getMacroNameStack()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#getMacroNameStack()
      */
-    public Object[] getMacroNameStack() {
-        return innerContext.getMacroNameStack();
+    public String[] getMacroNameStack() {
+        return wrappedContext.getMacroNameStack();
     }
 
     /**
-     * @see InternalHousekeepingContext#icacheGet(Object)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#icacheGet(java.lang.Object)
      */
     public IntrospectionCacheData icacheGet(Object key) {
-        return innerContext.icacheGet(key);
+        return wrappedContext.icacheGet(key);
     }
 
     /**
-     * @see InternalWrapperContext#localPut(String, Object)
-     */
-    public Object localPut(final String key, final Object value) {
-        return innerContext.put(key, value);
-    }
-
-    /**
-     * @see InternalHousekeepingContext#icachePut(Object, IntrospectionCacheData)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#icachePut(java.lang.Object, org.apache.velocity.util.introspection.IntrospectionCacheData)
      */
     public void icachePut(Object key, IntrospectionCacheData o) {
-        innerContext.icachePut(key, o);
+        wrappedContext.icachePut(key, o);
     }
 
     /**
-     * @see InternalHousekeepingContext#setMacroLibraries(List)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#setMacroLibraries(List)
      */
     public void setMacroLibraries(List macroLibraries) {
-        innerContext.setMacroLibraries(macroLibraries);
+        wrappedContext.setMacroLibraries(macroLibraries);
     }
 
     /**
-     * @see InternalHousekeepingContext#getMacroLibraries()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#getMacroLibraries()
      */
     public List getMacroLibraries() {
-        return innerContext.getMacroLibraries();
+        return wrappedContext.getMacroLibraries();
     }
 
     /**
-     * @see InternalEventContext#attachEventCartridge(EventCartridge)
+     * @see org.apache.velocity.context.InternalEventContext#attachEventCartridge(org.apache.velocity.app.event.EventCartridge)
      */
     public EventCartridge attachEventCartridge(EventCartridge ec) {
-        return innerContext.attachEventCartridge(ec);
+        return wrappedContext.attachEventCartridge(ec);
     }
 
     /**
-     * @see InternalEventContext#getEventCartridge()
+     * @see org.apache.velocity.context.InternalEventContext#getEventCartridge()
      */
     public EventCartridge getEventCartridge() {
-        return innerContext.getEventCartridge();
+        return wrappedContext.getEventCartridge();
     }
 
 
     /**
-     * @see InternalHousekeepingContext#setCurrentResource(org.apache.velocity.runtime.resource.Resource)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#setCurrentResource(org.apache.velocity.runtime.resource.Resource)
      */
     public void setCurrentResource(Resource r) {
-        innerContext.setCurrentResource(r);
+        wrappedContext.setCurrentResource(r);
     }
 
     /**
-     * @see InternalHousekeepingContext#getCurrentResource()
+     * @see org.apache.velocity.context.InternalHousekeepingContext#getCurrentResource()
      */
     public Resource getCurrentResource() {
-        return innerContext.getCurrentResource();
+        return wrappedContext.getCurrentResource();
     }
 }

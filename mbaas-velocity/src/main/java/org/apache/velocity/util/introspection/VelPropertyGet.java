@@ -26,7 +26,7 @@ package org.apache.velocity.util.introspection;
  * $foo.bar
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: VelPropertyGet.java 463298 2006-10-12 16:10:32Z henning $
+ * @version $Id$
  */
 public interface VelPropertyGet {
     /**

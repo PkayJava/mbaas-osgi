@@ -31,7 +31,7 @@ import java.io.Writer;
  *
  */
 public class ASTText extends SimpleNode {
-    private char[] ctext;
+    private String ctext;
 
     /**
      * @param id
@@ -49,28 +49,50 @@ public class ASTText extends SimpleNode {
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * text getter
+     *
+     * @return ctext
+     */
+    public String getCtext() {
+        return ctext;
+    }
+
+    /**
+     * text setter
+     *
+     * @param ctext
+     */
+    public void setCtext(String ctext) {
+        this.ctext = ctext;
+    }
+
+    /**
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#init(InternalContextAdapter, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
      */
     public Object init(InternalContextAdapter context, Object data)
             throws TemplateInitException {
+        StringBuilder builder = new StringBuilder();
         Token t = getFirstToken();
+        for (; t != getLastToken(); t = t.next) {
+            builder.append(NodeUtils.tokenLiteral(t));
+        }
+        builder.append(NodeUtils.tokenLiteral(t));
+        ctext = builder.toString();
 
-        String text = NodeUtils.tokenLiteral(t);
-
-        ctext = text.toCharArray();
+        cleanupParserAndTokens();
 
         return data;
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(InternalContextAdapter, Writer)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException {

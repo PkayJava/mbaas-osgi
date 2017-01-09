@@ -54,14 +54,14 @@ public class ASTTextblock extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
 
     /**
-     * @see SimpleNode#init(InternalContextAdapter, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
      */
     public Object init(InternalContextAdapter context, Object data)
             throws TemplateInitException {
@@ -69,16 +69,19 @@ public class ASTTextblock extends SimpleNode {
 
         String text = t.image;
 
-        // t.image is in format: #% <string> %#
+        // t.image is in format: #[[ <string> ]]#
         // we must strip away the hash tags
         text = text.substring(START.length(), text.length() - END.length());
 
         ctext = text.toCharArray();
+
+        cleanupParserAndTokens();
+
         return data;
     }
 
     /**
-     * @see SimpleNode#render(InternalContextAdapter, Writer)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException {

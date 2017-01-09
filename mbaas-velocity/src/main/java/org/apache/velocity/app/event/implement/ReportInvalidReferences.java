@@ -55,7 +55,7 @@ import java.util.List;
  * <p>This feature should be regarded as experimental.
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
- * @version $Id: ReportInvalidReferences.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class ReportInvalidReferences implements

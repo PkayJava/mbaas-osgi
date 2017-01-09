@@ -29,6 +29,8 @@ import org.apache.velocity.runtime.parser.node.Node;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Macro implements the macro definition directive of VTL.
@@ -46,7 +48,7 @@ import java.io.Writer;
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="hps@intermeta.de">Henning P. Schmiedehausen</a>
- * @version $Id: Macro.java 746438 2009-02-21 05:41:24Z nbubna $
+ * @version $Id$
  */
 public class Macro extends Directive {
     private static boolean debugMode = false;
@@ -98,7 +100,7 @@ public class Macro extends Directive {
     }
 
     /**
-     * @see org.apache.velocity.runtime.directive.Directive#init(org.apache.velocity.runtime.RuntimeServices, InternalContextAdapter, Node)
+     * @see org.apache.velocity.runtime.directive.Directive#init(org.apache.velocity.runtime.RuntimeServices, org.apache.velocity.context.InternalContextAdapter, org.apache.velocity.runtime.parser.node.Node)
      */
     public void init(RuntimeServices rs, InternalContextAdapter context,
                      Node node)
@@ -107,50 +109,56 @@ public class Macro extends Directive {
 
 
         // Add this macro to the VelocimacroManager now that it has been initialized.        
-        String argArray[] = getArgArray(node, rs);
+        List<MacroArg> macroArgs = getArgArray(node, rsvc);
         int numArgs = node.jjtGetNumChildren();
-        rs.addVelocimacro(argArray[0], node.jjtGetChild(numArgs - 1), argArray, node.getTemplateName());
+        rsvc.addVelocimacro(macroArgs.get(0).name, node.jjtGetChild(numArgs - 1),
+                macroArgs, node.getTemplate());
     }
 
     /**
-     * Used by Parser.java to do further parameter checking for macro arguments.
+     * Check the argument types of a macro call, called by the parser to do validation
      */
-    public static void checkArgs(RuntimeServices rs, Token t, Node node,
-                                 String sourceTemplate)
-            throws IOException, ParseException {
-        /*
-         *  There must be at least one arg to  #macro,
-         *  the name of the VM.  Note that 0 following
-         *  args is ok for naming blocks of HTML
-         */
-        int numArgs = node.jjtGetNumChildren();
-
-        /*
-         *  this number is the # of args + 1.  The + 1
-         *  is for the block tree
-         */
-        if (numArgs < 2) {
-
-            /*
-             *  error - they didn't name the macro or
-             *  define a block
-             */
-            rs.getLog().error("#macro error : Velocimacro must have name as 1st " +
-                    "argument to #macro(). #args = " + numArgs);
-
-            throw new MacroParseException("First argument to #macro() must be " +
-                    " macro name", sourceTemplate, t);
+    public void checkArgs(ArrayList<Integer> argtypes, Token t, String templateName)
+            throws ParseException {
+        if (argtypes.size() < 1) {
+            throw new MacroParseException("A macro definition requires at least a macro name"
+                    , templateName, t);
         }
 
         /*
          *  lets make sure that the first arg is an ASTWord
          */
-        int firstType = node.jjtGetChild(0).getType();
-        if (firstType != ParserTreeConstants.JJTWORD) {
-            throw new MacroParseException("First argument to #macro() must be a"
-                    + " token without surrounding \' or \", which specifies"
-                    + " the macro name.  Currently it is a "
-                    + ParserTreeConstants.jjtNodeName[firstType], sourceTemplate, t);
+        if (argtypes.get(0) != ParserTreeConstants.JJTWORD) {
+            throw new MacroParseException("Macro argument 1"
+                    + " must be a token without surrounding \' or \""
+                    , templateName, t);
+        }
+
+
+        // We use this to flag if the default arguments are out of order. such as
+        // #macro($a $b=1 $c).  We enforce that all default parameters must be
+        // specified consecutively, and at the end of the argument list.
+        boolean consecutive = false;
+
+        // All arguments other then the first must be either a reference
+        // or a directiveassign followed by a reference in the case a default
+        // value is specified.
+        for (int argPos = 1; argPos < argtypes.size(); argPos++) {
+            if (argtypes.get(argPos) == ParserTreeConstants.JJTDIRECTIVEASSIGN) {
+                // Abosrb next argument type since parser enforces that these are in
+                // pairs, and we don't need to check the type of the second
+                // arg becuase it is done by the parser.
+                argPos++;
+                consecutive = true;
+            } else if (argtypes.get(argPos) != ParserTreeConstants.JJTREFERENCE) {
+                throw new MacroParseException("Macro argument " + (argPos + 1)
+                        + " must be a reference", templateName, t);
+            } else if (consecutive) {
+                // We have already found a default parameter e.g.; $x = 2, but
+                // the next parameter was not a reference.
+                throw new MacroParseException("Macro non-default argument follows a default argument at "
+                        , templateName, t);
+            }
         }
     }
 
@@ -164,7 +172,7 @@ public class Macro extends Directive {
      * @param rsvc For debugging purposes only.
      * @return array of arguments
      */
-    private static String[] getArgArray(Node node, RuntimeServices rsvc) {
+    private static List<MacroArg> getArgArray(Node node, RuntimeServices rsvc) {
         /*
          * Get the number of arguments for the macro, excluding the
          * last child node which is the block tree containing the
@@ -173,62 +181,86 @@ public class Macro extends Directive {
         int numArgs = node.jjtGetNumChildren();
         numArgs--;  // avoid the block tree...
 
-        String argArray[] = new String[numArgs];
+        ArrayList<MacroArg> macroArgs = new ArrayList();
 
-        int i = 0;
+        for (int i = 0; i < numArgs; i++) {
+            Node curnode = node.jjtGetChild(i);
+            MacroArg macroArg = new MacroArg();
+            if (curnode.getType() == ParserTreeConstants.JJTDIRECTIVEASSIGN) {
+                // This is an argument with a default value
+                macroArg.name = curnode.getFirstTokenImage();
 
-        /*
-         *  eat the args
-         */
-
-        while (i < numArgs) {
-            argArray[i] = node.jjtGetChild(i).getFirstToken().image;
-
-            /*
-             *  trim off the leading $ for the args after the macro name.
-             *  saves everyone else from having to do it
-             */
-
-            if (i > 0) {
-                if (argArray[i].startsWith("$")) {
-                    argArray[i] = argArray[i]
-                            .substring(1, argArray[i].length());
-                }
+                // Inforced by the parser there will be an argument here.
+                i++;
+                curnode = node.jjtGetChild(i);
+                macroArg.defaultVal = curnode;
+            } else {
+                // An argument without a default value
+                macroArg.name = curnode.getFirstTokenImage();
             }
 
-            argArray[i] = argArray[i].intern();
-            i++;
+            // trim off the leading $ for the args after the macro name.
+            // saves everyone else from having to do it
+            if (i > 0 && macroArg.name.startsWith("$")) {
+                macroArg.name = macroArg.name.substring(1, macroArg.name.length());
+            }
+
+            macroArgs.add(macroArg);
         }
 
         if (debugMode) {
             StringBuffer msg = new StringBuffer("Macro.getArgArray() : nbrArgs=");
             msg.append(numArgs).append(" : ");
-            macroToString(msg, argArray);
-            rsvc.getLog().debug(msg);
+            macroToString(msg, macroArgs);
+            rsvc.getLog("macro").debug(msg.toString());
         }
 
-        return argArray;
+        return macroArgs;
+    }
+
+    /**
+     * MacroArgs holds the information for a single argument in a
+     * macro definition.  The arguments for a macro are passed around as a
+     * list of these objects.
+     */
+    public static class MacroArg {
+        /**
+         * Name of the argument with '$' stripped off
+         */
+        public String name = null;
+
+        /**
+         * If the argument was given a default value, then this contains
+         * the base of the AST tree of the value. Otherwise it is null.
+         */
+        public Node defaultVal = null;
     }
 
     /**
      * For debugging purposes.  Formats the arguments from
      * <code>argArray</code> and appends them to <code>buf</code>.
      *
-     * @param buf      A StringBuffer. If null, a new StringBuffer is allocated.
-     * @param argArray The Macro arguments to format
+     * @param buf       A StringBuffer. If null, a new StringBuffer is allocated.
+     * @param macroArgs Array of macro arguments, containing the
+     *                  #macro() arguments and default values.  the 0th is the name.
      * @return A StringBuffer containing the formatted arguments. If a StringBuffer
      * has passed in as buf, this method returns it.
      * @since 1.5
      */
     public static final StringBuffer macroToString(final StringBuffer buf,
-                                                   final String[] argArray) {
+                                                   List<MacroArg> macroArgs) {
         StringBuffer ret = (buf == null) ? new StringBuffer() : buf;
 
-        ret.append('#').append(argArray[0]).append("( ");
-        for (int i = 1; i < argArray.length; i++) {
-            ret.append(' ').append(argArray[i]);
+        ret.append('#').append(macroArgs.get(0).name).append("( ");
+        for (MacroArg marg : macroArgs) {
+            ret.append("$").append(marg.name);
+            if (marg.defaultVal != null) {
+                ret.append("=").append(marg.defaultVal);
+            }
+            ret.append(' ');
         }
         ret.append(" )");
         return ret;
     }
+
 }

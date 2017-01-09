@@ -55,7 +55,7 @@ import java.util.List;
  * depending upon application.
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: InternalContextAdapterImpl.java 731266 2009-01-04 15:11:20Z byron $
+ * @version $Id$
  */
 public final class InternalContextAdapterImpl implements InternalContextAdapter {
     /**
@@ -108,7 +108,7 @@ public final class InternalContextAdapterImpl implements InternalContextAdapter 
     /* --- InternalHousekeepingContext interface methods --- */
 
     /**
-     * @see org.apache.velocity.context.InternalHousekeepingContext#pushCurrentTemplateName(String)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#pushCurrentTemplateName(java.lang.String)
      */
     public void pushCurrentTemplateName(String s) {
         icb.pushCurrentTemplateName(s);
@@ -131,12 +131,12 @@ public final class InternalContextAdapterImpl implements InternalContextAdapter 
     /**
      * @see org.apache.velocity.context.InternalHousekeepingContext#getTemplateNameStack()
      */
-    public Object[] getTemplateNameStack() {
+    public String[] getTemplateNameStack() {
         return icb.getTemplateNameStack();
     }
 
     /**
-     * @see org.apache.velocity.context.InternalHousekeepingContext#pushCurrentMacroName(String)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#pushCurrentMacroName(java.lang.String)
      * @since 1.6
      */
     public void pushCurrentMacroName(String s) {
@@ -171,19 +171,19 @@ public final class InternalContextAdapterImpl implements InternalContextAdapter 
      * @see org.apache.velocity.context.InternalHousekeepingContext#getMacroNameStack()
      * @since 1.6
      */
-    public Object[] getMacroNameStack() {
+    public String[] getMacroNameStack() {
         return icb.getMacroNameStack();
     }
 
     /**
-     * @see org.apache.velocity.context.InternalHousekeepingContext#icacheGet(Object)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#icacheGet(java.lang.Object)
      */
     public IntrospectionCacheData icacheGet(Object key) {
         return icb.icacheGet(key);
     }
 
     /**
-     * @see org.apache.velocity.context.InternalHousekeepingContext#icachePut(Object, IntrospectionCacheData)
+     * @see org.apache.velocity.context.InternalHousekeepingContext#icachePut(java.lang.Object, org.apache.velocity.util.introspection.IntrospectionCacheData)
      */
     public void icachePut(Object key, IntrospectionCacheData o) {
         icb.icachePut(key, o);
@@ -222,45 +222,37 @@ public final class InternalContextAdapterImpl implements InternalContextAdapter 
     /* ---  Context interface methods --- */
 
     /**
-     * @see Context#put(String, Object)
+     * @see org.apache.velocity.context.Context#put(java.lang.String, java.lang.Object)
      */
     public Object put(String key, Object value) {
         return context.put(key, value);
     }
 
     /**
-     * @see InternalWrapperContext#localPut(String, Object)
-     * @since 1.5
-     */
-    public Object localPut(final String key, final Object value) {
-        return put(key, value);
-    }
-
-    /**
-     * @see Context#get(String)
+     * @see org.apache.velocity.context.Context#get(java.lang.String)
      */
     public Object get(String key) {
         return context.get(key);
     }
 
     /**
-     * @see Context#containsKey(Object)
+     * @see org.apache.velocity.context.Context#containsKey(java.lang.Object)
      */
-    public boolean containsKey(Object key) {
+    public boolean containsKey(String key) {
         return context.containsKey(key);
     }
 
     /**
-     * @see Context#getKeys()
+     * @see org.apache.velocity.context.Context#getKeys()
      */
-    public Object[] getKeys() {
+    public String[] getKeys() {
         return context.getKeys();
     }
 
     /**
-     * @see Context#remove(Object)
+     * @see org.apache.velocity.context.Context#remove(java.lang.Object)
      */
-    public Object remove(Object key) {
+    public Object remove(String key) {
         return context.remove(key);
     }
 
@@ -292,7 +284,7 @@ public final class InternalContextAdapterImpl implements InternalContextAdapter 
     /* -----  InternalEventContext ---- */
 
     /**
-     * @see InternalEventContext#attachEventCartridge(EventCartridge)
+     * @see org.apache.velocity.context.InternalEventContext#attachEventCartridge(org.apache.velocity.app.event.EventCartridge)
      */
     public EventCartridge attachEventCartridge(EventCartridge ec) {
         if (iec != null) {
@@ -303,7 +295,7 @@ public final class InternalContextAdapterImpl implements InternalContextAdapter 
     }
 
     /**
-     * @see InternalEventContext#getEventCartridge()
+     * @see org.apache.velocity.context.InternalEventContext#getEventCartridge()
      */
     public EventCartridge getEventCartridge() {
         if (iec != null) {
@@ -312,7 +304,5 @@ public final class InternalContextAdapterImpl implements InternalContextAdapter 
 
         return null;
     }
+
 }
-
-
-

@@ -71,8 +71,7 @@ public class StopCommand extends Error {
         } else // only stop for the top :)
         {
             return (that instanceof Template ||
-                    that instanceof RuntimeInstance ||
-                    that instanceof Evaluate);
+                    that instanceof RuntimeInstance);
         }
     }
 }

@@ -26,7 +26,7 @@ import org.apache.velocity.runtime.parser.ParseException;
  * directive initialization (e.g. wrong number of arguments)
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
- * @version $Id: TemplateInitException.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class TemplateInitException extends VelocityException
@@ -57,7 +57,7 @@ public class TemplateInitException extends VelocityException
     }
 
     /**
-     * Returns the Template name where this exception occured.
+     * Returns the Template name where this exception occurred.
      *
      * @return the template name
      */
@@ -66,7 +66,7 @@ public class TemplateInitException extends VelocityException
     }
 
     /**
-     * Returns the line number where this exception occured.
+     * Returns the line number where this exception occurred.
      *
      * @return the line number
      */
@@ -75,7 +75,7 @@ public class TemplateInitException extends VelocityException
     }
 
     /**
-     * Returns the column number where this exception occured.
+     * Returns the column number where this exception occurred.
      *
      * @return the line number
      */

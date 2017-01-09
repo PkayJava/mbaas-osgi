@@ -19,19 +19,24 @@ package org.apache.velocity.runtime.directive;
  * under the License.    
  */
 
-import org.apache.velocity.context.ChainedInternalContextAdapter;
 import org.apache.velocity.context.InternalContextAdapter;
-import org.apache.velocity.exception.*;
+import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.runtime.parser.ParseException;
+import org.apache.velocity.runtime.parser.ParserTreeConstants;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.ASTReference;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.apache.velocity.util.StringUtils;
 import org.apache.velocity.util.introspection.Info;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -41,81 +46,9 @@ import java.util.Iterator;
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author Daniel Rall
- * @version $Id: Foreach.java 945927 2010-05-18 22:21:41Z nbubna $
+ * @version $Id$
  */
 public class Foreach extends Directive {
-    /**
-     * A special context to use when the foreach iterator returns a null.  This
-     * is required since the standard context may not support nulls.
-     * All puts and gets are passed through, except for the foreach iterator key.
-     *
-     * @since 1.5
-     */
-    protected static class NullHolderContext extends ChainedInternalContextAdapter {
-        private String loopVariableKey = "";
-        private boolean active = true;
-
-        /**
-         * Create the context as a wrapper to be used within the foreach
-         *
-         * @param key     the reference used in the foreach
-         * @param context the parent context
-         */
-        private NullHolderContext(String key, InternalContextAdapter context) {
-            super(context);
-            if (key != null)
-                loopVariableKey = key;
-        }
-
-        /**
-         * Get an object from the context, or null if the key is equal to the loop variable
-         *
-         * @throws MethodInvocationException passes on potential exception from reference method call
-         * @see InternalContextAdapter#get(String)
-         */
-        public Object get(String key) throws MethodInvocationException {
-            return (active && loopVariableKey.equals(key))
-                    ? null
-                    : super.get(key);
-        }
-
-        /**
-         * @see InternalContextAdapter#put(String key, Object value)
-         */
-        public Object put(String key, Object value) {
-            if (loopVariableKey.equals(key) && (value == null)) {
-                active = true;
-            }
-
-            return super.put(key, value);
-        }
-
-        /**
-         * Allows callers to explicitly put objects in the local context.
-         * Objects added to the context through this method always end up
-         * in the top-level context of possible wrapped contexts.
-         *
-         * @param key   name of item to set.
-         * @param value object to set to key.
-         * @see org.apache.velocity.context.InternalWrapperContext#localPut(String, Object)
-         */
-        public Object localPut(final String key, final Object value) {
-            return put(key, value);
-        }
-
-        /**
-         * Remove an object from the context
-         *
-         * @see InternalContextAdapter#remove(Object key)
-         */
-        public Object remove(Object key) {
-            if (loopVariableKey.equals(key)) {
-                active = false;
-            }
-            return super.remove(key);
-        }
-    }
-
     /**
      * Return name of this directive.
      *
@@ -133,25 +66,6 @@ public class Foreach extends Directive {
     public int getType() {
         return BLOCK;
     }
-
-    /**
-     * The name of the variable to use when placing
-     * the counter value into the context. Right
-     * now the default is $velocityCount.
-     */
-    private String counterName;
-
-    /**
-     * The name of the variable to use when placing
-     * iterator hasNext() value into the context.Right
-     * now the defailt is $velocityHasNext
-     */
-    private String hasNextName;
-
-    /**
-     * What value to start the loop counter at.
-     */
-    private int counterInitialValue;
 
     /**
      * The maximum number of times we're allowed to loop.
@@ -175,9 +89,6 @@ public class Foreach extends Directive {
      */
     private String elementKey;
 
-    // track if we've done the deprecation warning thing already
-    private boolean warned = false;
-
     /**
      * immutable, so create in init
      */
@@ -195,38 +106,6 @@ public class Foreach extends Directive {
     public void init(RuntimeServices rs, InternalContextAdapter context, Node node)
             throws TemplateInitException {
         super.init(rs, context, node);
-
-        // handle deprecated config settings
-        counterName = rsvc.getString(RuntimeConstants.COUNTER_NAME);
-        hasNextName = rsvc.getString(RuntimeConstants.HAS_NEXT_NAME);
-        counterInitialValue = rsvc.getInt(RuntimeConstants.COUNTER_INITIAL_VALUE);
-        // only warn once per instance...
-        if (!warned && rsvc.getLog().isWarnEnabled()) {
-            warned = true;
-            // ...and only if they customize these settings
-            if (!"velocityCount".equals(counterName)) {
-                rsvc.getLog().warn("The " + RuntimeConstants.COUNTER_NAME +
-                        " property has been deprecated. It will be removed" +
-                        " (along with $velocityCount itself) in Velocity 2.0. " +
-                        " Instead, please use $foreach.count to access" +
-                        " the loop counter.");
-            }
-            if (!"velocityHasNext".equals(hasNextName)) {
-                rsvc.getLog().warn("The " + RuntimeConstants.HAS_NEXT_NAME +
-                        " property has been deprecated. It will be removed" +
-                        " (along with $velocityHasNext itself ) in Velocity 2.0. " +
-                        " Instead, please use $foreach.hasNext to access" +
-                        " this value from now on.");
-            }
-            if (counterInitialValue != 1) {
-                rsvc.getLog().warn("The " + RuntimeConstants.COUNTER_INITIAL_VALUE +
-                        " property has been deprecated. It will be removed" +
-                        " (along with $velocityCount itself) in Velocity 2.0. " +
-                        " Instead, please use $foreach.index to access" +
-                        " the 0-based loop index and $foreach.count" +
-                        " to access the 1-based loop counter.");
-            }
-        }
 
         maxNbrLoops = rsvc.getInt(RuntimeConstants.MAX_NUMBER_LOOPS,
                 Integer.MAX_VALUE);
@@ -253,11 +132,10 @@ public class Foreach extends Directive {
         } else {
             /*
              * the default, error-prone way which we'll remove
-             *  TODO : remove if all goes well
              */
-            elementKey = sn.getFirstToken().image.substring(1);
+            elementKey = sn.getFirstTokenImage().substring(1);
         }
-
+        
         /*
          * make an uberinfo - saves new's later on
          */
@@ -277,6 +155,40 @@ public class Foreach extends Directive {
     }
 
     /**
+     * Retrieve the contextual iterator.
+     */
+    protected Iterator getIterator(Object iterable, Node node) {
+        Iterator i = null;
+        /*
+         * do our introspection to see what our collection is
+         */
+        if (iterable != null) {
+            try {
+                i = rsvc.getUberspect().getIterator(iterable, uberInfo);
+            }
+            /*
+             * pass through application level runtime exceptions
+             */ catch (RuntimeException e) {
+                throw e;
+            } catch (Exception ee) {
+                String msg = "Error getting iterator for #foreach parameter "
+                        + node.literal() + " at " + StringUtils.formatFileString(node);
+                log.error(msg, ee);
+                throw new VelocityException(msg, ee);
+            }
+
+            if (i == null && !skipInvalidIterator) {
+                String msg = "#foreach parameter " + node.literal() + " at "
+                        + StringUtils.formatFileString(node) + " is of type " + iterable.getClass().getName()
+                        + " and cannot be iterated by " + rsvc.getUberspect().getClass().getName();
+                log.error(msg);
+                throw new VelocityException(msg);
+            }
+        }
+        return i;
+    }
+
+    /**
      * renders the #foreach() block
      *
      * @param context
@@ -284,61 +196,23 @@ public class Foreach extends Directive {
      * @param node
      * @return True if the directive rendered successfully.
      * @throws IOException
-     * @throws MethodInvocationException
-     * @throws ResourceNotFoundException
-     * @throws ParseErrorException
      */
-    public boolean render(InternalContextAdapter context,
-                          Writer writer, Node node)
-            throws IOException, MethodInvocationException, ResourceNotFoundException,
-            ParseErrorException {
-        /*
-         *  do our introspection to see what our collection is
-         */
-
-        Object listObject = node.jjtGetChild(2).value(context);
-
-        if (listObject == null)
-            return false;
-
-        Iterator i = null;
-
-        try {
-            i = rsvc.getUberspect().getIterator(listObject, uberInfo);
-        }
-        /**
-         * pass through application level runtime exceptions
-         */ catch (RuntimeException e) {
-            throw e;
-        } catch (Exception ee) {
-            String msg = "Error getting iterator for #foreach at " + uberInfo;
-            rsvc.getLog().error(msg, ee);
-            throw new VelocityException(msg, ee);
-        }
-
+    public boolean render(InternalContextAdapter context, Writer writer, Node node)
+            throws IOException {
+        Node iterableNode = node.jjtGetChild(2);
+        Object iterable = iterableNode.value(context);
+        Iterator i = getIterator(iterable, iterableNode);
         if (i == null) {
-            if (skipInvalidIterator) {
-                return false;
-            } else {
-                Node pnode = node.jjtGetChild(2);
-                String msg = "#foreach parameter " + pnode.literal() + " at "
-                        + Log.formatFileString(pnode)
-                        + " is of type " + listObject.getClass().getName()
-                        + " and is either of wrong type or cannot be iterated.";
-                rsvc.getLog().error(msg);
-                throw new VelocityException(msg);
-            }
+            return false;
         }
 
-        int counter = counterInitialValue;
-        boolean maxNbrLoopsExceeded = false;
-
+        // Get the block ast tree which is always the last child
+        Node block = node.jjtGetChild(node.jjtGetNumChildren() - 1);
+        
         /*
-         *  save the element key if there is one, and the loop counter
+         * save the element key if there is one
          */
         Object o = context.get(elementKey);
-        Object savedCounter = context.get(counterName);
-        Object nextFlag = context.get(hasNextName);
 
         /*
          * roll our own scope class instead of using preRender(ctx)'s
@@ -350,20 +224,11 @@ public class Foreach extends Directive {
             context.put(name, foreach);
         }
 
-        /*
-         * Instantiate the null holder context if a null value
-         * is returned by the foreach iterator.  Only one instance is
-         * created - it's reused for every null value.
-         */
-        NullHolderContext nullHolderContext = null;
+        int count = 1;
+        while (count <= maxNbrLoops && i.hasNext()) {
+            count++;
 
-        while (!maxNbrLoopsExceeded && i.hasNext()) {
-            // TODO: JDK 1.5+ -> Integer.valueOf()
-            put(context, counterName, new Integer(counter));
-            Object value = i.next();
-            put(context, hasNextName, Boolean.valueOf(i.hasNext()));
-            put(context, elementKey, value);
-
+            put(context, elementKey, i.next());
             if (isScopeProvided()) {
                 // update the scope control
                 foreach.index++;
@@ -371,40 +236,33 @@ public class Foreach extends Directive {
             }
 
             try {
-                /*
-                 * If the value is null, use the special null holder context
-                 */
-                if (value == null) {
-                    if (nullHolderContext == null) {
-                        // lazy instantiation
-                        nullHolderContext = new NullHolderContext(elementKey, context);
-                    }
-                    node.jjtGetChild(3).render(nullHolderContext, writer);
-                } else {
-                    node.jjtGetChild(3).render(context, writer);
-                }
+                renderBlock(context, writer, block);
             } catch (StopCommand stop) {
                 if (stop.isFor(this)) {
                     break;
                 } else {
                     // clean up first
-                    clean(context, o, savedCounter, nextFlag);
+                    clean(context, o);
                     throw stop;
                 }
             }
-
-            counter++;
-
-            // Determine whether we're allowed to continue looping.
-            // ASSUMPTION: counterInitialValue is not negative!
-            maxNbrLoopsExceeded = (counter - counterInitialValue) >= maxNbrLoops;
         }
-        clean(context, o, savedCounter, nextFlag);
+        clean(context, o);
+        /*
+         * closes the iterator if it implements the Closeable interface
+         */
+        if (i != null && i instanceof Closeable && i != iterable) /* except if the iterable is the iterator itself */ {
+            ((Closeable) i).close();
+        }
         return true;
     }
 
-    protected void clean(InternalContextAdapter context,
-                         Object o, Object savedCounter, Object nextFlag) {
+    protected void renderBlock(InternalContextAdapter context, Writer writer, Node block)
+            throws IOException {
+        block.render(context, writer);
+    }
+
+    protected void clean(InternalContextAdapter context, Object o) {
         /*
          *  restores element key if exists
          *  otherwise just removes
@@ -415,26 +273,28 @@ public class Foreach extends Directive {
             context.remove(elementKey);
         }
 
-        /*
-         * restores the loop counter (if we were nested)
-         * if we have one, else just removes
-         */
-        if (savedCounter != null) {
-            context.put(counterName, savedCounter);
-        } else {
-            context.remove(counterName);
-        }
-
-        /*
-         * restores the "hasNext" boolean flag if it exists
-         */
-        if (nextFlag != null) {
-            context.put(hasNextName, nextFlag);
-        } else {
-            context.remove(hasNextName);
-        }
-
         // clean up after the ForeachScope
         postRender(context);
+    }
+
+    /**
+     * We do not allow a word token in any other arg position except for the 2nd since
+     * we are looking for the pattern #foreach($foo in $bar).
+     */
+    public void checkArgs(ArrayList<Integer> argtypes, Token t, String templateName)
+            throws ParseException {
+        if (argtypes.size() < 3) {
+            throw new MacroParseException("Too few arguments to the #foreach directive",
+                    templateName, t);
+        } else if (argtypes.get(0) != ParserTreeConstants.JJTREFERENCE) {
+            throw new MacroParseException("Expected argument 1 of #foreach to be a reference",
+                    templateName, t);
+        } else if (argtypes.get(1) != ParserTreeConstants.JJTWORD) {
+            throw new MacroParseException("Expected word 'in' at argument position 2 in #foreach",
+                    templateName, t);
+        } else if (argtypes.get(2) == ParserTreeConstants.JJTWORD) {
+            throw new MacroParseException("Argument 3 of #foreach is of the wrong type",
+                    templateName, t);
+        }
     }
 }

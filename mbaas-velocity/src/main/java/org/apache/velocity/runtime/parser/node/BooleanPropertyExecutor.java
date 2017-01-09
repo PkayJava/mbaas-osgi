@@ -20,10 +20,8 @@ package org.apache.velocity.runtime.parser.node;
  */
 
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
 import org.apache.velocity.util.introspection.Introspector;
+import org.slf4j.Logger;
 
 /**
  * Handles discovery and valuation of a
@@ -36,7 +34,7 @@ import org.apache.velocity.util.introspection.Introspector;
  * by is<Property>
  *
  * @author <a href="geirm@apache.org">Geir Magnusson Jr.</a>
- * @version $Id: BooleanPropertyExecutor.java 687502 2008-08-20 23:19:52Z nbubna $
+ * @version $Id$
  */
 public class BooleanPropertyExecutor extends PropertyExecutor {
     /**
@@ -46,21 +44,22 @@ public class BooleanPropertyExecutor extends PropertyExecutor {
      * @param property
      * @since 1.5
      */
-    public BooleanPropertyExecutor(final Log log, final Introspector introspector,
+    public BooleanPropertyExecutor(final Logger log, final Introspector introspector,
                                    final Class clazz, final String property) {
-        super(log, introspector, clazz, property);
+        this(log, introspector, clazz, property, false);
     }
 
     /**
-     * @param rlog
+     * @param log
      * @param introspector
      * @param clazz
      * @param property
-     * @deprecated RuntimeLogger is deprecated. Use the other constructor.
+     * @maram wrapArray
+     * @since 1.5
      */
-    public BooleanPropertyExecutor(final RuntimeLogger rlog, final Introspector introspector,
-                                   final Class clazz, final String property) {
-        super(new RuntimeLoggerLog(rlog), introspector, clazz, property);
+    public BooleanPropertyExecutor(final Logger log, final Introspector introspector,
+                                   final Class clazz, final String property, final boolean wrapArray) {
+        super(log, introspector, clazz, property, wrapArray);
     }
 
     protected void discover(final Class clazz, final String property) {

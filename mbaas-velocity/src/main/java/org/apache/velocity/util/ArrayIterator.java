@@ -40,7 +40,7 @@ import java.util.NoSuchElementException;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@apache.org">Geir Magnusson Jr.</a>
- * @version $Id: ArrayIterator.java 463298 2006-10-12 16:10:32Z henning $
+ * @version $Id$
  */
 public class ArrayIterator implements Iterator {
     /**

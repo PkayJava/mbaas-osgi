@@ -19,8 +19,8 @@ package org.apache.velocity.exception;
  * under the License.    
  */
 
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParseException;
+import org.apache.velocity.util.StringUtils;
 import org.apache.velocity.util.introspection.Info;
 
 import java.util.regex.Matcher;
@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="hps@intermeta.de">Henning P. Schmiedehausen</a>
- * @version $Id: ParseErrorException.java 736638 2009-01-22 13:42:52Z byron $
+ * @version $Id$
  */
 public class ParseErrorException extends VelocityException {
     /**
@@ -109,7 +109,7 @@ public class ParseErrorException extends VelocityException {
                 columnNumber = Integer.parseInt(match.group(2));
                 String restOfMsg = match.group(3);
                 msg = "Lexical error, " + restOfMsg + " at "
-                        + Log.formatFileString(templateName, lineNumber, columnNumber);
+                        + StringUtils.formatFileString(templateName, lineNumber, columnNumber);
             }
 
             //  ugly, ugly, ugly...
@@ -140,8 +140,8 @@ public class ParseErrorException extends VelocityException {
             columnNumber = xpex.getColumnNumber();
             lineNumber = xpex.getLineNumber();
             templateName = xpex.getTemplateName();
-        } else if (pex.getWrappedThrowable() instanceof ParseException) {
-            ParseException pex2 = (ParseException) pex.getWrappedThrowable();
+        } else if (pex.getCause() instanceof ParseException) {
+            ParseException pex2 = (ParseException) pex.getCause();
 
             if (pex2.currentToken != null && pex2.currentToken.next != null) {
                 columnNumber = pex2.currentToken.next.beginColumn;
@@ -228,7 +228,7 @@ public class ParseErrorException extends VelocityException {
     }
 
     /**
-     * Return our custum message if we have one, else return the default message
+     * Return our custom message if we have one, else return the default message
      */
     public String getMessage() {
         if (msg != null) return msg;

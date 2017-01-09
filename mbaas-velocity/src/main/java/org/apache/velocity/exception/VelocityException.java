@@ -1,7 +1,5 @@
 package org.apache.velocity.exception;
 
-import org.apache.velocity.util.ExceptionUtils;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -26,23 +24,19 @@ import org.apache.velocity.util.ExceptionUtils;
  * application layer.
  *
  * @author <a href="mailto:kdowney@amberarcher.com">Kyle F. Downey</a>
- * @version $Id: VelocityException.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  */
-public class VelocityException
-        extends RuntimeException {
+public class VelocityException extends RuntimeException {
     /**
      * Version Id for serializable
      */
     private static final long serialVersionUID = 1251243065134956045L;
-
-    private final Throwable wrapped;
 
     /**
      * @param exceptionMessage The message to register.
      */
     public VelocityException(final String exceptionMessage) {
         super(exceptionMessage);
-        wrapped = null;
     }
 
     /**
@@ -51,9 +45,7 @@ public class VelocityException
      * @since 1.5
      */
     public VelocityException(final String exceptionMessage, final Throwable wrapped) {
-        super(exceptionMessage);
-        this.wrapped = wrapped;
-        ExceptionUtils.setCause(this, wrapped);
+        super(exceptionMessage, wrapped);
     }
 
     /**
@@ -61,9 +53,7 @@ public class VelocityException
      * @since 1.5
      */
     public VelocityException(final Throwable wrapped) {
-        super();
-        this.wrapped = wrapped;
-        ExceptionUtils.setCause(this, wrapped);
+        super(wrapped);
     }
 
     /**
@@ -72,8 +62,10 @@ public class VelocityException
      *
      * @return Throwable thrown by method invocation
      * @since 1.5
+     * @deprecated Use {@link java.lang.RuntimeException#getCause()}
      */
     public Throwable getWrappedThrowable() {
-        return wrapped;
+        return getCause();
     }
+
 }

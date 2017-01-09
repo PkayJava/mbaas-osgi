@@ -23,6 +23,7 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.parser.Parser;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import java.io.Writer;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTElseIfStatement.java 517553 2007-03-13 06:09:58Z wglass $
+ * @version $Id$
  */
 public class ASTElseIfStatement extends SimpleNode {
     /**
@@ -55,7 +56,17 @@ public class ASTElseIfStatement extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#jjtAccept(ParserVisitor, Object)
+     * @throws TemplateInitException
+     * @see org.apache.velocity.runtime.parser.node.Node#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
+     */
+    public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
+        Object obj = super.init(context, data);
+        cleanupParserAndTokens(); // drop reference to Parser and all JavaCC Tokens
+        return obj;
+    }
+
+    /**
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -79,7 +90,7 @@ public class ASTElseIfStatement extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#render(InternalContextAdapter, Writer)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException, MethodInvocationException,

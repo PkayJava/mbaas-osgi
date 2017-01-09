@@ -38,7 +38,7 @@ public abstract class AbstractChainableUberspector extends UberspectImpl impleme
     /**
      * {@inheritDoc}
      *
-     * @see ChainableUberspector#wrap(Uberspect)
+     * @see ChainableUberspector#wrap(org.apache.velocity.util.introspection.Uberspect)
      * @see #inner
      */
     public void wrap(Uberspect inner) {
@@ -48,60 +48,62 @@ public abstract class AbstractChainableUberspector extends UberspectImpl impleme
     /**
      * init - the chainable uberspector is responsible for the initialization of the wrapped uberspector
      *
-     * @see Uberspect#init()
+     * @see org.apache.velocity.util.introspection.Uberspect#init()
      */
     //@Override
     public void init() {
         if (this.inner != null) {
-            this.inner.init();
+            try {
+                this.inner.init();
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                this.inner = null;
+            }
         }
     }
 
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getIterator(Object,
-     * Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getIterator(java.lang.Object,
+     * org.apache.velocity.util.introspection.Info)
      */
     //@SuppressWarnings("unchecked")
     //@Override
-    public Iterator getIterator(Object obj, Info i) throws Exception {
+    public Iterator getIterator(Object obj, Info i) {
         return (this.inner != null) ? this.inner.getIterator(obj, i) : null;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getMethod(Object, String,
-     * Object[], Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getMethod(java.lang.Object, java.lang.String,
+     * java.lang.Object[], org.apache.velocity.util.introspection.Info)
      */
     //@Override
-    public VelMethod getMethod(Object obj, String methodName, Object[] args, Info i)
-            throws Exception {
+    public VelMethod getMethod(Object obj, String methodName, Object[] args, Info i) {
         return (this.inner != null) ? this.inner.getMethod(obj, methodName, args, i) : null;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getPropertyGet(Object, String,
-     * Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getPropertyGet(java.lang.Object, java.lang.String,
+     * org.apache.velocity.util.introspection.Info)
      */
     //@Override
-    public VelPropertyGet getPropertyGet(Object obj, String identifier, Info i)
-            throws Exception {
+    public VelPropertyGet getPropertyGet(Object obj, String identifier, Info i) {
         return (this.inner != null) ? this.inner.getPropertyGet(obj, identifier, i) : null;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getPropertySet(Object, String,
-     * Object, Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getPropertySet(java.lang.Object, java.lang.String,
+     * java.lang.Object, org.apache.velocity.util.introspection.Info)
      */
     //@Override
-    public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info i)
-            throws Exception {
+    public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info i) {
         return (this.inner != null) ? this.inner.getPropertySet(obj, identifier, arg, i) : null;
     }
 }

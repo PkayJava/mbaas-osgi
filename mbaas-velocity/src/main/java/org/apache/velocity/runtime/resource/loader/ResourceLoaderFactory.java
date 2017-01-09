@@ -27,7 +27,7 @@ import org.apache.velocity.util.ClassUtils;
  * Factory to grab a template loader.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
- * @version $Id: ResourceLoaderFactory.java 898032 2010-01-11 19:51:03Z nbubna $
+ * @version $Id$
  */
 public class ResourceLoaderFactory {
     /**

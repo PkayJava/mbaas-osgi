@@ -16,10 +16,9 @@ package org.apache.velocity.app;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -27,17 +26,16 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeSingleton;
-import org.apache.velocity.runtime.log.Log;
 import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.Properties;
 
 /**
  * This class provides  services to the application
- * developer, such as :
+ * developer, such as:
  * <ul>
  * <li> Simple Velocity Runtime engine initialization methods.
  * <li> Functions to apply the template engine to streams and strings
@@ -59,18 +57,24 @@ import java.util.Properties;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:Christoph.Reck@dlr.de">Christoph Reck</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
- * @version $Id: Velocity.java 898050 2010-01-11 20:15:31Z nbubna $
+ * @version $Id$
  */
 public class Velocity implements RuntimeConstants {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Velocity.class);
-
     /**
      * initialize the Velocity runtime engine, using the default
      * properties of the Velocity distribution
      */
     public static void init() {
         RuntimeSingleton.init();
+    }
+
+    /**
+     * Resets the instance, so Velocity can be re-initialized again.
+     *
+     * @since 2.0.0
+     */
+    public static void reset() {
+        RuntimeSingleton.reset();
     }
 
     /**
@@ -124,15 +128,13 @@ public class Velocity implements RuntimeConstants {
     }
 
     /**
-     * Set an entire configuration at once. This is
-     * useful in cases where the parent application uses
-     * the ExtendedProperties class and the velocity configuration
-     * is a subset of the parent application's configuration.
+     * Set an entire configuration at once.
      *
      * @param configuration A configuration object.
+     * @since 2.0
      */
-    public static void setExtendedProperties(ExtendedProperties configuration) {
-        RuntimeSingleton.setConfiguration(configuration);
+    public static void setProperties(Properties configuration) {
+        RuntimeSingleton.setProperties(configuration);
     }
 
     /**
@@ -168,48 +170,6 @@ public class Velocity implements RuntimeConstants {
             ResourceNotFoundException {
         return RuntimeSingleton.getRuntimeServices()
                 .evaluate(context, out, logTag, instring);
-    }
-
-    /**
-     * Renders the input stream using the context into the output writer.
-     * To be used when a template is dynamically constructed, or want to
-     * use Velocity as a token replacer.
-     *
-     * @param context  context to use in rendering input string
-     * @param writer   Writer in which to render the output
-     * @param logTag   string to be used as the template name for log messages
-     *                 in case of error
-     * @param instream input stream containing the VTL to be rendered
-     * @return true if successful, false otherwise.  If false, see
-     * Velocity runtime log
-     * @throws ParseErrorException       The template could not be parsed.
-     * @throws MethodInvocationException A method on a context object could not be invoked.
-     * @throws ResourceNotFoundException A referenced resource could not be loaded.
-     * @throws IOException               While loading a reference, an I/O problem occured.
-     * @deprecated Use
-     * {@link #evaluate(Context context, Writer writer,
-     * String logTag, Reader reader) }
-     */
-    public static boolean evaluate(Context context, Writer writer,
-                                   String logTag, InputStream instream)
-            throws ParseErrorException, MethodInvocationException,
-            ResourceNotFoundException {
-        /*
-         *  first, parse - convert ParseException if thrown
-         */
-        BufferedReader br = null;
-        String encoding = null;
-
-        try {
-            encoding = RuntimeSingleton.getString(INPUT_ENCODING, ENCODING_DEFAULT);
-            br = new BufferedReader(new InputStreamReader(instream, encoding));
-        } catch (UnsupportedEncodingException uce) {
-            String msg = "Unsupported input encoding : " + encoding
-                    + " for template " + logTag;
-            throw new ParseErrorException(msg);
-        }
-
-        return evaluate(context, writer, logTag, br);
     }
 
     /**
@@ -260,31 +220,7 @@ public class Velocity implements RuntimeConstants {
     }
 
     /**
-     * Merges a template and puts the rendered stream into the writer.
-     * The default encoding that Velocity uses to read template files is defined in
-     * the property input.encoding and defaults to ISO-8859-1.
-     *
-     * @param templateName name of template to be used in merge
-     * @param context      filled context to be used in merge
-     * @param writer       writer to write template into
-     * @return true if successful, false otherwise.  Errors
-     * logged to velocity log.
-     * @throws ParseErrorException       The template could not be parsed.
-     * @throws MethodInvocationException A method on a context object could not be invoked.
-     * @throws ResourceNotFoundException A referenced resource could not be loaded.
-     * @deprecated Use
-     * {@link #mergeTemplate(String templateName, String encoding,
-     * Context context, Writer writer)}
-     */
-    public static boolean mergeTemplate(String templateName,
-                                        Context context, Writer writer)
-            throws ResourceNotFoundException, ParseErrorException, MethodInvocationException {
-        return mergeTemplate(templateName, RuntimeSingleton.getString(INPUT_ENCODING, ENCODING_DEFAULT),
-                context, writer);
-    }
-
-    /**
-     * merges a template and puts the rendered stream into the writer
+     * Merges a template and puts the rendered stream into the writer
      *
      * @param templateName name of template to be used in merge
      * @param encoding     encoding used in template
@@ -329,12 +265,6 @@ public class Velocity implements RuntimeConstants {
         return RuntimeSingleton.getTemplate(name);
     }
 
-    public static Template getTemplate(Bundle bundle, String name)
-            throws ResourceNotFoundException, ParseErrorException {
-        LOGGER.info("Velocity.getTemplate");
-        return RuntimeSingleton.getTemplate(bundle, name);
-    }
-
     /**
      * Returns a <code>Template</code> from the Velocity
      * resource management system.
@@ -353,8 +283,18 @@ public class Velocity implements RuntimeConstants {
         return RuntimeSingleton.getTemplate(name, encoding);
     }
 
+    public static Template getTemplate(Bundle bundle, String name, String encoding)
+            throws ResourceNotFoundException, ParseErrorException {
+        return RuntimeSingleton.getTemplate(bundle, name, encoding);
+    }
+
+    public static Template getTemplate(Bundle bundle, String name)
+            throws ResourceNotFoundException, ParseErrorException {
+        return RuntimeSingleton.getTemplate(bundle, name, "UTF-8");
+    }
+
     /**
-     * <p>Determines whether a resource is accessable via the
+     * <p>Determines whether a resource is accessible via the
      * currently configured resource loaders.  {@link
      * org.apache.velocity.runtime.resource.Resource} is the generic
      * description of templates, static content, etc.</p>
@@ -378,50 +318,14 @@ public class Velocity implements RuntimeConstants {
      * @return A convenience Log instance that wraps the current LogChute.
      * @since 1.5
      */
-    public static Log getLog() {
+    public static Logger getLog() {
         return RuntimeSingleton.getLog();
-    }
-
-    /**
-     * @param message The message to log.
-     * @see Log#warn(Object)
-     * @deprecated Use getLog() and call warn() on it.
-     */
-    public static void warn(Object message) {
-        getLog().warn(message);
-    }
-
-    /**
-     * @param message The message to log.
-     * @see Log#info(Object)
-     * @deprecated Use getLog() and call info() on it.
-     */
-    public static void info(Object message) {
-        getLog().info(message);
-    }
-
-    /**
-     * @param message The message to log.
-     * @see Log#error(Object)
-     * @deprecated Use getLog() and call error() on it.
-     */
-    public static void error(Object message) {
-        getLog().error(message);
-    }
-
-    /**
-     * @param message The message to log.
-     * @see Log#debug(Object)
-     * @deprecated Use getLog() and call debug() on it.
-     */
-    public static void debug(Object message) {
-        getLog().debug(message);
     }
 
     /**
      * <p>
      * Set the an ApplicationAttribue, which is an Object
-     * set by the application which is accessable from
+     * set by the application which is accessible from
      * any component of the system that gets a RuntimeServices.
      * This allows communication between the application
      * environment and custom pluggable components of the
@@ -429,7 +333,7 @@ public class Velocity implements RuntimeConstants {
      * </p>
      * <p>
      * <p>
-     * Note that there is no enfocement or rules for the key
+     * Note that there is no enforcement or rules for the key
      * used - it is up to the application developer.  However, to
      * help make the intermixing of components possible, using
      * the target Class name (e.g.  com.foo.bar ) as the key
@@ -440,18 +344,9 @@ public class Velocity implements RuntimeConstants {
      * @param value object to store under this key
      */
     public static void setApplicationAttribute(Object key, Object value) {
-        RuntimeSingleton.getRuntimeInstance().setApplicationAttribute(key, value);
+        RuntimeSingleton.getRuntimeServices().setApplicationAttribute(key, value);
     }
 
-    /**
-     * @param resourceName Name of the Template to check.
-     * @return True if the template exists.
-     * @see #resourceExists(String)
-     * @deprecated Use resourceExists(String) instead.
-     */
-    public static boolean templateExists(String resourceName) {
-        return resourceExists(resourceName);
-    }
 
     /**
      * Remove a directive.

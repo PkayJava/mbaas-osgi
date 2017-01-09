@@ -16,21 +16,20 @@ package org.apache.velocity.util.introspection;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.lang.text.StrBuilder;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.util.MapFactory;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A cache of introspection information for a specific class instance.
- * Keys {@link Method} objects by a concatenation of the
+ * Keys {@link java.lang.reflect.Method} objects by a concatenation of the
  * method name and the names of classes that make up the parameters.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
@@ -39,18 +38,19 @@ import java.util.Map;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
  * @author Nathan Bubna
- * @version $Id: ClassMap.java 778038 2009-05-23 21:52:50Z nbubna $
+ * @author <a href="mailto:claude.brisson@gmail.com">Claude Brisson</a>
+ * @version $Id$
  */
 public class ClassMap {
     /**
      * Set true if you want to debug the reflection code
      */
-    private static final boolean debugReflection = false;
+    private static final boolean debugReflection = true;
 
     /**
      * Class logger
      */
-    private final Log log;
+    private final Logger log;
 
     /**
      * Class passed into the constructor used to as
@@ -65,16 +65,28 @@ public class ClassMap {
      *
      * @param clazz The class for which this ClassMap gets constructed.
      */
-    public ClassMap(final Class clazz, final Log log) {
+    public ClassMap(final Class clazz, final Logger log) {
+        this(clazz, log, null);
+    }
+
+    /**
+     * Standard constructor
+     *
+     * @param clazz             The class for which this ClassMap gets constructed.
+     * @param log               logger
+     * @param conversionHandler conversion handler
+     * @since 2.0
+     */
+    public ClassMap(final Class clazz, final Logger log, final ConversionHandler conversionHandler) {
         this.clazz = clazz;
         this.log = log;
 
         if (debugReflection && log.isDebugEnabled()) {
             log.debug("=================================================================");
-            log.debug("== Class: " + clazz);
+            log.debug("== Class: {}", clazz);
         }
 
-        methodCache = createMethodCache();
+        methodCache = createMethodCache(conversionHandler);
 
         if (debugReflection && log.isDebugEnabled()) {
             log.debug("=================================================================");
@@ -108,8 +120,8 @@ public class ClassMap {
      * are taken from all the public methods
      * that our class, its parents and their implemented interfaces provide.
      */
-    private MethodCache createMethodCache() {
-        MethodCache methodCache = new MethodCache(log);
+    private MethodCache createMethodCache(ConversionHandler conversionHandler) {
+        MethodCache methodCache = new MethodCache(log, conversionHandler);
         //
         // Looks through all elements in the class hierarchy. This one is bottom-first (i.e. we start
         // with the actual declaring class and its interfaces and then move up (superclass etc.) until we
@@ -123,7 +135,7 @@ public class ClassMap {
         // until Velocity 1.4. As we always reflect all elements of the tree (that's what we have a cache for), we will
         // hit the public elements sooner or later because we reflect all the public elements anyway.
         //
-        // Ah, the miracles of Java for(;;) ... 
+        // Ah, the miracles of Java for(;;) ...
         for (Class classToReflect = getCachedClass(); classToReflect != null; classToReflect = classToReflect.getSuperclass()) {
             if (Modifier.isPublic(classToReflect.getModifiers())) {
                 populateMethodCacheWith(methodCache, classToReflect);
@@ -150,7 +162,7 @@ public class ClassMap {
 
     private void populateMethodCacheWith(MethodCache methodCache, Class classToReflect) {
         if (debugReflection && log.isDebugEnabled()) {
-            log.debug("Reflecting " + classToReflect);
+            log.debug("Reflecting {}", classToReflect);
         }
 
         try {
@@ -164,7 +176,7 @@ public class ClassMap {
         } catch (SecurityException se) // Everybody feels better with...
         {
             if (log.isDebugEnabled()) {
-                log.debug("While accessing methods of " + classToReflect + ": ", se);
+                log.debug("While accessing methods of {}:", classToReflect, se);
             }
         }
     }
@@ -173,7 +185,7 @@ public class ClassMap {
      * This is the cache to store and look up the method information.
      *
      * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
-     * @version $Id: ClassMap.java 778038 2009-05-23 21:52:50Z nbubna $
+     * @version $Id$
      */
     private static final class MethodCache {
         private static final Object CACHE_MISS = new Object();
@@ -196,21 +208,22 @@ public class ClassMap {
         /**
          * Class logger
          */
-        private final Log log;
+        private final Logger log;
 
         /**
          * Cache of Methods, or CACHE_MISS, keyed by method
          * name and actual arguments used to find it.
          */
-        private final Map cache = MapFactory.create(false);
+        private final Map cache = new ConcurrentHashMap();
 
         /**
          * Map of methods that are searchable according to method parameters to find a match
          */
-        private final MethodMap methodMap = new MethodMap();
+        private final MethodMap methodMap;
 
-        private MethodCache(Log log) {
+        private MethodCache(Logger log, ConversionHandler conversionHandler) {
             this.log = log;
+            methodMap = new MethodMap(conversionHandler);
         }
 
         /**
@@ -235,7 +248,7 @@ public class ClassMap {
 
             Object cacheEntry = cache.get(methodKey);
             if (cacheEntry == CACHE_MISS) {
-                // We looked this up before and failed. 
+                // We looked this up before and failed.
                 return null;
             }
 
@@ -270,7 +283,7 @@ public class ClassMap {
                 cache.put(methodKey, method);
                 methodMap.add(method);
                 if (debugReflection && log.isDebugEnabled()) {
-                    log.debug("Adding " + method);
+                    log.debug("Adding {}", method);
                 }
             }
         }
@@ -290,7 +303,7 @@ public class ClassMap {
                 return method.getName();
             }
 
-            StrBuilder methodKey = new StrBuilder((args + 1) * 16).append(method.getName());
+            StringBuilder methodKey = new StringBuilder((args + 1) * 16).append(method.getName());
 
             for (int j = 0; j < args; j++) {
                 /*
@@ -319,7 +332,7 @@ public class ClassMap {
                 return method;
             }
 
-            StrBuilder methodKey = new StrBuilder((args + 1) * 16).append(method);
+            StringBuilder methodKey = new StringBuilder((args + 1) * 16).append(method);
 
             for (int j = 0; j < args; j++) {
                 Object arg = params[j];

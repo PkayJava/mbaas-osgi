@@ -21,6 +21,7 @@ package org.apache.velocity.runtime.parser.node;
 
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.parser.Parser;
 
 /**
@@ -43,14 +44,14 @@ public class ASTExpression extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
 
     /**
-     * @see SimpleNode#evaluate(InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#evaluate(org.apache.velocity.context.InternalContextAdapter)
      */
     public boolean evaluate(InternalContextAdapter context)
             throws MethodInvocationException {
@@ -58,10 +59,26 @@ public class ASTExpression extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#value(InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#value(org.apache.velocity.context.InternalContextAdapter)
      */
     public Object value(InternalContextAdapter context)
             throws MethodInvocationException {
         return jjtGetChild(0).value(context);
+    }
+
+    /**
+     * @throws TemplateInitException
+     * @see org.apache.velocity.runtime.parser.node.Node#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
+     */
+    public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
+        Object obj = super.init(context, data);
+        saveTokenImages();
+        cleanupParserAndTokens(); // drop reference to Parser and all JavaCC Tokens
+        return obj;
+    }
+
+    @Override
+    public String literal() {
+        return jjtGetChild(0).literal();
     }
 }

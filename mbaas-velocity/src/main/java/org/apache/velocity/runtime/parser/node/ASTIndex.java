@@ -1,3 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.velocity.runtime.parser.node;
 
 import org.apache.velocity.context.InternalContextAdapter;
@@ -5,9 +23,9 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ClassUtils;
+import org.apache.velocity.util.StringUtils;
 import org.apache.velocity.util.introspection.VelMethod;
 
 /*
@@ -30,12 +48,12 @@ import org.apache.velocity.util.introspection.VelMethod;
  */
 
 /**
- * This node is responsible for the bracket notation at the end of
- * a reference, e.g., $foo[1]
+ *  This node is responsible for the bracket notation at the end of
+ *  a reference, e.g., $foo[1]
  */
 
 public class ASTIndex extends SimpleNode {
-    private final String methodName = "get";
+    private static final String methodName = "get";
 
     /**
      * Indicates if we are running in strict reference mode.
@@ -54,6 +72,7 @@ public class ASTIndex extends SimpleNode {
             throws TemplateInitException {
         super.init(context, data);
         strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
+        cleanupParserAndTokens();
         return data;
     }
 
@@ -62,13 +81,12 @@ public class ASTIndex extends SimpleNode {
     private final static Class[] noTypes = {};
 
     /**
-     * If argument is an Integer and negative, then return (o.size() - argument).
+     * If argument is an Integer and negative, then return (o.size() - argument). 
      * Otherwise return the original argument.  We use this to calculate the true
      * index of a negative index e.g., $foo[-1]. If no size() method is found on the
      * 'o' object, then we throw an VelocityException.
-     *
      * @param context Used to access the method cache.
-     * @param node    ASTNode used for error reporting.
+     * @param node  ASTNode used for error reporting.
      */
     public static Object adjMinusIndexArg(Object argument, Object o,
                                           InternalContextAdapter context, SimpleNode node) {
@@ -82,7 +100,7 @@ public class ASTIndex extends SimpleNode {
                 throw new VelocityException(
                         "A 'size()' method required for negative value "
                                 + ((Integer) argument).intValue() + " does not exist for class '"
-                                + o.getClass().getName() + "' at " + Log.formatFileString(node));
+                                + o.getClass().getName() + "' at " + StringUtils.formatFileString(node));
             }
 
             Object size = null;
@@ -90,7 +108,7 @@ public class ASTIndex extends SimpleNode {
                 size = method.invoke(o, noParams);
             } catch (Exception e) {
                 throw new VelocityException("Error trying to calls the 'size()' method on '"
-                        + o.getClass().getName() + "' at " + Log.formatFileString(node), e);
+                        + o.getClass().getName() + "' at " + StringUtils.formatFileString(node), e);
             }
 
             int sizeint = 0;
@@ -100,10 +118,10 @@ public class ASTIndex extends SimpleNode {
                 // If size() doesn't return an Integer we want to report a pretty error
                 throw new VelocityException("Method 'size()' on class '"
                         + o.getClass().getName() + "' returned '" + size.getClass().getName()
-                        + "' when Integer was expected at " + Log.formatFileString(node));
+                        + "' when Integer was expected at " + StringUtils.formatFileString(node));
             }
 
-            argument = new Integer(sizeint + ((Integer) argument).intValue());
+            argument = Integer.valueOf(sizeint + ((Integer) argument).intValue());
         }
 
         // Nothing to do, return the original argument
@@ -150,7 +168,7 @@ public class ASTIndex extends SimpleNode {
             String msg = "Error invoking method 'get("
                     + (argument == null ? "null" : argument.getClass().getName())
                     + ")' in " + o.getClass().getName()
-                    + " at " + Log.formatFileString(this);
+                    + " at " + StringUtils.formatFileString(this);
             log.error(msg, e);
             throw new VelocityException(msg, e);
         }

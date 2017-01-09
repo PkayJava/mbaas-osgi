@@ -20,9 +20,9 @@ package org.apache.velocity.runtime.directive;
  */
 
 import org.apache.velocity.exception.ExtendedParseException;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Token;
+import org.apache.velocity.util.StringUtils;
 
 /**
  * Exception to indicate problem happened while constructing #macro()
@@ -31,7 +31,7 @@ import org.apache.velocity.runtime.parser.Token;
  *
  * @author <a href="mailto:geirm@apache.org">Geir Magnusson Jr.</a>
  * @author <a href="hps@intermeta.de">Henning P. Schmiedehausen</a>
- * @version $Id: MacroParseException.java 735709 2009-01-19 14:30:03Z byron $
+ * @version $Id$
  */
 public class MacroParseException
         extends ParseException
@@ -172,7 +172,7 @@ public class MacroParseException
      * @since 1.5
      */
     protected void appendTemplateInfo(final StringBuffer sb) {
-        sb.append(Log.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
+        sb.append(StringUtils.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
         sb.append(eol);
     }
 }

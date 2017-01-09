@@ -19,6 +19,7 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.
  */
 
+import org.apache.velocity.Template;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -35,7 +36,7 @@ import java.io.Writer;
  * and the JavaCC generated code.
  *
  * @author <a href="mailto:hps@intermeta.de">Henning P. Schmiedehausen</a>
- * @version $Id: Node.java 737539 2009-01-25 17:24:29Z nbubna $
+ * @version $Id$
  */
 
 public interface Node extends Renderable {
@@ -212,4 +213,19 @@ public interface Node extends Renderable {
      * @return the file name of the template
      */
     public String getTemplateName();
+
+    /**
+     * @return cached image (String) of the first Token for this Node returned by the Parser
+     */
+    public String getFirstTokenImage();
+
+    /**
+     * @return cached image (String) of the last Token for this Node returned by the Parser
+     */
+    public String getLastTokenImage();
+
+    /**
+     * @return the template this node belongs to
+     */
+    public Template getTemplate();
 }

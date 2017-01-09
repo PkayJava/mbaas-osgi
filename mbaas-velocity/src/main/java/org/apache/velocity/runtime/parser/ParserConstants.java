@@ -87,199 +87,203 @@ public interface ParserConstants {
     /**
      * RegularExpression Id.
      */
-    int DOUBLE_ESCAPE = 22;
+    int SINGLE_LINE_COMMENT = 22;
     /**
      * RegularExpression Id.
      */
-    int ESCAPE = 23;
+    int FORMAL_COMMENT = 23;
     /**
      * RegularExpression Id.
      */
-    int TEXT = 24;
+    int MULTI_LINE_COMMENT = 24;
     /**
      * RegularExpression Id.
      */
-    int SINGLE_LINE_COMMENT = 25;
+    int TEXTBLOCK = 25;
     /**
      * RegularExpression Id.
      */
-    int FORMAL_COMMENT = 26;
+    int WHITESPACE = 28;
     /**
      * RegularExpression Id.
      */
-    int MULTI_LINE_COMMENT = 27;
+    int NEWLINE = 29;
     /**
      * RegularExpression Id.
      */
-    int TEXTBLOCK = 28;
+    int SUFFIX = 30;
     /**
      * RegularExpression Id.
      */
-    int WHITESPACE = 31;
+    int STRING_LITERAL = 31;
     /**
      * RegularExpression Id.
      */
-    int STRING_LITERAL = 32;
+    int TRUE = 32;
     /**
      * RegularExpression Id.
      */
-    int TRUE = 33;
+    int FALSE = 33;
     /**
      * RegularExpression Id.
      */
-    int FALSE = 34;
+    int MINUS = 34;
     /**
      * RegularExpression Id.
      */
-    int NEWLINE = 35;
+    int PLUS = 35;
     /**
      * RegularExpression Id.
      */
-    int MINUS = 36;
+    int MULTIPLY = 36;
     /**
      * RegularExpression Id.
      */
-    int PLUS = 37;
+    int DIVIDE = 37;
     /**
      * RegularExpression Id.
      */
-    int MULTIPLY = 38;
+    int MODULUS = 38;
     /**
      * RegularExpression Id.
      */
-    int DIVIDE = 39;
+    int LOGICAL_AND = 39;
     /**
      * RegularExpression Id.
      */
-    int MODULUS = 40;
+    int LOGICAL_OR = 40;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_AND = 41;
+    int LOGICAL_LT = 41;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_OR = 42;
+    int LOGICAL_LE = 42;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_LT = 43;
+    int LOGICAL_GT = 43;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_LE = 44;
+    int LOGICAL_GE = 44;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_GT = 45;
+    int LOGICAL_EQUALS = 45;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_GE = 46;
+    int LOGICAL_NOT_EQUALS = 46;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_EQUALS = 47;
+    int LOGICAL_NOT = 47;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_NOT_EQUALS = 48;
+    int EQUALS = 48;
     /**
      * RegularExpression Id.
      */
-    int LOGICAL_NOT = 49;
+    int END = 49;
     /**
      * RegularExpression Id.
      */
-    int EQUALS = 50;
+    int IF_DIRECTIVE = 50;
     /**
      * RegularExpression Id.
      */
-    int END = 51;
+    int ELSEIF = 51;
     /**
      * RegularExpression Id.
      */
-    int IF_DIRECTIVE = 52;
+    int ELSE = 52;
     /**
      * RegularExpression Id.
      */
-    int ELSEIF_DIRECTIVE = 53;
+    int DIGIT = 53;
     /**
      * RegularExpression Id.
      */
-    int ELSE_DIRECTIVE = 54;
+    int INTEGER_LITERAL = 54;
     /**
      * RegularExpression Id.
      */
-    int DIGIT = 55;
+    int FLOATING_POINT_LITERAL = 55;
     /**
      * RegularExpression Id.
      */
-    int INTEGER_LITERAL = 56;
+    int EXPONENT = 56;
     /**
      * RegularExpression Id.
      */
-    int FLOATING_POINT_LITERAL = 57;
+    int LETTER = 57;
     /**
      * RegularExpression Id.
      */
-    int EXPONENT = 58;
+    int DIRECTIVE_CHAR = 58;
     /**
      * RegularExpression Id.
      */
-    int LETTER = 59;
+    int WORD = 59;
     /**
      * RegularExpression Id.
      */
-    int DIRECTIVE_CHAR = 60;
+    int BRACKETED_WORD = 60;
     /**
      * RegularExpression Id.
      */
-    int WORD = 61;
+    int ALPHA_CHAR = 61;
     /**
      * RegularExpression Id.
      */
-    int BRACKETED_WORD = 62;
+    int IDENTIFIER_CHAR = 62;
     /**
      * RegularExpression Id.
      */
-    int ALPHA_CHAR = 63;
+    int IDENTIFIER = 63;
     /**
      * RegularExpression Id.
      */
-    int ALPHANUM_CHAR = 64;
+    int DOT = 64;
     /**
      * RegularExpression Id.
      */
-    int IDENTIFIER_CHAR = 65;
+    int LCURLY = 65;
     /**
      * RegularExpression Id.
      */
-    int IDENTIFIER = 66;
+    int RCURLY = 66;
     /**
      * RegularExpression Id.
      */
-    int DOT = 67;
+    int REFERENCE_TERMINATOR = 67;
     /**
      * RegularExpression Id.
      */
-    int LCURLY = 68;
+    int DIRECTIVE_TERMINATOR = 68;
     /**
      * RegularExpression Id.
      */
-    int RCURLY = 69;
+    int DOUBLE_ESCAPE = 69;
     /**
      * RegularExpression Id.
      */
-    int REFERENCE_TERMINATOR = 70;
+    int ESCAPE = 70;
     /**
      * RegularExpression Id.
      */
-    int DIRECTIVE_TERMINATOR = 71;
+    int TEXT = 71;
     /**
      * RegularExpression Id.
      */
-    int EMPTY_INDEX = 72;
+    int INLINE_TEXT = 72;
+    /**
+     * RegularExpression Id.
+     */
+    int EMPTY_INDEX = 73;
 
     /**
      * Lexical state.
@@ -292,43 +296,51 @@ public interface ParserConstants {
     /**
      * Lexical state.
      */
-    int REFINDEX = 2;
+    int REFMOD3 = 2;
     /**
      * Lexical state.
      */
-    int DIRECTIVE = 3;
+    int REFINDEX = 3;
     /**
      * Lexical state.
      */
-    int REFMOD2 = 4;
+    int DIRECTIVE = 4;
     /**
      * Lexical state.
      */
-    int DEFAULT = 5;
+    int REFMOD2 = 5;
     /**
      * Lexical state.
      */
-    int REFMOD = 6;
+    int DEFAULT = 6;
     /**
      * Lexical state.
      */
-    int IN_TEXTBLOCK = 7;
+    int PRE_REFERENCE = 7;
     /**
      * Lexical state.
      */
-    int IN_MULTI_LINE_COMMENT = 8;
+    int REFMOD = 8;
     /**
      * Lexical state.
      */
-    int IN_FORMAL_COMMENT = 9;
+    int IN_TEXTBLOCK = 9;
     /**
      * Lexical state.
      */
-    int IN_SINGLE_LINE_COMMENT = 10;
+    int IN_MULTI_LINE_COMMENT = 10;
     /**
      * Lexical state.
      */
-    int PRE_DIRECTIVE = 11;
+    int IN_FORMAL_COMMENT = 11;
+    /**
+     * Lexical state.
+     */
+    int IN_SINGLE_LINE_COMMENT = 12;
+    /**
+     * Lexical state.
+     */
+    int PRE_DIRECTIVE = 13;
 
     /**
      * Literal token values.
@@ -345,7 +357,7 @@ public interface ParserConstants {
             "\"{\"",
             "\"}\"",
             "\"(\"",
-            "<RPAREN>",
+            "\")\"",
             "\")\"",
             "<ESCAPE_DIRECTIVE>",
             "<SET_DIRECTIVE>",
@@ -356,20 +368,18 @@ public interface ParserConstants {
             "\"#*\"",
             "\"#\"",
             "\"##\"",
-            "\"\\\\\\\\\"",
-            "\"\\\\\"",
-            "<TEXT>",
             "<SINGLE_LINE_COMMENT>",
             "\"*#\"",
             "\"*#\"",
             "\"]]#\"",
-            "<token of kind 29>",
-            "<token of kind 30>",
+            "<token of kind 26>",
+            "<token of kind 27>",
             "<WHITESPACE>",
+            "<NEWLINE>",
+            "<SUFFIX>",
             "<STRING_LITERAL>",
             "\"true\"",
             "\"false\"",
-            "<NEWLINE>",
             "\"-\"",
             "\"+\"",
             "\"*\"",
@@ -387,8 +397,8 @@ public interface ParserConstants {
             "\"=\"",
             "<END>",
             "<IF_DIRECTIVE>",
-            "<ELSEIF_DIRECTIVE>",
-            "<ELSE_DIRECTIVE>",
+            "<ELSEIF>",
+            "<ELSE>",
             "<DIGIT>",
             "<INTEGER_LITERAL>",
             "<FLOATING_POINT_LITERAL>",
@@ -398,7 +408,6 @@ public interface ParserConstants {
             "<WORD>",
             "<BRACKETED_WORD>",
             "<ALPHA_CHAR>",
-            "<ALPHANUM_CHAR>",
             "<IDENTIFIER_CHAR>",
             "<IDENTIFIER>",
             "<DOT>",
@@ -406,6 +415,10 @@ public interface ParserConstants {
             "\"}\"",
             "<REFERENCE_TERMINATOR>",
             "<DIRECTIVE_TERMINATOR>",
+            "\"\\\\\\\\\"",
+            "\"\\\\\"",
+            "<TEXT>",
+            "<INLINE_TEXT>",
             "<EMPTY_INDEX>",
     };
 

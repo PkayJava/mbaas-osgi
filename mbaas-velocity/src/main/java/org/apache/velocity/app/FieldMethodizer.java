@@ -58,7 +58,7 @@ import java.util.HashMap;
  * to handle them by explicitly placing them into the context.
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: FieldMethodizer.java 652755 2008-05-02 04:00:58Z nbubna $
+ * @version $Id$
  */
 public class FieldMethodizer {
     /**

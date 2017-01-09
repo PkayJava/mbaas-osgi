@@ -16,20 +16,20 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.text.StrBuilder;
+import org.apache.velocity.Template;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
+import org.apache.velocity.util.StringUtils;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -42,7 +42,7 @@ public class SimpleNode implements Node {
     protected RuntimeServices rsvc = null;
 
     /** */
-    protected Log log = null;
+    protected Logger log = null;
 
     /** */
     protected Node parent;
@@ -54,11 +54,10 @@ public class SimpleNode implements Node {
     protected int id;
 
     /** */
-    // TODO - It seems that this field is only valid when parsing, and should not be kept around.    
     protected Parser parser;
 
     /** */
-    protected int info; // added
+    protected int info;
 
     /** */
     public boolean state;
@@ -72,9 +71,33 @@ public class SimpleNode implements Node {
     /** */
     protected Token last;
 
+    protected Template template;
 
-    protected String templateName;
+    /**
+     * For caching the literal value.
+     */
+    protected String literal = null;
 
+    /**
+     * Line number for this Node in the vm source file.
+     */
+
+    protected int line;
+
+    /**
+     * Column number for this Node in the vm source file.
+     */
+    protected int column;
+
+    /**
+     * String image variable of the first Token element that was parsed and connected to this Node.
+     */
+    protected String firstImage;
+
+    /**
+     * String image variable of the last Token element that was parsed and connected to this Node.
+     */
+    protected String lastImage;
 
     public RuntimeServices getRuntimeServices() {
         return rsvc;
@@ -94,18 +117,18 @@ public class SimpleNode implements Node {
     public SimpleNode(Parser p, int i) {
         this(i);
         parser = p;
-        templateName = parser.currentTemplateName;
+        template = parser.currentTemplate;
     }
 
     /**
-     * @see Node#jjtOpen()
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtOpen()
      */
     public void jjtOpen() {
         first = parser.getToken(1); // added
     }
 
     /**
-     * @see Node#jjtClose()
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtClose()
      */
     public void jjtClose() {
         last = parser.getToken(0); // added
@@ -119,35 +142,35 @@ public class SimpleNode implements Node {
     }
 
     /**
-     * @see Node#getFirstToken()
+     * @see org.apache.velocity.runtime.parser.node.Node#getFirstToken()
      */
     public Token getFirstToken() {
         return first;
     }
 
     /**
-     * @see Node#getLastToken()
+     * @see org.apache.velocity.runtime.parser.node.Node#getLastToken()
      */
     public Token getLastToken() {
         return last;
     }
 
     /**
-     * @see Node#jjtSetParent(Node)
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtSetParent(org.apache.velocity.runtime.parser.node.Node)
      */
     public void jjtSetParent(Node n) {
         parent = n;
     }
 
     /**
-     * @see Node#jjtGetParent()
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtGetParent()
      */
     public Node jjtGetParent() {
         return parent;
     }
 
     /**
-     * @see Node#jjtAddChild(Node, int)
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtAddChild(org.apache.velocity.runtime.parser.node.Node, int)
      */
     public void jjtAddChild(Node n, int i) {
         if (children == null) {
@@ -161,14 +184,14 @@ public class SimpleNode implements Node {
     }
 
     /**
-     * @see Node#jjtGetChild(int)
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtGetChild(int)
      */
     public Node jjtGetChild(int i) {
         return children[i];
     }
 
     /**
-     * @see Node#jjtGetNumChildren()
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtGetNumChildren()
      */
     public int jjtGetNumChildren() {
         return (children == null) ? 0 : children.length;
@@ -176,7 +199,7 @@ public class SimpleNode implements Node {
 
 
     /**
-     * @see Node#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -184,7 +207,7 @@ public class SimpleNode implements Node {
 
 
     /**
-     * @see Node#childrenAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.Node#childrenAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object childrenAccept(ParserVisitor visitor, Object data) {
         if (children != null) {
@@ -211,7 +234,7 @@ public class SimpleNode implements Node {
      * @return String representation of this node.
      */
     public String toString(String prefix) {
-        return prefix + toString();
+        return prefix + "_" + toString();
     }
 
     /**
@@ -221,12 +244,13 @@ public class SimpleNode implements Node {
      * @param prefix
      */
     public void dump(String prefix) {
-        System.out.println(toString(prefix));
+        System.out.println(toString());
         if (children != null) {
             for (int i = 0; i < children.length; ++i) {
                 SimpleNode n = (SimpleNode) children[i];
+                System.out.print(prefix + " |_");
                 if (n != null) {
-                    n.dump(prefix + " ");
+                    n.dump(prefix + (i == children.length - 1 ? "   " : " | "));
                 }
             }
         }
@@ -236,33 +260,39 @@ public class SimpleNode implements Node {
      * Return a string that tells the current location of this node.
      */
     protected String getLocation(InternalContextAdapter context) {
-        return Log.formatFileString(this);
+        return StringUtils.formatFileString(this);
     }
 
     // All additional methods
 
     /**
-     * @see Node#literal()
+     * @see org.apache.velocity.runtime.parser.node.Node#literal()
      */
     public String literal() {
+        if (literal != null) {
+            return literal;
+        }
+
         // if we have only one string, just return it and avoid
         // buffer allocation. VELOCITY-606
         if (first == last) {
-            return NodeUtils.tokenLiteral(first);
+            literal = NodeUtils.tokenLiteral(first);
+            return literal;
         }
 
         Token t = first;
-        StrBuilder sb = new StrBuilder(NodeUtils.tokenLiteral(t));
+        StringBuilder sb = new StringBuilder(NodeUtils.tokenLiteral(t));
         while (t != last) {
             t = t.next;
             sb.append(NodeUtils.tokenLiteral(t));
         }
-        return sb.toString();
+        literal = sb.toString();
+        return literal;
     }
 
     /**
      * @throws TemplateInitException
-     * @see Node#init(InternalContextAdapter, Object)
+     * @see org.apache.velocity.runtime.parser.node.Node#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
      */
     public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
         /*
@@ -270,7 +300,7 @@ public class SimpleNode implements Node {
          */
 
         rsvc = (RuntimeServices) data;
-        log = rsvc.getLog();
+        log = rsvc.getLog("rendering");
 
         int i, k = jjtGetNumChildren();
 
@@ -278,11 +308,14 @@ public class SimpleNode implements Node {
             jjtGetChild(i).init(context, data);
         }
 
+        line = first.beginLine;
+        column = first.beginColumn;
+
         return data;
     }
 
     /**
-     * @see Node#evaluate(InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.Node#evaluate(org.apache.velocity.context.InternalContextAdapter)
      */
     public boolean evaluate(InternalContextAdapter context)
             throws MethodInvocationException {
@@ -290,7 +323,7 @@ public class SimpleNode implements Node {
     }
 
     /**
-     * @see Node#value(InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.Node#value(org.apache.velocity.context.InternalContextAdapter)
      */
     public Object value(InternalContextAdapter context)
             throws MethodInvocationException {
@@ -298,7 +331,7 @@ public class SimpleNode implements Node {
     }
 
     /**
-     * @see Node#render(InternalContextAdapter, Writer)
+     * @see org.apache.velocity.runtime.parser.node.Node#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException, MethodInvocationException, ParseErrorException, ResourceNotFoundException {
@@ -311,7 +344,7 @@ public class SimpleNode implements Node {
     }
 
     /**
-     * @see Node#execute(Object, InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.Node#execute(java.lang.Object, org.apache.velocity.context.InternalContextAdapter)
      */
     public Object execute(Object o, InternalContextAdapter context)
             throws MethodInvocationException {
@@ -319,59 +352,59 @@ public class SimpleNode implements Node {
     }
 
     /**
-     * @see Node#getType()
+     * @see org.apache.velocity.runtime.parser.node.Node#getType()
      */
     public int getType() {
         return id;
     }
 
     /**
-     * @see Node#setInfo(int)
+     * @see org.apache.velocity.runtime.parser.node.Node#setInfo(int)
      */
     public void setInfo(int info) {
         this.info = info;
     }
 
     /**
-     * @see Node#getInfo()
+     * @see org.apache.velocity.runtime.parser.node.Node#getInfo()
      */
     public int getInfo() {
         return info;
     }
 
     /**
-     * @see Node#setInvalid()
+     * @see org.apache.velocity.runtime.parser.node.Node#setInvalid()
      */
     public void setInvalid() {
         invalid = true;
     }
 
     /**
-     * @see Node#isInvalid()
+     * @see org.apache.velocity.runtime.parser.node.Node#isInvalid()
      */
     public boolean isInvalid() {
         return invalid;
     }
 
     /**
-     * @see Node#getLine()
+     * @see org.apache.velocity.runtime.parser.node.Node#getLine()
      */
     public int getLine() {
-        return first.beginLine;
+        return line;
     }
 
     /**
-     * @see Node#getColumn()
+     * @see org.apache.velocity.runtime.parser.node.Node#getColumn()
      */
     public int getColumn() {
-        return first.beginColumn;
+        return column;
     }
 
     /**
      * @since 1.5
      */
     public String toString() {
-        StrBuilder tokens = new StrBuilder();
+        StringBuilder tokens = new StringBuilder();
 
         for (Token t = getFirstToken(); t != null; ) {
             tokens.append("[").append(t.image).append("]");
@@ -384,18 +417,56 @@ public class SimpleNode implements Node {
             }
             t = t.next;
         }
-
-        return new ToStringBuilder(this)
-                .append("id", getType())
-                .append("info", getInfo())
-                .append("invalid", isInvalid())
-                .append("children", jjtGetNumChildren())
-                .append("tokens", tokens)
-                .toString();
+        String tok = tokens.toString();
+        if (tok.length() > 50) tok = tok.substring(0, 50) + "...";
+        return getClass().getSimpleName() + " [id=" + id + ", info=" + info + ", invalid="
+                + invalid
+                + ", tokens=" + tok + "]";
     }
 
     public String getTemplateName() {
-        return templateName;
+        return template.getName();
+    }
+
+    /**
+     * Call before calling cleanupParserAndTokens() if you want to store image of
+     * the first and last token of this node.
+     */
+    public void saveTokenImages() {
+        if (first != null) {
+            this.firstImage = first.image;
+        }
+        if (last != null) {
+            this.lastImage = last.image;
+        }
+    }
+
+    /**
+     * Removes references to Parser and Tokens since they are not needed anymore at this point.
+     * <p>
+     * This allows us to save memory quite a bit.
+     */
+    public void cleanupParserAndTokens() {
+        this.parser = null;
+        this.first = null;
+        this.last = null;
+    }
+
+    /**
+     * @return String image variable of the first Token element that was parsed and connected to this Node.
+     */
+    public String getFirstTokenImage() {
+        return firstImage;
+    }
+
+    /**
+     * @return String image variable of the last Token element that was parsed and connected to this Node.
+     */
+    public String getLastTokenImage() {
+        return lastImage;
+    }
+
+    public Template getTemplate() {
+        return template;
     }
 }
-

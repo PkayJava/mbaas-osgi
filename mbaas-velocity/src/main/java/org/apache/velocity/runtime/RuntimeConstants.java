@@ -26,7 +26,7 @@ package org.apache.velocity.runtime;
  * @author <a href="mailto:jon@latchkey.com">Jon S. Stevens</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
- * @version $Id: RuntimeConstants.java 806601 2009-08-21 15:30:38Z nbubna $
+ * @version $Id$
  */
 public interface RuntimeConstants {
     /*
@@ -44,44 +44,14 @@ public interface RuntimeConstants {
      */
 
     /**
-     * Location of the velocity log file.
-     */
-    String RUNTIME_LOG = "runtime.log";
-
-    /**
      * externally provided logger.
      */
-    String RUNTIME_LOG_LOGSYSTEM = "runtime.log.logsystem";
+    String RUNTIME_LOG_INSTANCE = "runtime.log.instance";
 
     /**
-     * class of log system to use.
+     * externally provided logger name.
      */
-    String RUNTIME_LOG_LOGSYSTEM_CLASS = "runtime.log.logsystem.class";
-
-    /**
-     * Properties referenced in the template are required to exist the object
-     */
-    String RUNTIME_REFERENCES_STRICT = "runtime.references.strict";
-
-    /**
-     * Indicates we are going to use modifed escape behavior in strict mode
-     */
-    String RUNTIME_REFERENCES_STRICT_ESCAPE = "runtime.references.strict.escape";
-
-    /**
-     * @deprecated This appears to have always been meaningless.
-     */
-    String RUNTIME_LOG_ERROR_STACKTRACE = "runtime.log.error.stacktrace";
-
-    /**
-     * @deprecated The functionality this controlled is confusing and no longer necessary.
-     */
-    String RUNTIME_LOG_WARN_STACKTRACE = "runtime.log.warn.stacktrace";
-
-    /**
-     * @deprecated This appears to have always been meaningless.
-     */
-    String RUNTIME_LOG_INFO_STACKTRACE = "runtime.log.info.stacktrace";
+    String RUNTIME_LOG_NAME = "runtime.log.name";
 
     /**
      * Logging of invalid references.
@@ -89,34 +59,9 @@ public interface RuntimeConstants {
     String RUNTIME_LOG_REFERENCE_LOG_INVALID = "runtime.log.invalid.references";
 
     /**
-     * @deprecated Use LogChute.TRACE_PREFIX instead
+     * Whether to use string interning.
      */
-    String TRACE_PREFIX = " [trace] ";
-
-    /**
-     * @deprecated Use LogChute.DEBUG_PREFIX instead
-     */
-    String DEBUG_PREFIX = " [debug] ";
-
-    /**
-     * @deprecated Use LogChute.INFO_PREFIX instead
-     */
-    String INFO_PREFIX = "  [info] ";
-
-    /**
-     * @deprecated Use LogChute.WARN_PREFIX instead
-     */
-    String WARN_PREFIX = "  [warn] ";
-
-    /**
-     * @deprecated Use LogChute.ERROR_PREFIX instead
-     */
-    String ERROR_PREFIX = " [error] ";
-
-    /**
-     * @deprecated This will be removed in a future version
-     */
-    String UNKNOWN_PREFIX = " [unknown] ";
+    String RUNTIME_STRING_INTERNING = "runtime.string.interning";
 
     /*
      * ----------------------------------------------------------------------
@@ -129,23 +74,6 @@ public interface RuntimeConstants {
      */
 
     /**
-     * Counter reference name in #foreach directives.
-     */
-    String COUNTER_NAME = "directive.foreach.counter.name";
-
-    /**
-     * Iterator.hasNext() reference name in #foreach directives.
-     *
-     * @since 1.6
-     */
-    String HAS_NEXT_NAME = "directive.foreach.iterator.name";
-
-    /**
-     * Initial counter value in #foreach directives.
-     */
-    String COUNTER_INITIAL_VALUE = "directive.foreach.counter.initial.value";
-
-    /**
      * Maximum allowed number of loops.
      */
     String MAX_NUMBER_LOOPS = "directive.foreach.maxloops";
@@ -156,22 +84,6 @@ public interface RuntimeConstants {
      * @since 1.6
      */
     String SKIP_INVALID_ITERATOR = "directive.foreach.skip.invalid";
-
-    /**
-     * if set to true then allows #set to accept null values in the right hand side.
-     */
-    String SET_NULL_ALLOWED = "directive.set.null.allowed";
-
-    /**
-     * Indicates if toString() should be called during #if condition evaluation
-     * just to ensure it does not return null. Check is unnecessary if all
-     * toString() implementations are known to have non-null return values.
-     * Disabling the check (like Velocity 1.5 did) will can boost performance
-     * since toString() may be a complex operation on large objects.
-     *
-     * @since 1.6
-     */
-    String DIRECTIVE_IF_TOSTRING_NULLCHECK = "directive.if.tostring.nullcheck";
 
     /**
      * Starting tag for error messages triggered by passing a parameter not allowed in the #include directive. Only string literals,
@@ -196,13 +108,6 @@ public interface RuntimeConstants {
     String DEFINE_DIRECTIVE_MAXDEPTH = "directive.define.max.depth";
 
     /**
-     * class to use for local context with #evaluate()
-     *
-     * @since 1.6
-     */
-    String EVALUATE_CONTEXT_CLASS = "directive.evaluate.context.class";
-
-    /**
      * Used to suppress various scope control objects.
      *
      * @since 1.7
@@ -215,7 +120,16 @@ public interface RuntimeConstants {
      * ----------------------------------------------------------------------
      */
 
-    /**  */
+    /**
+     * The <code>resource.manager.instance</code> property specifies an existing instance of a
+     * {@link org.apache.velocity.runtime.resource.ResourceManager} implementation to use
+     */
+    String RESOURCE_MANAGER_INSTANCE = "resource.manager.instance";
+
+    /**
+     * The <code>resource.manager.class</code> property specifies the name of the
+     * {@link org.apache.velocity.runtime.resource.ResourceManager} implementation to use.
+     */
     String RESOURCE_MANAGER_CLASS = "resource.manager.class";
 
     /**
@@ -270,12 +184,6 @@ public interface RuntimeConstants {
     String EVENTHANDLER_REFERENCEINSERTION = "eventhandler.referenceinsertion.class";
 
     /**
-     * The <code>eventhandler.nullset.class</code> property specifies a list of the
-     * {@link org.apache.velocity.app.event.NullSetEventHandler} implementations to use.
-     */
-    String EVENTHANDLER_NULLSET = "eventhandler.nullset.class";
-
-    /**
      * The <code>eventhandler.methodexception.class</code> property specifies a list of the
      * {@link org.apache.velocity.app.event.MethodExceptionEventHandler} implementations to use.
      */
@@ -316,29 +224,24 @@ public interface RuntimeConstants {
     String VM_LIBRARY_AUTORELOAD = "velocimacro.library.autoreload";
 
     /**
-     * boolean (true/false) default true : allow inline (in-template) macro definitions.
+     * boolean (true/false) default true: allow inline (in-template) macro definitions.
      */
     String VM_PERM_ALLOW_INLINE = "velocimacro.permissions.allow.inline";
 
     /**
-     * boolean (true/false) default false : allow inline (in-template) macro definitions to replace existing.
+     * boolean (true/false) default false: allow inline (in-template) macro definitions to replace existing.
      */
     String VM_PERM_ALLOW_INLINE_REPLACE_GLOBAL = "velocimacro.permissions.allow.inline.to.replace.global";
 
     /**
-     * Switch for forcing inline macros to be local : default false.
+     * Switch for forcing inline macros to be local: default false.
      */
     String VM_PERM_INLINE_LOCAL = "velocimacro.permissions.allow.inline.local.scope";
 
     /**
-     * Switch for VM blather : default true.
+     * Switch for VM blather: default true.
      */
     String VM_MESSAGES_ON = "velocimacro.messages.on";
-
-    /**
-     * switch for local context in VM : default false.
-     */
-    String VM_CONTEXT_LOCALSCOPE = "velocimacro.context.localscope";
 
     /**
      * if true, throw an exception for wrong number of arguments
@@ -358,7 +261,23 @@ public interface RuntimeConstants {
      * @since 1.7
      */
     String VM_BODY_REFERENCE = "velocimacro.body.reference";
-    
+
+    /*
+     * ----------------------------------------------------------------------
+     * S T I C T   M O D E  B E H A V I O U R
+     * ----------------------------------------------------------------------
+     */
+
+    /**
+     * Properties referenced in the template are required to exist the object
+     */
+    String RUNTIME_REFERENCES_STRICT = "runtime.references.strict";
+
+    /**
+     * Indicates we are going to use modified escape behavior in strict mode
+     */
+    String RUNTIME_REFERENCES_STRICT_ESCAPE = "runtime.references.strict.escape";
+
     /*
      * ----------------------------------------------------------------------
      * G E N E R A L  R U N T I M E  C O N F I G U R A T I O N
@@ -376,19 +295,19 @@ public interface RuntimeConstants {
     String INPUT_ENCODING = "input.encoding";
 
     /**
-     * Encoding for the output stream. Currently used by Anakia and VelocityServlet
+     * Default Encoding is UTF-8.
      */
-    String OUTPUT_ENCODING = "output.encoding";
-
-    /**
-     * Default Encoding is ISO-8859-1.
-     */
-    String ENCODING_DEFAULT = "ISO-8859-1";
+    String ENCODING_DEFAULT = "UTF-8";
 
     /**
      * key name for uberspector. Multiple classnames can be specified,in which case uberspectors will be chained.
      */
     String UBERSPECT_CLASSNAME = "runtime.introspector.uberspect";
+
+    /**
+     * key for Conversion Manager class
+     */
+    String CONVERSION_HANDLER_CLASS = "runtime.conversion.handler.class";
 
     /**
      * A comma separated list of packages to restrict access to in the SecureIntrospector.
@@ -406,6 +325,11 @@ public interface RuntimeConstants {
     String STRICT_MATH = "runtime.strict.math";
 
     /**
+     * Key upon which a context should be accessible within itself
+     */
+    String CONTEXT_AUTOREFERENCE_KEY = "context.autoreference.key";
+
+    /**
      * The <code>parser.pool.class</code> property specifies the name of the {@link org.apache.velocity.util.SimplePool}
      * implementation to use.
      */
@@ -415,7 +339,19 @@ public interface RuntimeConstants {
      * @see #NUMBER_OF_PARSERS
      */
     String PARSER_POOL_SIZE = "parser.pool.size";
-    
+
+    /**
+     * Space gobbling mode
+     */
+    String SPACE_GOBBLING = "space.gobbling";
+
+    /**
+     * Space gobbling modes
+     */
+    public enum SpaceGobbling {
+        NONE, BC, LINES, STRUCTURED
+    }
+
     /*
      * ----------------------------------------------------------------------
      * These constants are used internally by the Velocity runtime i.e.
@@ -435,10 +371,18 @@ public interface RuntimeConstants {
     String DEFAULT_RUNTIME_DIRECTIVES = "org/apache/velocity/runtime/defaults/directive.properties";
 
     /**
+     * externally provided logger name.
+     */
+    String DEFAULT_RUNTIME_LOG_NAME = "org.apache.velocity";
+
+    /**
+     * token used to identify the loader internally.
+     */
+    String RESOURCE_LOADER_IDENTIFIER = "_RESOURCE_LOADER_IDENTIFIER_";
+
+    /**
      * The default number of parser instances to create. Configurable via the parameter named by the {@link #PARSER_POOL_SIZE}
      * constant.
      */
     int NUMBER_OF_PARSERS = 20;
-
-
 }

@@ -29,9 +29,9 @@ import org.apache.velocity.runtime.parser.Parser;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTAndNode.java 687184 2008-08-19 22:16:39Z nbubna $
+ * @version $Id$
  */
-public class ASTAndNode extends SimpleNode {
+public class ASTAndNode extends ASTLogicalOperator {
     /**
      * @param id
      */
@@ -47,8 +47,13 @@ public class ASTAndNode extends SimpleNode {
         super(p, id);
     }
 
+    @Override
+    public String getLiteralOperator() {
+        return "&&";
+    }
+
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -65,8 +70,6 @@ public class ASTAndNode extends SimpleNode {
      */
     public Object value(InternalContextAdapter context)
             throws MethodInvocationException {
-        // TODO: JDK 1.4+ -> valueOf()
-        // return new Boolean(evaluate(context));
         return evaluate(context) ? Boolean.TRUE : Boolean.FALSE;
     }
 

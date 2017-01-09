@@ -16,15 +16,17 @@ package org.apache.velocity.app.event.implement;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.oro.text.perl.MalformedPerl5PatternException;
-import org.apache.oro.text.perl.Perl5Util;
 import org.apache.velocity.app.event.ReferenceInsertionEventHandler;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.RuntimeServicesAware;
 import org.apache.velocity.util.StringUtils;
+import org.slf4j.Logger;
+
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Base class for escaping references.  To use it, override the following methods:
@@ -42,27 +44,23 @@ import org.apache.velocity.util.StringUtils;
  * (e.g. <code>$sql</code>, <code>$sql.toString(),</code>, etc).
  * <p>
  * <PRE>
- * <CODE>eventhandler.escape.sql.match = /sql.*<!-- -->/
- * </CODE>
+ * <CODE>eventhandler.escape.sql.match = sql.*</CODE>
  * </PRE>
- * <!-- note: ignore empty HTML comment above - breaks up star slash avoiding javadoc end -->
  * <p>
- * Regular expressions should follow the "Perl5" format used by the ORO regular expression
- * library.  More info is at
- * <a href="http://jakarta.apache.org/oro/api/org/apache/oro/text/perl/package-summary.html">http://jakarta.apache.org/oro/api/org/apache/oro/text/perl/package-summary.html</a>.
+ * Regular expressions should follow the format used by the Java language.  More info in the
+ * <a href="http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html">Pattern class documentation</a>.
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain </a>
- * @version $Id: EscapeReference.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public abstract class EscapeReference implements ReferenceInsertionEventHandler, RuntimeServicesAware {
 
-
-    private Perl5Util perl = new Perl5Util();
-
     private RuntimeServices rs;
 
     private String matchRegExp = null;
+
+    protected Logger log;
 
     /**
      * Escape the given text.  Override this in a subclass to do the actual
@@ -91,14 +89,14 @@ public abstract class EscapeReference implements ReferenceInsertionEventHandler,
      * @param value
      * @return Escaped text.
      */
-    public Object referenceInsert(String reference, Object value) {
+    public Object referenceInsert(Context context, String reference, Object value) {
         if (value == null) {
             return value;
         }
 
         if (matchRegExp == null) {
             return escape(value);
-        } else if (perl.match(matchRegExp, reference)) {
+        } else if (reference.matches(matchRegExp)) {
             return escape(value);
         } else {
             return value;
@@ -112,23 +110,20 @@ public abstract class EscapeReference implements ReferenceInsertionEventHandler,
      */
     public void setRuntimeServices(RuntimeServices rs) {
         this.rs = rs;
+        log = rs.getLog("event");
 
-        /**
-         * Get the regular expression pattern.
-         */
-        matchRegExp = StringUtils.nullTrim(rs.getConfiguration().getString(getMatchAttribute()));
-        if ((matchRegExp != null) && (matchRegExp.length() == 0)) {
+        // Get the regular expression pattern.
+        matchRegExp = StringUtils.nullTrim(rs.getString(getMatchAttribute()));
+        if (org.apache.commons.lang3.StringUtils.isEmpty(matchRegExp)) {
             matchRegExp = null;
         }
 
-        /**
-         * Test the regular expression for a well formed pattern
-         */
+        // Test the regular expression for a well formed pattern
         if (matchRegExp != null) {
             try {
-                perl.match(matchRegExp, "");
-            } catch (MalformedPerl5PatternException E) {
-                rs.getLog().error("Invalid regular expression '" + matchRegExp
+                "".matches(matchRegExp);
+            } catch (PatternSyntaxException E) {
+                log.error("Invalid regular expression '" + matchRegExp
                         + "'.  No escaping will be performed.", E);
                 matchRegExp = null;
             }

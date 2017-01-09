@@ -2,18 +2,18 @@ package org.apache.velocity.runtime.resource;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
+import org.apache.velocity.util.StringBuilderWriter;
 import org.osgi.framework.Bundle;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
+import java.io.Writer;
 
 /**
- * Created by socheatkhauv on 1/8/17.
+ * Created by socheatkhauv on 1/9/17.
  */
 public class BundleContentResource extends ContentResource {
 
-    private final Bundle bundle;
+    private Bundle bundle;
 
     public BundleContentResource(Bundle bundle) {
         this.bundle = bundle;
@@ -24,11 +24,9 @@ public class BundleContentResource extends ContentResource {
         BufferedReader reader = null;
 
         try {
-            StringWriter sw = new StringWriter();
+            Writer sw = new StringBuilderWriter();
 
-            reader = new BufferedReader(
-                    new InputStreamReader(resourceLoader.getResourceStream(this.bundle, name),
-                            encoding));
+            reader = new BufferedReader(resourceLoader.getResourceReader(bundle, name, encoding));
 
             char buf[] = new char[1024];
             int len = 0;
@@ -45,7 +43,7 @@ public class BundleContentResource extends ContentResource {
             throw e;
         } catch (Exception e) {
             String msg = "Cannot process content resource";
-            rsvc.getLog().error(msg, e);
+            log.error(msg, e);
             throw new VelocityException(msg, e);
         } finally {
             if (reader != null) {

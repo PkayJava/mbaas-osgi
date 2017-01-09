@@ -7,9 +7,9 @@ package org.apache.velocity.runtime.parser.node;
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -17,26 +17,27 @@ package org.apache.velocity.runtime.parser.node;
  * the License.
  */
 
-import org.apache.commons.lang.text.StrBuilder;
+import org.apache.velocity.Template;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
+import org.apache.velocity.util.StringBuilderWriter;
+import org.apache.velocity.util.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.Writer;
 
 /**
  * ASTStringLiteral support. Will interpolate!
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
- * @version $Id: ASTStringLiteral.java 1032134 2010-11-06 20:19:39Z cbrisson $
+ * @version $Id$
  */
 public class ASTStringLiteral extends SimpleNode {
     /* cache the value of the interpolation switch */
@@ -45,13 +46,6 @@ public class ASTStringLiteral extends SimpleNode {
     private SimpleNode nodeTree = null;
 
     private String image = "";
-
-    private String interpolateimage = "";
-
-    /**
-     * true if the string contains a line comment (##)
-     */
-    private boolean containsLineComment;
 
     /**
      * @param id
@@ -89,7 +83,7 @@ public class ASTStringLiteral extends SimpleNode {
          * the stringlit is set at template parse time, so we can do this here
          * for now. if things change and we can somehow create stringlits at
          * runtime, this must move to the runtime execution path
-         * 
+         *
          * so, only if interpolation is turned on AND it starts with a " AND it
          * has a directive or reference, then we can interpolate. Otherwise,
          * don't bother.
@@ -117,57 +111,37 @@ public class ASTStringLiteral extends SimpleNode {
             image = replaceQuotes(image, img.charAt(0));
         }
 
-        /**
-         * note. A kludge on a kludge. The first part, Geir calls this the
-         * dreaded <MORE> kludge. Basically, the use of the <MORE> token eats
-         * the last character of an interpolated string. EXCEPT when a line
-         * comment (##) is in the string this isn't an issue.
-         *
-         * So, to solve this we look for a line comment. If it isn't found we
-         * add a space here and remove it later.
-         */
-
-        /**
-         * Note - this should really use a regexp to look for [^\]## but
-         * apparently escaping of line comments isn't working right now anyway.
-         */
-        containsLineComment = (image.indexOf("##") != -1);
-
-        /*
-         * if appropriate, tack a space on the end (dreaded <MORE> kludge)
-         */
-
-        if (!containsLineComment) {
-            interpolateimage = image + " ";
-        } else {
-            interpolateimage = image;
-        }
-
         if (interpolate) {
             /*
-             * now parse and init the nodeTree
+             * parse and init the nodeTree
              */
-            StringReader br = new StringReader(interpolateimage);
+            StringReader br = new StringReader(image);
 
             /*
              * it's possible to not have an initialization context - or we don't
              * want to trust the caller - so have a fallback value if so
-             * 
+             *
              * Also, do *not* dump the VM namespace for this template
              */
 
-            String templateName =
-                    (context != null) ? context.getCurrentTemplateName() : "StringLiteral";
+            Template template = null;
+            if (context != null) {
+                template = (Template) context.getCurrentResource();
+            }
+            if (template == null) {
+                template = new Template();
+                template.setName("StringLiteral");
+            }
             try {
-                nodeTree = rsvc.parse(br, templateName, false);
+                nodeTree = rsvc.parse(br, template);
             } catch (ParseException e) {
                 String msg = "Failed to parse String literal at " +
-                        Log.formatFileString(templateName, getLine(), getColumn());
-                throw new TemplateInitException(msg, e, templateName, getColumn(), getLine());
+                        StringUtils.formatFileString(template.getName(), getLine(), getColumn());
+                throw new TemplateInitException(msg, e, template.getName(), getColumn(), getLine());
             }
 
             adjTokenLineNums(nodeTree);
-            
+
             /*
              * init with context. It won't modify anything
              */
@@ -175,7 +149,13 @@ public class ASTStringLiteral extends SimpleNode {
             nodeTree.init(context, rsvc);
         }
 
+        cleanupParserAndTokens();
+
         return data;
+    }
+
+    public String literal() {
+        return image;
     }
 
     /**
@@ -190,7 +170,7 @@ public class ASTStringLiteral extends SimpleNode {
         Token tok = node.getFirstToken();
         // Test against null is probably not neccessary, but just being safe
         while (tok != null && tok != node.getLastToken()) {
-            // If tok is on the first line, then the actual column is 
+            // If tok is on the first line, then the actual column is
             // offset by the template column.
 
             if (tok.beginLine == 1)
@@ -218,8 +198,7 @@ public class ASTStringLiteral extends SimpleNode {
             return s;
         }
 
-        StrBuilder result = new StrBuilder(s.length());
-        char prev = ' ';
+        StringBuilder result = new StringBuilder(s.length());
         for (int i = 0, is = s.length(); i < is; i++) {
             char c = s.charAt(i);
             result.append(c);
@@ -245,7 +224,7 @@ public class ASTStringLiteral extends SimpleNode {
         int u = string.indexOf("\\u");
         if (u < 0) return string;
 
-        StrBuilder result = new StrBuilder();
+        StringBuilder result = new StringBuilder();
 
         int lastCopied = 0;
 
@@ -269,8 +248,8 @@ public class ASTStringLiteral extends SimpleNode {
 
 
     /**
-     * @see SimpleNode#jjtAccept(ParserVisitor,
-     * Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor,
+     * java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -301,24 +280,14 @@ public class ASTStringLiteral extends SimpleNode {
                  * now render against the real context
                  */
 
-                StringWriter writer = new StringWriter();
+                Writer writer = new StringBuilderWriter();
                 nodeTree.render(context, writer);
 
                 /*
                  * and return the result as a String
                  */
 
-                String ret = writer.toString();
-
-                /*
-                 * if appropriate, remove the space from the end (dreaded <MORE>
-                 * kludge part deux)
-                 */
-                if (!containsLineComment && ret.length() > 0) {
-                    return ret.substring(0, ret.length() - 1);
-                } else {
-                    return ret;
-                }
+                return writer.toString();
             }
 
             /**

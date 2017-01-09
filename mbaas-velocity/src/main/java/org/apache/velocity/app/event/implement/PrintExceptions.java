@@ -20,8 +20,10 @@ package org.apache.velocity.app.event.implement;
  */
 
 import org.apache.velocity.app.event.MethodExceptionEventHandler;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.RuntimeServicesAware;
+import org.apache.velocity.util.introspection.Info;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -30,19 +32,23 @@ import java.io.StringWriter;
  * Simple event handler that renders method exceptions in the page
  * rather than throwing the exception.  Useful for debugging.
  * <p>
- * <P>By default this event handler renders the exception name only.
- * To include both the exception name and the message, set the property
- * <code>eventhandler.methodexception.message</code> to <code>true</code>.  To render
- * the stack trace, set the property <code>eventhandler.methodexception.stacktrace</code>
+ * <P>By default this event handler renders an error message containing the class and method which generated
+ * the exception, the exception name and its message.
+ * <p>
+ * To render the reference and the location in the tempkate, set the property <code>eventhandler.methodexception.templateinfo</code>
+ * to <code>true</code>.
+ * <p>
+ * To render the stack trace, set the property <code>eventhandler.methodexception.stacktrace</code>
  * to <code>true</code>.
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
- * @version $Id: PrintExceptions.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @author <a href="mailto:claude.brisson@gmail.com">Claude Brisson</a>
+ * @version $Id$
  * @since 1.5
  */
 public class PrintExceptions implements MethodExceptionEventHandler, RuntimeServicesAware {
 
-    private static String SHOW_MESSAGE = "eventhandler.methodexception.message";
+    private static String SHOW_TEMPLATE_INFO = "eventhandler.methodexception.templateinfo";
     private static String SHOW_STACK_TRACE = "eventhandler.methodexception.stacktrace";
 
     /**
@@ -53,42 +59,30 @@ public class PrintExceptions implements MethodExceptionEventHandler, RuntimeServ
     /**
      * Render the method exception, and optionally the exception message and stack trace.
      *
-     * @param claz   the class of the object the method is being applied to
-     * @param method the method
-     * @param e      the thrown exception
+     * @param context current context
+     * @param claz    the class of the object the method is being applied to
+     * @param method  the method
+     * @param e       the thrown exception
+     * @param info    template name and line, column informations
      * @return an object to insert in the page
-     * @throws Exception an exception to be thrown instead inserting an object
      */
-    public Object methodException(Class claz, String method, Exception e) throws Exception {
-        boolean showMessage = rs.getBoolean(SHOW_MESSAGE, false);
+    public Object methodException(Context context, Class claz, String method, Exception e, Info info) {
+        boolean showTemplateInfo = rs.getBoolean(SHOW_TEMPLATE_INFO, false);
         boolean showStackTrace = rs.getBoolean(SHOW_STACK_TRACE, false);
 
-        StringBuffer st;
-        if (showMessage && showStackTrace) {
-            st = new StringBuffer(200);
-            st.append(e.getClass().getName()).append("\n");
-            st.append(e.getMessage()).append("\n");
-            st.append(getStackTrace(e));
+        StringBuffer st = new StringBuffer();
+        st.append("Exception while executing method ").append(claz.toString()).append(".").append(method);
+        st.append(": ").append(e.getClass().getName()).append(": ").append(e.getMessage());
 
-        } else if (showMessage) {
-            st = new StringBuffer(50);
-            st.append(e.getClass().getName()).append("\n");
-            st.append(e.getMessage()).append("\n");
-
-        } else if (showStackTrace) {
-            st = new StringBuffer(200);
-            st.append(e.getClass().getName()).append("\n");
-            st.append(getStackTrace(e));
-
-        } else {
-            st = new StringBuffer(15);
-            st.append(e.getClass().getName()).append("\n");
+        if (showTemplateInfo) {
+            st.append(" at ").append(info.getTemplateName()).append(" (line ").append(info.getLine()).append(", column ").append(info.getColumn()).append(")");
         }
-
+        if (showStackTrace) {
+            st.append("\n").append(getStackTrace(e));
+        }
         return st.toString();
 
     }
-
 
     private static String getStackTrace(Throwable throwable) {
         PrintWriter printWriter = null;

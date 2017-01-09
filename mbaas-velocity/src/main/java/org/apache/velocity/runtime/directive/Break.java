@@ -22,10 +22,13 @@ package org.apache.velocity.runtime.directive;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.runtime.parser.ParseException;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
+import org.apache.velocity.util.StringUtils;
 
 import java.io.Writer;
+import java.util.ArrayList;
 
 /**
  * Break directive used for interrupting scopes.
@@ -63,38 +66,19 @@ public class Break extends Directive {
         return false;
     }
 
-    /**
-     * simple init - init the tree and get the elementKey from
-     * the AST
-     *
-     * @param rs
-     * @param context
-     * @param node
-     * @throws TemplateInitException
-     */
+    @Override
     public void init(RuntimeServices rs, InternalContextAdapter context, Node node) {
         super.init(rs, context, node);
 
-        int kids = node.jjtGetNumChildren();
-        if (kids > 1) {
-            throw new VelocityException("The #stop directive only accepts a single scope object at "
-                    + Log.formatFileString(this));
-        } else {
-            this.scoped = (kids == 1);
-        }
+        this.scoped = (node.jjtGetNumChildren() == 1);
     }
 
     /**
-     * Break directive does not actually do any rendering.
-     * <p>
      * This directive throws a StopCommand which signals either
      * the nearest Scope or the specified scope to stop rendering
      * its content.
      *
-     * @param context
-     * @param writer
-     * @param node
-     * @return never, always throws a StopCommand
+     * @return never, always throws a StopCommand or Exception
      */
     public boolean render(InternalContextAdapter context, Writer writer, Node node) {
         if (!scoped) {
@@ -104,12 +88,23 @@ public class Break extends Directive {
         Object argument = node.jjtGetChild(0).value(context);
         if (argument instanceof Scope) {
             ((Scope) argument).stop();
+            throw new IllegalStateException("Scope.stop() failed to throw a StopCommand");
         } else {
             throw new VelocityException(node.jjtGetChild(0).literal() +
                     " is not a valid " + Scope.class.getName() + " instance at "
-                    + Log.formatFileString(this));
+                    + StringUtils.formatFileString(this));
         }
-        return false;
+    }
+
+    /**
+     * Called by the parser to validate the argument types
+     */
+    public void checkArgs(ArrayList<Integer> argtypes, Token t, String templateName)
+            throws ParseException {
+        if (argtypes.size() > 1) {
+            throw new MacroParseException("The #break directive takes only a single, optional Scope argument",
+                    templateName, t);
+        }
     }
 
 }

@@ -16,17 +16,18 @@ package org.apache.velocity.runtime.resource.loader;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
+import org.apache.velocity.util.ExtProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
@@ -47,15 +48,15 @@ public class URLResourceLoader extends ResourceLoader {
     private Method[] timeoutMethods;
 
     /**
-     * @see ResourceLoader#init(ExtendedProperties)
+     * @see ResourceLoader#init(org.apache.velocity.util.ExtProperties)
      */
-    public void init(ExtendedProperties configuration) {
+    public void init(ExtProperties configuration) {
         log.trace("URLResourceLoader : initialization starting.");
 
         roots = configuration.getStringArray("root");
         if (log.isDebugEnabled()) {
             for (int i = 0; i < roots.length; i++) {
-                log.debug("URLResourceLoader : adding root '" + roots[i] + "'");
+                log.debug("URLResourceLoader : adding root '{}'", roots[i]);
             }
         }
 
@@ -66,7 +67,7 @@ public class URLResourceLoader extends ResourceLoader {
                 Method conn = URLConnection.class.getMethod("setConnectTimeout", types);
                 Method read = URLConnection.class.getMethod("setReadTimeout", types);
                 timeoutMethods = new Method[]{conn, read};
-                log.debug("URLResourceLoader : timeout set to " + timeout);
+                log.debug("URLResourceLoader : timeout set to {}", timeout);
             } catch (NoSuchMethodException nsme) {
                 log.debug("URLResourceLoader : Java 1.5+ is required to customize timeout!", nsme);
                 timeout = -1;
@@ -80,40 +81,49 @@ public class URLResourceLoader extends ResourceLoader {
     }
 
     /**
-     * Get an InputStream so that the Runtime can build a
+     * Get a Reader so that the Runtime can build a
      * template with it.
      *
-     * @param name name of template to fetch bytestream of
+     * @param name     name of template to fetch bytestream of
+     * @param encoding asked encoding
      * @return InputStream containing the template
      * @throws ResourceNotFoundException if template not found
      *                                   in the file template path.
+     * @since 2.0
      */
-    public synchronized InputStream getResourceStream(String name)
+    public synchronized Reader getResourceReader(String name, String encoding)
             throws ResourceNotFoundException {
         if (StringUtils.isEmpty(name)) {
             throw new ResourceNotFoundException("URLResourceLoader : No template name provided");
         }
 
-        InputStream inputStream = null;
+        Reader reader = null;
         Exception exception = null;
         for (int i = 0; i < roots.length; i++) {
+            InputStream rawStream = null;
             try {
                 URL u = new URL(roots[i] + name);
                 URLConnection conn = u.openConnection();
                 tryToSetTimeout(conn);
-                inputStream = conn.getInputStream();
+                rawStream = conn.getInputStream();
+                reader = buildReader(rawStream, encoding);
 
-                if (inputStream != null) {
-                    if (log.isDebugEnabled())
-                        log.debug("URLResourceLoader: Found '" + name + "' at '" + roots[i] + "'");
+                if (reader != null) {
+                    if (log.isDebugEnabled()) log.debug("URLResourceLoader: Found '{}' at '{}'", name, roots[i]);
 
                     // save this root for later re-use
                     templateRoots.put(name, roots[i]);
                     break;
                 }
             } catch (IOException ioe) {
+                if (rawStream != null) {
+                    try {
+                        rawStream.close();
+                    } catch (IOException e) {
+                    }
+                }
                 if (log.isDebugEnabled())
-                    log.debug("URLResourceLoader: Exception when looking for '" + name + "' at '" + roots[i] + "'", ioe);
+                    log.debug("URLResourceLoader: Exception when looking for '{}' at '{}'", name, roots[i], ioe);
 
                 // only save the first one for later throwing
                 if (exception == null) {
@@ -123,7 +133,7 @@ public class URLResourceLoader extends ResourceLoader {
         }
 
         // if we never found the template
-        if (inputStream == null) {
+        if (reader == null) {
             String msg;
             if (exception == null) {
                 msg = "URLResourceLoader : Resource '" + name + "' not found.";
@@ -134,7 +144,7 @@ public class URLResourceLoader extends ResourceLoader {
             throw new ResourceNotFoundException(msg);
         }
 
-        return inputStream;
+        return reader;
     }
 
     /**

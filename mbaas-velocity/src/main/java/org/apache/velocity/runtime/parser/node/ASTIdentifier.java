@@ -46,7 +46,7 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTIdentifier.java 732250 2009-01-07 07:37:10Z byron $
+ * @version $Id$
  */
 public class ASTIdentifier extends SimpleNode {
     private String identifier = "";
@@ -78,7 +78,7 @@ public class ASTIdentifier extends SimpleNode {
 
 
     /**
-     * @see SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -97,17 +97,20 @@ public class ASTIdentifier extends SimpleNode {
             throws TemplateInitException {
         super.init(context, data);
 
-        identifier = getFirstToken().image.intern();
+        identifier = rsvc.useStringInterning() ? getFirstToken().image.intern() : getFirstToken().image;
 
         uberInfo = new Info(getTemplateName(), getLine(), getColumn());
 
         strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
 
+        saveTokenImages();
+        cleanupParserAndTokens();
+
         return data;
     }
 
     /**
-     * @see SimpleNode#execute(Object, InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#execute(java.lang.Object, org.apache.velocity.context.InternalContextAdapter)
      */
     public Object execute(Object o, InternalContextAdapter context)
             throws MethodInvocationException {
@@ -187,13 +190,12 @@ public class ASTIdentifier extends SimpleNode {
             if (t instanceof Exception) {
                 try {
                     return EventHandlerUtil.methodException(rsvc, context, o.getClass(), vg.getMethodName(),
-                            (Exception) t);
+                            (Exception) t, uberInfo);
                 }
 
                 /**
                  * If the event handler throws an exception, then wrap it
-                 * in a MethodInvocationException.  Don't pass through RuntimeExceptions like other
-                 * similar catchall code blocks.
+                 * in a MethodInvocationException.
                  */ catch (Exception e) {
                     throw new MethodInvocationException(
                             "Invocation of method '" + vg.getMethodName() + "'"

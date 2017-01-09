@@ -20,6 +20,7 @@ package org.apache.velocity.runtime.parser.node;
  */
 
 import org.apache.velocity.context.InternalContextAdapter;
+import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.parser.Parser;
 
 /**
@@ -30,7 +31,7 @@ import org.apache.velocity.runtime.parser.Parser;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTElseStatement.java 517553 2007-03-13 06:09:58Z wglass $
+ * @version $Id$
  */
 public class ASTElseStatement extends SimpleNode {
     /**
@@ -49,7 +50,7 @@ public class ASTElseStatement extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#jjtAccept(ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -64,6 +65,16 @@ public class ASTElseStatement extends SimpleNode {
      */
     public boolean evaluate(InternalContextAdapter context) {
         return true;
+    }
+
+    /**
+     * @throws TemplateInitException
+     * @see org.apache.velocity.runtime.parser.node.Node#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
+     */
+    public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
+        Object obj = super.init(context, data);
+        cleanupParserAndTokens(); // drop reference to Parser and all JavaCC Tokens
+        return obj;
     }
 }
 

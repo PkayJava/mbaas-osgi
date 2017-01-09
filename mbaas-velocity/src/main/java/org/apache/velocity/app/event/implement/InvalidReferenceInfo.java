@@ -26,7 +26,7 @@ import org.apache.velocity.util.introspection.Info;
  * with line, column, and template name.
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain </a>
- * @version $Id: InvalidReferenceInfo.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class InvalidReferenceInfo extends Info {

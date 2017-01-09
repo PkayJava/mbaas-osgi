@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * General purpose implemention of the application Context
+ * General purpose implementation of the application Context
  * interface for general application use.  This class should
  * be used in place of the original Context class.
  * <p>
@@ -44,8 +44,8 @@ import java.util.Map;
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:fedor.karpelevitch@home.com">Fedor Karpelevitch</a>
  * @author <a href="mailto:dlr@finemaltcoding.com">Daniel Rall</a>
- * @version $Id: VelocityContext.java 898032 2010-01-11 19:51:03Z nbubna $
- * @see Context
+ * @version $Id$
+ * @see org.apache.velocity.context.Context
  */
 public class VelocityContext extends AbstractContext implements Cloneable {
     /**
@@ -56,7 +56,7 @@ public class VelocityContext extends AbstractContext implements Cloneable {
     /**
      * Storage for key/value pairs.
      */
-    private Map context = null;
+    private Map<String, Object> context = null;
 
     /**
      * Creates a new instance (with no inner context).
@@ -71,7 +71,7 @@ public class VelocityContext extends AbstractContext implements Cloneable {
      *
      * @param context
      */
-    public VelocityContext(Map context) {
+    public VelocityContext(Map<String, Object> context) {
         this(context, null);
     }
 
@@ -97,9 +97,9 @@ public class VelocityContext extends AbstractContext implements Cloneable {
      *                     create default storage.
      * @param innerContext Inner context.
      */
-    public VelocityContext(Map context, Context innerContext) {
+    public VelocityContext(Map<String, Object> context, Context innerContext) {
         super(innerContext);
-        this.context = (context == null ? new HashMap() : context);
+        this.context = (context == null ? new HashMap<String, Object>() : context);
     }
 
     /**
@@ -132,7 +132,7 @@ public class VelocityContext extends AbstractContext implements Cloneable {
      * @param key name of value to check
      * @return true if non-null value in store
      */
-    public boolean internalContainsKey(Object key) {
+    public boolean internalContainsKey(String key) {
         return context.containsKey(key);
     }
 
@@ -141,8 +141,8 @@ public class VelocityContext extends AbstractContext implements Cloneable {
      *
      * @return keys as []
      */
-    public Object[] internalGetKeys() {
-        return context.keySet().toArray();
+    public String[] internalGetKeys() {
+        return context.keySet().toArray(new String[context.size()]);
     }
 
     /**
@@ -152,20 +152,20 @@ public class VelocityContext extends AbstractContext implements Cloneable {
      * @param key name of value to remove
      * @return value removed
      */
-    public Object internalRemove(Object key) {
+    public Object internalRemove(String key) {
         return context.remove(key);
     }
 
     /**
      * Clones this context object.
      *
-     * @return A deep copy of this <code>Context</code>.
+     * @return A shallow copy of this <code>Context</code>.
      */
     public Object clone() {
         VelocityContext clone = null;
         try {
             clone = (VelocityContext) super.clone();
-            clone.context = new HashMap(context);
+            clone.context = new HashMap<String, Object>(context);
         } catch (CloneNotSupportedException ignored) {
         }
         return clone;

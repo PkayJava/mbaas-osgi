@@ -24,10 +24,14 @@ import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.runtime.parser.ParseException;
+import org.apache.velocity.runtime.parser.ParserTreeConstants;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
+import org.apache.velocity.util.StringUtils;
 
 import java.io.Writer;
+import java.util.ArrayList;
 
 /**
  * Directive that puts an unrendered AST block in the context
@@ -56,7 +60,7 @@ public class Define extends Block {
         // the first child is the block name (key), the second child is the block AST body
         if (node.jjtGetNumChildren() != 2) {
             throw new VelocityException("parameter missing: block name at "
-                    + Log.formatFileString(this));
+                    + StringUtils.formatFileString(this));
         }
         
         /*
@@ -64,13 +68,13 @@ public class Define extends Block {
          * just assume it looks like this: $block_name. Should we check if it has
          * a '$' or not?
          */
-        key = node.jjtGetChild(0).getFirstToken().image.substring(1);
+        key = node.jjtGetChild(0).getFirstTokenImage().substring(1);
 
         /*
          * default max depth of two is used because intentional recursion is
          * unlikely and discouraged, so make unintentional ones end fast
          */
-        maxDepth = rs.getInt(RuntimeConstants.DEFINE_DIRECTIVE_MAXDEPTH, 2);
+        maxDepth = rsvc.getInt(RuntimeConstants.DEFINE_DIRECTIVE_MAXDEPTH, 2);
     }
 
     /**
@@ -85,4 +89,19 @@ public class Define extends Block {
         return true;
     }
 
+    /**
+     * Called by the parser to validate the argument types
+     */
+    public void checkArgs(ArrayList<Integer> argtypes, Token t, String templateName)
+            throws ParseException {
+        if (argtypes.size() != 1) {
+            throw new MacroParseException("The #define directive requires one argument",
+                    templateName, t);
+        }
+
+        if (argtypes.get(0) == ParserTreeConstants.JJTWORD) {
+            throw new MacroParseException("The argument to #define is of the wrong type",
+                    templateName, t);
+        }
+    }
 }

@@ -20,8 +20,6 @@ package org.apache.velocity.io;
  */
 
 
-import org.apache.velocity.util.ExceptionUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -39,7 +37,7 @@ import java.io.PushbackInputStream;
  *
  * @author <a href="mailto:mailmur@yahoo.com">Aki Nieminen</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: UnicodeInputStream.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class UnicodeInputStream
@@ -62,15 +60,11 @@ public class UnicodeInputStream
 
     /**
      * BOM Marker for UTF 32, little endian. See http://www.unicode.org/unicode/faq/utf_bom.html
-     * <p>
-     * TODO: Does Java actually support this?
      */
     public static final UnicodeBOM UTF32LE_BOM = new UnicodeBOM("UTF-32LE", new byte[]{(byte) 0xff, (byte) 0xfe, (byte) 0x00, (byte) 0x00});
 
     /**
      * BOM Marker for UTF 32, big endian. See http://www.unicode.org/unicode/faq/utf_bom.html
-     * <p>
-     * TODO: Does Java actually support this?
      */
     public static final UnicodeBOM UTF32BE_BOM = new UnicodeBOM("UTF-32BE", new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0xfe, (byte) 0xff});
 
@@ -127,9 +121,7 @@ public class UnicodeInputStream
         try {
             this.encoding = readEncoding();
         } catch (IOException ioe) {
-            IllegalStateException ex = new IllegalStateException("Could not read BOM from Stream");
-            ExceptionUtils.setCause(ex, ioe);
-            throw ex;
+            throw new IllegalStateException("Could not read BOM from Stream", ioe);
         }
     }
 
@@ -259,7 +251,7 @@ public class UnicodeInputStream
     }
 
     /**
-     * @see InputStream#close()
+     * @see java.io.InputStream#close()
      */
     public void close()
             throws IOException {
@@ -267,7 +259,7 @@ public class UnicodeInputStream
     }
 
     /**
-     * @see InputStream#available()
+     * @see java.io.InputStream#available()
      */
     public int available()
             throws IOException {
@@ -275,21 +267,21 @@ public class UnicodeInputStream
     }
 
     /**
-     * @see InputStream#mark(int)
+     * @see java.io.InputStream#mark(int)
      */
     public void mark(final int readlimit) {
         inputStream.mark(readlimit);
     }
 
     /**
-     * @see InputStream#markSupported()
+     * @see java.io.InputStream#markSupported()
      */
     public boolean markSupported() {
         return inputStream.markSupported();
     }
 
     /**
-     * @see InputStream#read()
+     * @see java.io.InputStream#read()
      */
     public int read()
             throws IOException {
@@ -297,7 +289,7 @@ public class UnicodeInputStream
     }
 
     /**
-     * @see InputStream#read(byte[])
+     * @see java.io.InputStream#read(byte[])
      */
     public int read(final byte[] b)
             throws IOException {
@@ -305,7 +297,7 @@ public class UnicodeInputStream
     }
 
     /**
-     * @see InputStream#read(byte[], int, int)
+     * @see java.io.InputStream#read(byte[], int, int)
      */
     public int read(final byte[] b, final int off, final int len)
             throws IOException {
@@ -313,7 +305,7 @@ public class UnicodeInputStream
     }
 
     /**
-     * @see InputStream#reset()
+     * @see java.io.InputStream#reset()
      */
     public void reset()
             throws IOException {
@@ -321,18 +313,28 @@ public class UnicodeInputStream
     }
 
     /**
-     * @see InputStream#skip(long)
+     * @see java.io.InputStream#skip(long)
      */
     public long skip(final long n)
             throws IOException {
         return inputStream.skip(n);
     }
 
+
+    /**
+     * Helper function to compare encodings
+     */
+    public static boolean sameEncoding(String left, String right) {
+        left = left.toUpperCase().replace("-", "").replace("_", "");
+        right = right.toUpperCase().replace("-", "").replace("_", "");
+        return left.equals(right);
+    }
+
     /**
      * Helper class to bundle encoding and BOM marker.
      *
      * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
-     * @version $Id: UnicodeInputStream.java 685685 2008-08-13 21:43:27Z nbubna $
+     * @version $Id$
      */
     static final class UnicodeBOM {
         private final String encoding;

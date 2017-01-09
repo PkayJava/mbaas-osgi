@@ -20,10 +20,8 @@ package org.apache.velocity.runtime.parser.node;
  */
 
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
 import org.apache.velocity.util.introspection.Introspector;
+import org.slf4j.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -36,7 +34,7 @@ import java.lang.reflect.InvocationTargetException;
  * the case.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
- * @version $Id: GetExecutor.java 687177 2008-08-19 22:00:32Z nbubna $
+ * @version $Id$
  */
 public class GetExecutor extends AbstractExecutor {
     private final Introspector introspector;
@@ -51,7 +49,7 @@ public class GetExecutor extends AbstractExecutor {
      * @param property
      * @since 1.5
      */
-    public GetExecutor(final Log log, final Introspector introspector,
+    public GetExecutor(final Logger log, final Introspector introspector,
                        final Class clazz, final String property) {
         this.log = log;
         this.introspector = introspector;
@@ -70,23 +68,20 @@ public class GetExecutor extends AbstractExecutor {
     }
 
     /**
-     * @param rlog
-     * @param introspector
-     * @param clazz
-     * @param property
-     * @deprecated RuntimeLogger is deprecated. Use the other constructor.
-     */
-    public GetExecutor(final RuntimeLogger rlog, final Introspector introspector,
-                       final Class clazz, final String property) {
-        this(new RuntimeLoggerLog(rlog), introspector, clazz, property);
-    }
-
-    /**
      * @since 1.5
      */
     protected void discover(final Class clazz) {
         try {
             setMethod(introspector.getMethod(clazz, "get", params));
+            /* get(Number) or get(integral) are NOT admissible,
+             * as the key is a string
+             */
+            if (getMethod() != null) {
+                Class<?>[] args = getMethod().getParameterTypes();
+                if (args.length == 1 && (args[0].isPrimitive() || Number.class.isAssignableFrom(args[0]))) {
+                    setMethod(null);
+                }
+            }
         }
         /**
          * pass through application level runtime exceptions
@@ -100,7 +95,7 @@ public class GetExecutor extends AbstractExecutor {
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.AbstractExecutor#execute(Object)
+     * @see org.apache.velocity.runtime.parser.node.AbstractExecutor#execute(java.lang.Object)
      */
     public Object execute(final Object o)
             throws IllegalAccessException, InvocationTargetException {

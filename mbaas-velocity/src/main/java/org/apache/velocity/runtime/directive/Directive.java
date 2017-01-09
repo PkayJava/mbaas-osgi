@@ -16,9 +16,10 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
+import org.apache.velocity.Template;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -26,24 +27,29 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
+import org.apache.velocity.runtime.parser.ParseException;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.Writer;
-
+import java.util.ArrayList;
 
 /**
  * Base class for all directives used in Velocity.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author Nathan Bubna
- * @version $Id: Directive.java 778045 2009-05-23 22:17:46Z nbubna $
+ * @version $Id$
  */
 public abstract class Directive implements DirectiveConstants, Cloneable {
     private int line = 0;
     private int column = 0;
     private boolean provideScope = false;
-    private String templateName;
+    private Template template;
+
+    protected Logger log = null;
 
     /**
      *
@@ -81,9 +87,18 @@ public abstract class Directive implements DirectiveConstants, Cloneable {
      * @param line
      * @param column
      */
-    public void setLocation(int line, int column, String templateName) {
+    public void setLocation(int line, int column, Template template) {
         setLocation(line, column);
-        this.templateName = templateName;
+        this.template = template;
+    }
+
+    /**
+     * returns the template in which this directive appears
+     *
+     * @return template
+     */
+    public Template getTemplate() {
+        return template;
     }
 
     /**
@@ -109,11 +124,11 @@ public abstract class Directive implements DirectiveConstants, Cloneable {
      * defined in a file.
      */
     public String getTemplateName() {
-        return templateName;
+        return template.getName();
     }
 
     /**
-     * @returns the name to be used when a scope control is provided for this
+     * @return the name to be used when a scope control is provided for this
      * directive.
      */
     public String getScopeName() {
@@ -140,9 +155,26 @@ public abstract class Directive implements DirectiveConstants, Cloneable {
                      Node node)
             throws TemplateInitException {
         rsvc = rs;
+        log = rsvc.getLog("directive." + getName());
 
         String property = getScopeName() + '.' + RuntimeConstants.PROVIDE_SCOPE_CONTROL;
         this.provideScope = rsvc.getBoolean(property, provideScope);
+    }
+
+    /**
+     * The Parser calls this method during template parsing to check the arguments
+     * types.  Be aware that this method is called pre init, so not all data
+     * is available in this method.  The default implementation does not peform any
+     * checking.  We do this so that Custom directives do not trigger any parse
+     * errors in IDEs.
+     *
+     * @param argtypes     type, Array of argument types of each argument to the directive
+     *                     for example ParserTreeConstants.JJTWORD
+     * @param t            token of directive
+     * @param templateName the name of the template this directive is referenced in.
+     */
+    public void checkArgs(ArrayList<Integer> argtypes, Token t, String templateName)
+            throws ParseException {
     }
 
     /**

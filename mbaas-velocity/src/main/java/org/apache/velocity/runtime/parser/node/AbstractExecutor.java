@@ -19,7 +19,7 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.    
  */
 
-import org.apache.velocity.runtime.log.Log;
+import org.slf4j.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -31,11 +31,11 @@ import java.lang.reflect.Method;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@apache.org">Geir Magnusson Jr.</a>
- * @version $Id: AbstractExecutor.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  */
 public abstract class AbstractExecutor {
     /** */
-    protected Log log = null;
+    protected Logger log = null;
 
     /**
      * Method to be executed.

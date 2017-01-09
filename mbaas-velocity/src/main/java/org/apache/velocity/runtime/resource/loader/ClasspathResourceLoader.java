@@ -16,17 +16,18 @@ package org.apache.velocity.runtime.resource.loader;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.util.ClassUtils;
-import org.apache.velocity.util.ExceptionUtils;
+import org.apache.velocity.util.ExtProperties;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 
 /**
  * ClasspathResourceLoader is a simple loader that will load
@@ -53,7 +54,7 @@ import java.io.InputStream;
  * <br>
  * To use, put your template directories, jars
  * and zip files into the classpath or other mechanisms that make
- * resources accessable to the classloader.
+ * resources accessible to the classloader.
  * <br>
  * <br>
  * This makes deployment trivial for web applications running in
@@ -73,7 +74,7 @@ import java.io.InputStream;
  *
  * @author <a href="mailto:mailmur@yahoo.com">Aki Nieminen</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ClasspathResourceLoader.java 471259 2006-11-04 20:26:57Z henning $
+ * @version $Id$
  */
 public class ClasspathResourceLoader extends ResourceLoader {
 
@@ -82,24 +83,26 @@ public class ClasspathResourceLoader extends ResourceLoader {
      *
      * @param configuration
      */
-    public void init(ExtendedProperties configuration) {
+    public void init(ExtProperties configuration) {
         if (log.isTraceEnabled()) {
             log.trace("ClasspathResourceLoader : initialization complete.");
         }
     }
 
     /**
-     * Get an InputStream so that the Runtime can build a
+     * Get a Reader so that the Runtime can build a
      * template with it.
      *
-     * @param name name of template to get
+     * @param name     name of template to get
+     * @param encoding asked encoding
      * @return InputStream containing the template
      * @throws ResourceNotFoundException if template not found
      *                                   in  classpath.
+     * @since 2.0
      */
-    public InputStream getResourceStream(String name)
+    public Reader getResourceReader(String name, String encoding)
             throws ResourceNotFoundException {
-        InputStream result = null;
+        Reader result = null;
 
         if (StringUtils.isEmpty(name)) {
             throw new ResourceNotFoundException("No template name provided");
@@ -110,15 +113,24 @@ public class ClasspathResourceLoader extends ResourceLoader {
          * a servlet container) then fall back to the system classloader.
          */
 
+        InputStream rawStream = null;
         try {
-            result = ClassUtils.getResourceAsStream(getClass(), name);
+            rawStream = ClassUtils.getResourceAsStream(getClass(), name);
+            if (rawStream != null) {
+                result = buildReader(rawStream, encoding);
+            }
         } catch (Exception fnfe) {
-            throw (ResourceNotFoundException) ExceptionUtils.createWithCause(ResourceNotFoundException.class, "problem with template: " + name, fnfe);
+            if (rawStream != null) {
+                try {
+                    rawStream.close();
+                } catch (IOException ioe) {
+                }
+            }
+            throw new ResourceNotFoundException("ClasspathResourceLoader problem with template: " + name, fnfe);
         }
 
         if (result == null) {
-            String msg = "ClasspathResourceLoader Error: cannot find resource " +
-                    name;
+            String msg = "ClasspathResourceLoader Error: cannot find resource " + name;
 
             throw new ResourceNotFoundException(msg);
         }

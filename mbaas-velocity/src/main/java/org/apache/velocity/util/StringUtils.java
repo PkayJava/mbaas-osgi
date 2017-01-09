@@ -19,23 +19,24 @@ package org.apache.velocity.util;
  * under the License.    
  */
 
+import org.apache.velocity.runtime.directive.Directive;
+import org.apache.velocity.runtime.parser.node.Node;
+import org.apache.velocity.util.introspection.Info;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.*;
 
-
 /**
  * This class provides some methods for dynamically
  * invoking methods in objects, and some string
- * manipulation methods used by torque. The string
- * methods will soon be moved into the turbine
- * string utilities class.
+ * manipulation and formatting methods.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:dlr@finemaltcoding.com">Daniel Rall</a>
- * @version $Id: StringUtils.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  */
 public class StringUtils {
     /**
@@ -67,38 +68,6 @@ public class StringUtils {
      */
     static public String getPackageAsPath(String pckge) {
         return pckge.replace('.', File.separator.charAt(0)) + File.separator;
-    }
-
-    /**
-     * <p>
-     * Remove underscores from a string and replaces first
-     * letters with capitals.  Other letters are changed to lower case.
-     * </p>
-     * <p>
-     * <p>
-     * For example <code>foo_bar</code> becomes <code>FooBar</code>
-     * but <code>foo_barBar</code> becomes <code>FooBarbar</code>.
-     * </p>
-     *
-     * @param data string to remove underscores from.
-     * @return String
-     * @deprecated Use the org.apache.commons.util.StringUtils class
-     * instead.  Using its firstLetterCaps() method in conjunction
-     * with a StringTokenizer will achieve the same result.
-     */
-    static public String removeUnderScores(String data) {
-        String temp = null;
-        StringBuffer out = new StringBuffer();
-        temp = data;
-
-        StringTokenizer st = new StringTokenizer(temp, "_");
-
-        while (st.hasMoreTokens()) {
-            String element = (String) st.nextElement();
-            out.append(firstLetterCaps(element));
-        }
-
-        return out.toString();
     }
 
     /**
@@ -527,7 +496,7 @@ public class StringUtils {
      * Check to see if all the string objects passed
      * in are empty.
      *
-     * @param list A list of {@link String} objects.
+     * @param list A list of {@link java.lang.String} objects.
      * @return Whether all strings are empty.
      */
     public boolean allEmpty(List list) {
@@ -571,5 +540,50 @@ public class StringUtils {
         } else {
             return s.trim();
         }
+    }
+
+    /**
+     * Creates a string that formats the template filename with line number
+     * and column of the given Directive. We use this routine to provide a cosistent format for displaying
+     * file errors.
+     */
+    public static final String formatFileString(Directive directive) {
+        return formatFileString(directive.getTemplateName(), directive.getLine(), directive.getColumn());
+    }
+
+    /**
+     * Creates a string that formats the template filename with line number
+     * and column of the given Node. We use this routine to provide a cosistent format for displaying
+     * file errors.
+     */
+    public static final String formatFileString(Node node) {
+        return formatFileString(node.getTemplateName(), node.getLine(), node.getColumn());
+    }
+
+    /**
+     * Simply creates a string that formats the template filename with line number
+     * and column. We use this routine to provide a cosistent format for displaying
+     * file errors.
+     */
+    public static final String formatFileString(Info info) {
+        return formatFileString(info.getTemplateName(), info.getLine(), info.getColumn());
+    }
+
+    /**
+     * Simply creates a string that formats the template filename with line number
+     * and column. We use this routine to provide a cosistent format for displaying
+     * file errors.
+     *
+     * @param template File name of template, can be null
+     * @param linenum  Line number within the file
+     * @param colnum   Column number withing the file at linenum
+     */
+    public static final String formatFileString(String template, int linenum, int colnum) {
+        StringBuilder buffer = new StringBuilder();
+        if (template == null || template.equals("")) {
+            template = "<unknown template>";
+        }
+        buffer.append(template).append("[line ").append(linenum).append(", column ").append(colnum).append(']');
+        return buffer.toString();
     }
 }

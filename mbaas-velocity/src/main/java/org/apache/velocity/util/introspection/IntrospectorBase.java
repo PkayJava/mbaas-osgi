@@ -19,8 +19,9 @@ package org.apache.velocity.util.introspection;
  * under the License.    
  */
 
-import org.apache.velocity.runtime.log.Log;
+import org.slf4j.Logger;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
@@ -50,13 +51,14 @@ import java.lang.reflect.Method;
  * @author <a href="mailto:szegedia@freemail.hu">Attila Szegedi</a>
  * @author <a href="mailto:paulo.gaspar@krankikom.de">Paulo Gaspar</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: IntrospectorBase.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @author <a href="mailto:cdauth@cdauth.eu">Candid Dauth</a>
+ * @version $Id$
  */
 public abstract class IntrospectorBase {
     /**
      * Class logger
      */
-    protected final Log log;
+    protected final Logger log;
 
     /**
      * The Introspector Cache
@@ -64,11 +66,17 @@ public abstract class IntrospectorBase {
     private final IntrospectorCache introspectorCache;
 
     /**
+     * The Conversion handler
+     */
+    private final ConversionHandler conversionHandler;
+
+    /**
      * C'tor.
      */
-    protected IntrospectorBase(final Log log) {
+    protected IntrospectorBase(final Logger log, final ConversionHandler conversionHandler) {
         this.log = log;
-        introspectorCache = new IntrospectorCacheImpl(log); // TODO: Load that from properties.
+        introspectorCache = new IntrospectorCache(log, conversionHandler);
+        this.conversionHandler = conversionHandler;
     }
 
     /**
@@ -101,6 +109,31 @@ public abstract class IntrospectorBase {
         }
 
         return classMap.findMethod(name, params);
+    }
+
+    /**
+     * Gets the field defined by <code>name</code>.
+     *
+     * @param c    Class in which the method search is taking place
+     * @param name Name of the field being searched for
+     * @return The desired Field object.
+     * @throws IllegalArgumentException When the parameters passed in can not be used for introspection.
+     */
+    public Field getField(final Class c, final String name)
+            throws IllegalArgumentException {
+        if (c == null) {
+            throw new IllegalArgumentException("class object is null!");
+        }
+
+        IntrospectorCache ic = getIntrospectorCache();
+
+        ClassFieldMap classFieldMap = ic.getFieldMap(c);
+        if (classFieldMap == null) {
+            ic.put(c);
+            classFieldMap = ic.getFieldMap(c);
+        }
+
+        return classFieldMap.findField(name);
     }
 
     /**

@@ -55,7 +55,7 @@ public class ASTFloatingPointLiteral extends SimpleNode {
 
 
     /**
-     * @see SimpleNode#jjtAccept(ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -91,12 +91,13 @@ public class ASTFloatingPointLiteral extends SimpleNode {
             value = new BigDecimal(str);
 
         }
+        cleanupParserAndTokens();
 
         return data;
     }
 
     /**
-     * @see SimpleNode#value(InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#value(org.apache.velocity.context.InternalContextAdapter)
      */
     public Object value(InternalContextAdapter context) {
         return value;

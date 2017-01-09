@@ -20,6 +20,7 @@ package org.apache.velocity.app.event.implement;
  */
 
 import org.apache.velocity.app.event.IncludeEventHandler;
+import org.apache.velocity.context.Context;
 
 /**
  * <p>Event handler that looks for included files relative to the path of the
@@ -27,7 +28,7 @@ import org.apache.velocity.app.event.IncludeEventHandler;
  * slash "/" or backwards slash "\".
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain </a>
- * @version $Id: IncludeRelativePath.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class IncludeRelativePath implements IncludeEventHandler {
@@ -43,6 +44,7 @@ public class IncludeRelativePath implements IncludeEventHandler {
      * @return new path relative to the current template's path
      */
     public String includeEvent(
+            Context context,
             String includeResourcePath,
             String currentResourcePath,
             String directiveName) {

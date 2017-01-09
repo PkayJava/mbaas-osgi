@@ -27,7 +27,7 @@ package org.apache.velocity.util;
  * @author Gal Shachor
  * @author Costin
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: SimplePool.java 463298 2006-10-12 16:10:32Z henning $
+ * @version $Id$
  */
 public final class SimplePool {
     /*

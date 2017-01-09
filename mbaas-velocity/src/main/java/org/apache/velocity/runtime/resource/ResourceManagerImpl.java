@@ -19,20 +19,18 @@ package org.apache.velocity.runtime.resource;
  * under the License.
  */
 
-import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
+import org.apache.velocity.util.ExtProperties;
 import org.apache.velocity.util.StringUtils;
 import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,12 +46,10 @@ import java.util.Vector;
  * @author <a href="mailto:paulo.gaspar@krankikom.de">Paulo Gaspar</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: ResourceManagerImpl.java 745757 2009-02-19 06:48:10Z nbubna $
+ * @version $Id$
  */
 public class ResourceManagerImpl
         implements ResourceManager {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResourceManagerImpl.class);
 
     /**
      * A template resources.
@@ -64,11 +60,6 @@ public class ResourceManagerImpl
      * A static content resource.
      */
     public static final int RESOURCE_CONTENT = 2;
-
-    /**
-     * token used to identify the loader internally.
-     */
-    private static final String RESOURCE_LOADER_IDENTIFIER = "_RESOURCE_LOADER_IDENTIFIER_";
 
     /**
      * Object implementing ResourceCache to be our resource manager's Resource cache.
@@ -106,14 +97,14 @@ public class ResourceManagerImpl
     /**
      * Logging.
      */
-    protected Log log = null;
+    protected Logger log = null;
 
     /**
      * Initialize the ResourceManager.
      *
      * @param rsvc The Runtime Services object which is associated with this Resource Manager.
      */
-    public synchronized void initialize(final RuntimeServices rsvc) {
+    public synchronized void initialize(final RuntimeServices rs) {
         if (isInit) {
             log.debug("Re-initialization of ResourceLoader attempted and ignored.");
             return;
@@ -121,10 +112,10 @@ public class ResourceManagerImpl
 
         ResourceLoader resourceLoader = null;
 
-        this.rsvc = rsvc;
-        log = rsvc.getLog();
+        rsvc = rs;
+        log = rsvc.getLog("loader");
 
-        log.trace("Default ResourceManager initializing. (" + this.getClass() + ")");
+        log.trace("ResourceManager initializing: {}", this.getClass());
 
         assembleResourceLoaderInitializers();
 
@@ -133,7 +124,7 @@ public class ResourceManagerImpl
              * Resource loader can be loaded either via class name or be passed
              * in as an instance.
              */
-            ExtendedProperties configuration = (ExtendedProperties) it.next();
+            ExtProperties configuration = (ExtProperties) it.next();
 
             String loaderClass = StringUtils.nullTrim(configuration.getString("class"));
             ResourceLoader loaderInstance = (ResourceLoader) configuration.get("instance");
@@ -144,7 +135,7 @@ public class ResourceManagerImpl
                 resourceLoader = ResourceLoaderFactory.getLoader(rsvc, loaderClass);
             } else {
                 String msg = "Unable to find '" +
-                        configuration.getString(RESOURCE_LOADER_IDENTIFIER) +
+                        configuration.getString(RuntimeConstants.RESOURCE_LOADER_IDENTIFIER) +
                         ".resource.loader.class' specification in configuration." +
                         " This is a critical value.  Please adjust configuration.";
                 log.error(msg);
@@ -170,7 +161,7 @@ public class ResourceManagerImpl
 
         Object cacheObject = null;
 
-        if (org.apache.commons.lang.StringUtils.isNotEmpty(cacheClassName)) {
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(cacheClassName)) {
             try {
                 cacheObject = ClassUtils.getNewInstance(cacheClassName);
             } catch (ClassNotFoundException cnfe) {
@@ -209,7 +200,7 @@ public class ResourceManagerImpl
     }
 
     /**
-     * This will produce a List of Hashtables, each hashtable contains the intialization info for a particular resource loader. This
+     * This will produce a List of Hashtables, each hashtable contains the initialization info for a particular resource loader. This
      * Hashtable will be passed in when initializing the the template loader.
      */
     private void assembleResourceLoaderInitializers() {
@@ -230,16 +221,16 @@ public class ResourceManagerImpl
             StringBuffer loaderID = new StringBuffer(loaderName);
             loaderID.append(".").append(RuntimeConstants.RESOURCE_LOADER);
 
-            ExtendedProperties loaderConfiguration =
+            ExtProperties loaderConfiguration =
                     rsvc.getConfiguration().subset(loaderID.toString());
 
             /*
-             *  we can't really count on ExtendedProperties to give us an empty set
+             *  we can't really count on ExtProperties to give us an empty set
              */
             if (loaderConfiguration == null) {
                 log.debug("ResourceManager : No configuration information found " +
-                        "for resource loader named '" + loaderName +
-                        "' (id is " + loaderID + "). Skipping it...");
+                                "for resource loader named '{}' (id is {}). Skipping it...",
+                        loaderName, loaderID);
                 continue;
             }
 
@@ -249,7 +240,7 @@ public class ResourceManagerImpl
              *  in the 'name' field
              */
 
-            loaderConfiguration.setProperty(RESOURCE_LOADER_IDENTIFIER, loaderName);
+            loaderConfiguration.setProperty(RuntimeConstants.RESOURCE_LOADER_IDENTIFIER, loaderName);
 
             /*
              * Add resources to the list of resource loader
@@ -343,7 +334,88 @@ public class ResourceManagerImpl
                         resourceName + "' in any resource loader.");
                 throw rnfe;
             } catch (ParseErrorException pee) {
-                log.error("ResourceManager.getResource() parse exception", pee);
+                log.error("ResourceManager: parse exception: {}", pee.getMessage());
+                throw pee;
+            } catch (RuntimeException re) {
+                log.error("ResourceManager.getResource() load exception", re);
+                throw re;
+            }
+        }
+
+        return resource;
+    }
+
+    public Resource getResource(Bundle bundle, final String resourceName, final int resourceType, final String encoding)
+            throws ResourceNotFoundException,
+            ParseErrorException {
+        /*
+         * Check to see if the resource was placed in the cache.
+         * If it was placed in the cache then we will use
+         * the cached version of the resource. If not we
+         * will load it.
+         *
+         * Note: the type is included in the key to differentiate ContentResource
+         * (static content from #include) with a Template.
+         */
+
+        String resourceKey = resourceType + resourceName + bundle.getLastModified();
+        Resource resource = globalCache.get(resourceKey);
+
+        if (resource != null) {
+            try {
+                // avoids additional method call to refreshResource
+                if (resource.requiresChecking()) {
+                    /*
+                     * both loadResource() and refreshResource() now return
+                     * a new Resource instance when they are called
+                     * (put in the cache when appropriate) in order to allow
+                     * several threads to parse the same template simultaneously.
+                     * It is redundant work and will cause more garbage collection but the
+                     * benefit is that it allows concurrent parsing and processing
+                     * without race conditions when multiple requests try to
+                     * refresh/load the same template at the same time.
+                     *
+                     * Another alternative is to limit template parsing/retrieval
+                     * so that only one thread can parse each template at a time
+                     * but that creates a scalability bottleneck.
+                     *
+                     * See VELOCITY-606, VELOCITY-595 and VELOCITY-24
+                     */
+                    resource = refreshResource(resource, encoding);
+                }
+            } catch (ResourceNotFoundException rnfe) {
+                /*
+                 *  something exceptional happened to that resource
+                 *  this could be on purpose,
+                 *  so clear the cache and try again
+                 */
+
+                globalCache.remove(resourceKey);
+
+                return getResource(bundle, resourceName, resourceType, encoding);
+            } catch (ParseErrorException pee) {
+                log.error("ResourceManager.getResource() exception", pee);
+                throw pee;
+            } catch (RuntimeException re) {
+                log.error("ResourceManager.getResource() exception", re);
+                throw re;
+            }
+        } else {
+            try {
+                /*
+                 *  it's not in the cache, so load it.
+                 */
+                resource = loadResource(bundle, resourceName, resourceType, encoding);
+
+                if (resource.getResourceLoader().isCachingOn()) {
+                    globalCache.put(resourceKey, resource);
+                }
+            } catch (ResourceNotFoundException rnfe) {
+                log.error("ResourceManager : unable to find resource '" +
+                        resourceName + "' in any resource loader.");
+                throw rnfe;
+            } catch (ParseErrorException pee) {
+                log.error("ResourceManager: parse exception: {}", pee.getMessage());
                 throw pee;
             } catch (RuntimeException re) {
                 log.error("ResourceManager.getResource() load exception", re);
@@ -420,9 +492,8 @@ public class ResourceManagerImpl
                      */
 
                     if (logWhenFound && log.isDebugEnabled()) {
-                        log.debug("ResourceManager : found " + resourceName +
-                                " with loader " +
-                                resourceLoader.getClassName());
+                        log.debug("ResourceManager: found {} with loader {}",
+                                resourceName, resourceLoader.getClassName());
                     }
 
                     howOldItWas = resourceLoader.getLastModified(resource);
@@ -459,7 +530,6 @@ public class ResourceManagerImpl
     protected Resource loadResource(Bundle bundle, String resourceName, int resourceType, String encoding)
             throws ResourceNotFoundException,
             ParseErrorException {
-        LOGGER.info("ResourceManagerImpl.loadResource(Bundle bundle, String resourceName, int resourceType, String encoding)");
         Resource resource = createResource(bundle, resourceName, resourceType);
         resource.setRuntimeServices(rsvc);
         resource.setName(resourceName);
@@ -497,9 +567,8 @@ public class ResourceManagerImpl
                      */
 
                     if (logWhenFound && log.isDebugEnabled()) {
-                        log.debug("ResourceManager : found " + resourceName +
-                                " with loader " +
-                                resourceLoader.getClassName());
+                        log.debug("ResourceManager: found {} with loader {}",
+                                resourceName, resourceLoader.getClassName());
                     }
 
                     howOldItWas = resourceLoader.getLastModified(resource);
@@ -576,12 +645,9 @@ public class ResourceManagerImpl
              *  this strikes me as bad...
              */
 
-            if (!org.apache.commons.lang.StringUtils.equals(resource.getEncoding(), encoding)) {
-                log.warn("Declared encoding for template '" +
-                        resource.getName() +
-                        "' is different on reload. Old = '" +
-                        resource.getEncoding() + "' New = '" + encoding);
-
+            if (!org.apache.commons.lang3.StringUtils.equals(resource.getEncoding(), encoding)) {
+                log.warn("Declared encoding for template '{}' is different on reload. Old = '{}' New = '{}'",
+                        resource.getName(), resource.getEncoding(), encoding);
                 resource.setEncoding(encoding);
             }
 
@@ -593,7 +659,7 @@ public class ResourceManagerImpl
 
             String resourceKey = resource.getType() + resource.getName();
 
-            /* 
+            /*
              * we create a copy to avoid partially overwriting a
              * template which may be in use in another thread
              */
@@ -614,25 +680,6 @@ public class ResourceManagerImpl
             globalCache.put(resourceKey, newResource);
         }
         return resource;
-    }
-
-    /**
-     * Gets the named resource. Returned class type corresponds to specified type (i.e. <code>Template</code> to <code>
-     * RESOURCE_TEMPLATE</code>).
-     *
-     * @param resourceName The name of the resource to retrieve.
-     * @param resourceType The type of resource (<code>RESOURCE_TEMPLATE</code>, <code>RESOURCE_CONTENT</code>, etc.).
-     * @return Resource with the template parsed and ready.
-     * @throws ResourceNotFoundException if template not found from any available source.
-     * @throws ParseErrorException       if template cannot be parsed due to syntax (or other) error.
-     * @throws Exception                 if a problem in parse
-     * @deprecated Use {@link #getResource(String resourceName, int resourceType, String encoding)}
-     */
-    public Resource getResource(String resourceName, int resourceType)
-            throws ResourceNotFoundException,
-            ParseErrorException,
-            Exception {
-        return getResource(resourceName, resourceType, RuntimeConstants.ENCODING_DEFAULT);
     }
 
     /**
@@ -665,85 +712,4 @@ public class ResourceManagerImpl
         return null;
     }
 
-    @Override
-    public Resource getResource(Bundle bundle, String resourceName, int resourceType, String encoding) throws ResourceNotFoundException, ParseErrorException {
-        LOGGER.info("ResourceManagerImpl.getResource(Bundle bundle, String resourceName, int resourceType, String encoding)");
-        /*
-         * Check to see if the resource was placed in the cache.
-         * If it was placed in the cache then we will use
-         * the cached version of the resource. If not we
-         * will load it.
-         *
-         * Note: the type is included in the key to differentiate ContentResource
-         * (static content from #include) with a Template.
-         */
-
-        String resourceKey = resourceType + resourceName + bundle.getLastModified();
-        LOGGER.info("resource key {}", resourceKey);
-        Resource resource = globalCache.get(resourceKey);
-
-        if (resource != null) {
-            try {
-                // avoids additional method call to refreshResource
-                if (resource.requiresChecking()) {
-                    /*
-                     * both loadResource() and refreshResource() now return
-                     * a new Resource instance when they are called
-                     * (put in the cache when appropriate) in order to allow
-                     * several threads to parse the same template simultaneously.
-                     * It is redundant work and will cause more garbage collection but the
-                     * benefit is that it allows concurrent parsing and processing
-                     * without race conditions when multiple requests try to
-                     * refresh/load the same template at the same time.
-                     *
-                     * Another alternative is to limit template parsing/retrieval
-                     * so that only one thread can parse each template at a time
-                     * but that creates a scalability bottleneck.
-                     *
-                     * See VELOCITY-606, VELOCITY-595 and VELOCITY-24
-                     */
-                    resource = refreshResource(resource, encoding);
-                }
-            } catch (ResourceNotFoundException rnfe) {
-                /*
-                 *  something exceptional happened to that resource
-                 *  this could be on purpose,
-                 *  so clear the cache and try again
-                 */
-
-                globalCache.remove(resourceKey);
-
-                return getResource(bundle, resourceName, resourceType, encoding);
-            } catch (ParseErrorException pee) {
-                log.error("ResourceManager.getResource() exception", pee);
-                throw pee;
-            } catch (RuntimeException re) {
-                log.error("ResourceManager.getResource() exception", re);
-                throw re;
-            }
-        } else {
-            try {
-                /*
-                 *  it's not in the cache, so load it.
-                 */
-                resource = loadResource(bundle, resourceName, resourceType, encoding);
-
-                if (resource.getResourceLoader().isCachingOn()) {
-                    globalCache.put(resourceKey, resource);
-                }
-            } catch (ResourceNotFoundException rnfe) {
-                log.error("ResourceManager : unable to find resource '" +
-                        resourceName + "' in any resource loader.");
-                throw rnfe;
-            } catch (ParseErrorException pee) {
-                log.error("ResourceManager.getResource() parse exception", pee);
-                throw pee;
-            } catch (RuntimeException re) {
-                log.error("ResourceManager.getResource() load exception", re);
-                throw re;
-            }
-        }
-
-        return resource;
-    }
 }

@@ -24,14 +24,14 @@ import java.io.Writer;
 
 /**
  * Implementation of a fast Writer. It was originally taken from JspWriter
- * and modified to have less syncronization going on.
+ * and modified to have less synchronization going on.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:jon@latchkey.com">Jon S. Stevens</a>
  * @author Anil K. Vijendran
- * @version $Id: VelocityWriter.java 463298 2006-10-12 16:10:32Z henning $
+ * @version $Id$
  */
-public final class VelocityWriter extends Writer {
+public final class VelocityWriter extends Writer implements Filter {
     /**
      * constant indicating that the Writer is not buffering output
      */
@@ -49,10 +49,10 @@ public final class VelocityWriter extends Writer {
      */
     public static final int UNBOUNDED_BUFFER = -2;
 
+    private Writer writer = null;
+
     private int bufferSize;
     private boolean autoFlush;
-
-    private Writer writer;
 
     private char cb[];
     private int nextChar;
@@ -309,4 +309,14 @@ public final class VelocityWriter extends Writer {
         this.writer = writer;
         clear();
     }
+
+    /**
+     * Send the content of a reference, e.g.; $foo, to the writer.
+     * The default implementation is to call the wrapped Writer's
+     * write(String) method.
+     */
+    public void writeReference(String ref) throws IOException {
+        write(ref);
+    }
+
 }

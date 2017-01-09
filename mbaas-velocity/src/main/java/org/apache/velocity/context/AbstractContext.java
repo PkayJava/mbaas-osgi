@@ -45,7 +45,7 @@ package org.apache.velocity.context;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:fedor.karpelevitch@home.com">Fedor Karpelevitch</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
- * @version $Id: AbstractContext.java 732250 2009-01-07 07:37:10Z byron $
+ * @version $Id$
  */
 
 public abstract class AbstractContext extends InternalContextBase
@@ -86,10 +86,10 @@ public abstract class AbstractContext extends InternalContextBase
      * Currently, this method is not used internally by
      * the Velocity engine.
      *
-     * @param key key to test for existance
+     * @param key key to test for existence
      * @return true if found, false if not
      */
-    public abstract boolean internalContainsKey(Object key);
+    public abstract boolean internalContainsKey(String key);
 
     /**
      * Implement to return an object array of key
@@ -100,10 +100,10 @@ public abstract class AbstractContext extends InternalContextBase
      *
      * @return array of keys
      */
-    public abstract Object[] internalGetKeys();
+    public abstract String[] internalGetKeys();
 
     /**
-     * I mplement to remove an item from your storage.
+     * Implement to remove an item from your storage.
      * <br><br>
      * Currently, this method is not used internally by
      * the Velocity engine.
@@ -111,7 +111,7 @@ public abstract class AbstractContext extends InternalContextBase
      * @param key key to remove
      * @return object removed if exists, else null
      */
-    public abstract Object internalRemove(Object key);
+    public abstract Object internalRemove(String key);
 
     /**
      * default CTOR
@@ -131,7 +131,7 @@ public abstract class AbstractContext extends InternalContextBase
 
         /*
          *  now, do a 'forward pull' of event cartridge so
-         *  it's accessable, bringing to the top level.
+         *  it's accessible, bringing to the top level.
          */
 
         if (innerContext instanceof InternalEventContext) {
@@ -155,6 +155,12 @@ public abstract class AbstractContext extends InternalContextBase
             return null;
         }
 
+        /*
+         * We always use string interning here:
+         * 1) speed is générally less critical when populating the context than during parsing or rendering
+         * 2) a context key is very likely to be used several times, or even a lot of times, in the template (but does it save memory if runtime.string.interning is false?)
+         * 3) last but not least: we don't have access to RuntimeServices from here, the reenginering would be painful...
+         */
         return internalPut(key.intern(), value);
     }
 
@@ -198,7 +204,7 @@ public abstract class AbstractContext extends InternalContextBase
      * @param key The key to look for.
      * @return true if the key is in the context, false if not.
      */
-    public boolean containsKey(Object key) {
+    public boolean containsKey(String key) {
         if (key == null) {
             return false;
         }
@@ -217,7 +223,7 @@ public abstract class AbstractContext extends InternalContextBase
      * @return Object[] of keys in the Context. Does not return
      * keys in chained context.
      */
-    public Object[] getKeys() {
+    public String[] getKeys() {
         return internalGetKeys();
     }
 
@@ -228,7 +234,7 @@ public abstract class AbstractContext extends InternalContextBase
      * @return The value that the key was mapped to, or <code>null</code>
      * if unmapped.
      */
-    public Object remove(Object key) {
+    public Object remove(String key) {
         if (key == null) {
             return null;
         }

@@ -35,7 +35,7 @@ import java.util.List;
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:Christoph.Reck@dlr.de">Christoph Reck</a>
- * @version $Id: InternalHousekeepingContext.java 731266 2009-01-04 15:11:20Z byron $
+ * @version $Id$
  */
 interface InternalHousekeepingContext {
     /**
@@ -60,9 +60,9 @@ interface InternalHousekeepingContext {
     /**
      * Returns the template name stack in form of an array.
      *
-     * @return Object[] with the template name stack contents.
+     * @return String[] with the template name stack contents.
      */
-    Object[] getTemplateNameStack();
+    String[] getTemplateNameStack();
 
     /**
      * set the current macro name on top of stack
@@ -93,9 +93,9 @@ interface InternalHousekeepingContext {
     /**
      * Returns the macro name stack in form of an array.
      *
-     * @return Object[] with the macro name stack contents.
+     * @return String[] with the macro name stack contents.
      */
-    Object[] getMacroNameStack();
+    String[] getMacroNameStack();
 
     /**
      * returns an IntrospectionCache Data (@see IntrospectionCacheData)

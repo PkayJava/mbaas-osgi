@@ -25,9 +25,12 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.*;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.runtime.parser.ParseException;
+import org.apache.velocity.runtime.parser.ParserTreeConstants;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.apache.velocity.util.StringUtils;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -55,10 +58,15 @@ import java.util.List;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:Christoph.Reck@dlr.de">Christoph Reck</a>
- * @version $Id: Parse.java 928253 2010-03-27 19:39:04Z nbubna $
+ * @version $Id$
  */
 public class Parse extends InputBase {
     private int maxDepth;
+
+    /**
+     * Indicates if we are running in strict reference mode.
+     */
+    public boolean strictRef = false;
 
     /**
      * Return name of this directive.
@@ -100,6 +108,8 @@ public class Parse extends InputBase {
         super.init(rs, context, node);
 
         this.maxDepth = rsvc.getInt(RuntimeConstants.PARSE_DIRECTIVE_MAXDEPTH, 10);
+
+        strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
     }
 
     /**
@@ -125,16 +135,16 @@ public class Parse extends InputBase {
          */
         if (node.jjtGetNumChildren() == 0) {
             throw new VelocityException("#parse(): argument missing at " +
-                    Log.formatFileString(this));
+                    StringUtils.formatFileString(this));
         }
 
         /*
          *  does it have a value?  If you have a null reference, then no.
          */
         Object value = node.jjtGetChild(0).value(context);
-        if (value == null && rsvc.getLog().isDebugEnabled()) {
-            rsvc.getLog().debug("#parse(): null argument at " +
-                    Log.formatFileString(this));
+        if (value == null && log.isDebugEnabled()) {
+            log.debug("#parse(): null argument at " +
+                    StringUtils.formatFileString(this));
         }
 
         /*
@@ -146,6 +156,14 @@ public class Parse extends InputBase {
          *  check to see if the argument will be changed by the event cartridge
          */
         String arg = EventHandlerUtil.includeEvent(rsvc, context, sourcearg, context.getCurrentTemplateName(), getName());
+
+        /*
+         * if strict mode and arg was not fixed by event handler, then complain
+         */
+        if (strictRef && value == null && arg == null) {
+            throw new VelocityException("The argument to #parse returned null at "
+                    + StringUtils.formatFileString(this));
+        }
 
         /*
          *   a null return value from the event cartridge indicates we should not
@@ -161,13 +179,13 @@ public class Parse extends InputBase {
             /* 
              * see if we have exceeded the configured depth.
              */
-            Object[] templateStack = context.getTemplateNameStack();
+            String[] templateStack = context.getTemplateNameStack();
             if (templateStack.length >= maxDepth) {
                 StringBuffer path = new StringBuffer();
                 for (int i = 0; i < templateStack.length; ++i) {
                     path.append(" > " + templateStack[i]);
                 }
-                rsvc.getLog().error("Max recursion depth reached (" +
+                log.error("Max recursion depth reached (" +
                         templateStack.length + ')' + " File stack:" +
                         path);
                 return false;
@@ -186,28 +204,28 @@ public class Parse extends InputBase {
             /*
              * the arg wasn't found.  Note it and throw
              */
-            rsvc.getLog().error("#parse(): cannot find template '" + arg +
-                    "', called at " + Log.formatFileString(this));
+            log.error("#parse(): cannot find template '" + arg +
+                    "', called at " + StringUtils.formatFileString(this));
             throw rnfe;
         } catch (ParseErrorException pee) {
             /*
              * the arg was found, but didn't parse - syntax error
              *  note it and throw
              */
-            rsvc.getLog().error("#parse(): syntax error in #parse()-ed template '"
-                    + arg + "', called at " + Log.formatFileString(this));
+            log.error("#parse(): syntax error in #parse()-ed template '"
+                    + arg + "', called at " + StringUtils.formatFileString(this));
             throw pee;
         }
         /**
          * pass through application level runtime exceptions
          */ catch (RuntimeException e) {
-            rsvc.getLog().error("Exception rendering #parse(" + arg + ") at " +
-                    Log.formatFileString(this));
+            log.error("Exception rendering #parse(" + arg + ") at " +
+                    StringUtils.formatFileString(this));
             throw e;
         } catch (Exception e) {
             String msg = "Exception rendering #parse(" + arg + ") at " +
-                    Log.formatFileString(this);
-            rsvc.getLog().error(msg, e);
+                    StringUtils.formatFileString(this);
+            log.error(msg, e);
             throw new VelocityException(msg, e);
         }
 
@@ -225,7 +243,8 @@ public class Parse extends InputBase {
 
         context.setMacroLibraries(macroLibraries);
 
-        macroLibraries.add(arg);
+        /* instead of adding the name of the template, add the Template reference */
+        macroLibraries.add(t);
 
         /*
          *  and render it
@@ -246,13 +265,13 @@ public class Parse extends InputBase {
             /**
              * Log #parse errors so the user can track which file called which.
              */
-            rsvc.getLog().error("Exception rendering #parse(" + arg + ") at " +
-                    Log.formatFileString(this));
+            log.error("Exception rendering #parse(" + arg + ") at " +
+                    StringUtils.formatFileString(this));
             throw e;
         } catch (Exception e) {
             String msg = "Exception rendering #parse(" + arg + ") at " +
-                    Log.formatFileString(this);
-            rsvc.getLog().error(msg, e);
+                    StringUtils.formatFileString(this);
+            log.error(msg, e);
             throw new VelocityException(msg, e);
         } finally {
             context.popCurrentTemplateName();
@@ -267,5 +286,20 @@ public class Parse extends InputBase {
         return true;
     }
 
+    /**
+     * Called by the parser to validate the argument types
+     */
+    public void checkArgs(ArrayList<Integer> argtypes, Token t, String templateName)
+            throws ParseException {
+        if (argtypes.size() != 1) {
+            throw new MacroParseException("The #parse directive requires one argument",
+                    templateName, t);
+        }
+
+        if (argtypes.get(0) == ParserTreeConstants.JJTWORD) {
+            throw new MacroParseException("The argument to #parse is of the wrong type",
+                    templateName, t);
+        }
+    }
 }
 

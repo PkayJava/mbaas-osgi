@@ -19,17 +19,19 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.    
  */
 
-import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
+import org.apache.velocity.io.UnicodeInputStream;
+import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCacheImpl;
-import org.apache.velocity.util.StringUtils;
+import org.apache.velocity.util.ExtProperties;
 import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
 
-import java.io.InputStream;
+import java.io.*;
+import java.net.URL;
 
 /**
  * This is abstract class the all text resource loaders should
@@ -37,7 +39,8 @@ import java.io.InputStream;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ResourceLoader.java 832280 2009-11-03 02:47:55Z wglass $
+ * @author <a href="mailto:claude.brisson@gmail.com">Claude Brisson</a>
+ * @version $Id$
  */
 public abstract class ResourceLoader {
     /**
@@ -59,7 +62,7 @@ public abstract class ResourceLoader {
     protected String className = null;
 
     protected RuntimeServices rsvc = null;
-    protected Log log = null;
+    protected Logger log = null;
 
     /**
      * This initialization is used by all resource
@@ -69,9 +72,10 @@ public abstract class ResourceLoader {
      * @param rs
      * @param configuration
      */
-    public void commonInit(RuntimeServices rs, ExtendedProperties configuration) {
+    public void commonInit(RuntimeServices rs, ExtProperties configuration) {
         this.rsvc = rs;
-        this.log = rsvc.getLog();
+        String loaderName = configuration.getString(RuntimeConstants.RESOURCE_LOADER_IDENTIFIER);
+        log = rsvc.getLog("loader." + (loaderName == null ? this.getClass().getSimpleName() : loaderName));
 
         /*
          *  these two properties are not required for all loaders.
@@ -117,62 +121,31 @@ public abstract class ResourceLoader {
      *
      * @param configuration
      */
-    public abstract void init(ExtendedProperties configuration);
+    public abstract void init(ExtProperties configuration);
 
     /**
-     * Get the InputStream that the Runtime will parse
+     * Get the Reader that the Runtime will parse
      * to create a template.
      *
      * @param source
-     * @return The input stream for the requested resource.
+     * @return The reader for the requested resource.
      * @throws ResourceNotFoundException
+     * @since 2.0
      */
-    public abstract InputStream getResourceStream(String source)
+    public abstract Reader getResourceReader(String source, String encoding)
             throws ResourceNotFoundException;
 
-    public InputStream getResourceStream(Bundle bundle, String templateName)
+    public Reader getResourceReader(Bundle bundle, String source, String encoding)
             throws ResourceNotFoundException {
-        /*
-         * Make sure we have a valid templateName.
-         */
-        if (org.apache.commons.lang.StringUtils.isEmpty(templateName)) {
-            /*
-             * If we don't get a properly formed templateName then
-             * there's not much we can do. So we'll forget about
-             * trying to search any more paths for the template.
-             */
-            throw new ResourceNotFoundException(
-                    "Need to specify a file name or file path!");
-        }
-
-        String template = StringUtils.normalizePath(templateName);
-        if (template == null || template.length() == 0) {
-            String msg = "File resource error : argument " + template +
-                    " contains .. and may be trying to access " +
-                    "content outside of template root.  Rejected.";
-
-            log.error("FileResourceLoader : " + msg);
-
-            throw new ResourceNotFoundException(msg);
-        }
-
+        URL url = bundle.getResource(source);
         InputStream inputStream = null;
         try {
-            inputStream = bundle.getResource(templateName).openStream();
-        } catch (Throwable e) {
-            e.printStackTrace();
+            inputStream = url.openStream();
+        } catch (IOException e) {
+            throw new ResourceNotFoundException(e);
         }
-
-        if (inputStream != null) {
-            return inputStream;
-        }
-
-        /*
-         * We have now searched all the paths for
-         * templates and we didn't find anything so
-         * throw an exception.
-         */
-        throw new ResourceNotFoundException("FileResourceLoader : cannot find " + template);
+        InputStreamReader reader = new InputStreamReader(inputStream);
+        return reader;
     }
 
     /**
@@ -251,36 +224,78 @@ public abstract class ResourceLoader {
     /**
      * Check whether any given resource exists. This is not really
      * a very efficient test and it can and should be overridden in the
-     * subclasses extending ResourceLoader.
+     * subclasses extending ResourceLoader2.
      *
      * @param resourceName The name of a resource.
      * @return true if a resource exists and can be accessed.
      * @since 1.6
      */
     public boolean resourceExists(final String resourceName) {
-        InputStream is = null;
+        Reader reader = null;
         try {
-            is = getResourceStream(resourceName);
+            reader = getResourceReader(resourceName, null);
         } catch (ResourceNotFoundException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Could not load resource '" + resourceName
-                        + "' from ResourceLoader " + this.getClass().getName()
-                        + ": " + e.getMessage());
+                log.debug("Could not load resource '{}' from ResourceLoader {}",
+                        resourceName, this.getClass().getName());
             }
         } finally {
             try {
-                if (is != null) {
-                    is.close();
+                if (reader != null) {
+                    reader.close();
                 }
             } catch (Exception e) {
                 if (log.isErrorEnabled()) {
-                    String msg = "While closing InputStream for resource '" + resourceName
-                            + "' from ResourceLoader " + this.getClass().getName();
+                    String msg = "While closing InputStream for resource '" +
+                            resourceName + "' from ResourceLoader " +
+                            this.getClass().getName();
                     log.error(msg, e);
                     throw new VelocityException(msg, e);
                 }
             }
         }
-        return (is != null);
+        return (reader != null);
     }
+
+    /**
+     * Builds a Reader given a raw InputStream and an encoding. Should be use
+     * by every subclass that whishes to accept optional BOMs in resources.
+     * This method does *not* close the given input stream whenever an exception is thrown.
+     *
+     * @param rawStream The raw input stream.
+     * @param encoding  The asked encoding.
+     * @return found reader
+     * @throws IOException, UnsupportedEncodingException
+     * @since 2.0
+     */
+    protected Reader buildReader(InputStream rawStream, String encoding)
+            throws IOException, UnsupportedEncodingException {
+        UnicodeInputStream inputStream = new UnicodeInputStream(rawStream);
+        /*
+         * Check encoding
+         */
+        String foundEncoding = inputStream.getEncodingFromStream();
+        if (foundEncoding != null && encoding != null && !UnicodeInputStream.sameEncoding(foundEncoding, encoding)) {
+            log.warn("Found BOM encoding '{}' differs from asked encoding: '{}' - using BOM encoding to read resource.", foundEncoding, encoding);
+            encoding = foundEncoding;
+        }
+        if (encoding == null) {
+            if (foundEncoding == null) {
+                encoding = rsvc.getString(RuntimeConstants.INPUT_ENCODING);
+            } else {
+                encoding = foundEncoding;
+            }
+        }
+
+        try {
+            return new InputStreamReader(inputStream, encoding);
+        } catch (UnsupportedEncodingException uee) {
+            try {
+                inputStream.close();
+            } catch (IOException ioe) {
+            }
+            throw uee;
+        }
+    }
+
 }

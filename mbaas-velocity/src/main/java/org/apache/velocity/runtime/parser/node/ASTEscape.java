@@ -33,7 +33,7 @@ import java.io.Writer;
  * what controls the generation of this class.
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTEscape.java 731266 2009-01-04 15:11:20Z byron $
+ * @version $Id$
  */
 public class ASTEscape extends SimpleNode {
     /**
@@ -58,14 +58,14 @@ public class ASTEscape extends SimpleNode {
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#init(InternalContextAdapter, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
      */
     public Object init(InternalContextAdapter context, Object data) {
         ctext = val.toCharArray();
@@ -73,7 +73,7 @@ public class ASTEscape extends SimpleNode {
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(InternalContextAdapter, Writer)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException {

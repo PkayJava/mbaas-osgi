@@ -19,19 +19,18 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.
  */
 
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
+import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.util.StringResource;
 import org.apache.velocity.runtime.resource.util.StringResourceRepository;
 import org.apache.velocity.runtime.resource.util.StringResourceRepositoryImpl;
 import org.apache.velocity.util.ClassUtils;
+import org.apache.velocity.util.ExtProperties;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +47,7 @@ import java.util.Map;
  * resource.loader = string
  * string.resource.loader.description = Velocity StringResource loader
  * string.resource.loader.class = org.apache.velocity.runtime.resource.loader.StringResourceLoader
- * string.resource.loader.repository.class = org.apache.velocity.runtime.resource.util.StringResourceRepositoryImpl
+ * string.resource.loader.repository.class = org.apache.velocity.runtime.resource.loader.StringResourceRepositoryImpl
  * </pre>
  * Resources can be added to the repository like this:
  * <pre><code>
@@ -107,7 +106,7 @@ import java.util.Map;
  * @author <a href="mailto:eelco.hillenius@openedge.nl">Eelco Hillenius</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
  * @author Nathan Bubna
- * @version $Id: StringResourceLoader.java 825302 2009-10-14 21:51:39Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class StringResourceLoader extends ResourceLoader {
@@ -156,12 +155,6 @@ public class StringResourceLoader extends ResourceLoader {
      * Key to look up the repository char encoding.
      */
     public static final String REPOSITORY_ENCODING = "repository.encoding";
-
-    /**
-     * The default repository encoding.
-     */
-    public static final String REPOSITORY_ENCODING_DEFAULT = "UTF-8";
-
 
     protected static final Map STATIC_REPOSITORIES =
             Collections.synchronizedMap(new HashMap());
@@ -218,9 +211,9 @@ public class StringResourceLoader extends ResourceLoader {
 
 
     /**
-     * @see ResourceLoader#init(ExtendedProperties)
+     * @see ResourceLoader#init(org.apache.velocity.util.ExtProperties)
      */
-    public void init(final ExtendedProperties configuration) {
+    public void init(final ExtProperties configuration) {
         log.trace("StringResourceLoader : initialization starting.");
 
         // get the repository configuration info
@@ -233,12 +226,12 @@ public class StringResourceLoader extends ResourceLoader {
         if (isStatic) {
             this.repository = getRepository(repoName);
             if (repository != null && log.isDebugEnabled()) {
-                log.debug("Loaded repository '" + repoName + "' from static repo store");
+                log.debug("Loaded repository '{}' from static repo store", repoName);
             }
         } else {
             this.repository = (StringResourceRepository) rsvc.getApplicationAttribute(repoName);
             if (repository != null && log.isDebugEnabled()) {
-                log.debug("Loaded repository '" + repoName + "' from application attributes");
+                log.debug("Loaded repository '{}' from application attributes", repoName);
             }
         }
 
@@ -256,17 +249,17 @@ public class StringResourceLoader extends ResourceLoader {
             // ok, we already have a repo
             // warn them if they are trying to change the class of the repository
             if (!this.repository.getClass().getName().equals(repoClass)) {
-                log.debug("Cannot change class of string repository '" + repoName +
-                        "' from " + this.repository.getClass().getName() + " to " + repoClass +
-                        ". The change will be ignored.");
+                log.debug("Cannot change class of string repository '{}' from {} to {}." +
+                                " The change will be ignored.",
+                        repoName, this.repository.getClass().getName(), repoClass);
             }
 
             // allow them to change the default encoding of the repo
             if (encoding != null &&
                     !this.repository.getEncoding().equals(encoding)) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Changing the default encoding of string repository '" + repoName +
-                            "' from " + this.repository.getEncoding() + " to " + encoding);
+                    log.debug("Changing the default encoding of string repository '{}' from {} to {}",
+                            repoName, this.repository.getEncoding(), encoding);
                 }
                 this.repository.setEncoding(encoding);
             }
@@ -281,7 +274,7 @@ public class StringResourceLoader extends ResourceLoader {
     public StringResourceRepository createRepository(final String className,
                                                      final String encoding) {
         if (log.isDebugEnabled()) {
-            log.debug("Creating string repository using class " + className + "...");
+            log.debug("Creating string repository using class {}...", className);
         }
 
         StringResourceRepository repo;
@@ -298,11 +291,11 @@ public class StringResourceLoader extends ResourceLoader {
         if (encoding != null) {
             repo.setEncoding(encoding);
         } else {
-            repo.setEncoding(REPOSITORY_ENCODING_DEFAULT);
+            repo.setEncoding(RuntimeConstants.ENCODING_DEFAULT);
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Default repository encoding is " + repo.getEncoding());
+            log.debug("Default repository encoding is {}", repo.getEncoding());
         }
         return repo;
     }
@@ -320,15 +313,17 @@ public class StringResourceLoader extends ResourceLoader {
     }
 
     /**
-     * Get an InputStream so that the Runtime can build a
+     * Get a reader so that the Runtime can build a
      * template with it.
      *
-     * @param name name of template to get.
-     * @return InputStream containing the template.
+     * @param name     name of template to get.
+     * @param encoding asked encoding
+     * @return Reader containing the template.
      * @throws ResourceNotFoundException Ff template not found
      *                                   in the RepositoryFactory.
+     * @since 2.0
      */
-    public InputStream getResourceStream(final String name)
+    public Reader getResourceReader(String name, String encoding)
             throws ResourceNotFoundException {
         if (StringUtils.isEmpty(name)) {
             throw new ResourceNotFoundException("No template name provided");
@@ -341,11 +336,19 @@ public class StringResourceLoader extends ResourceLoader {
         }
 
         byte[] byteArray = null;
+        InputStream rawStream = null;
 
         try {
             byteArray = resource.getBody().getBytes(resource.getEncoding());
-            return new ByteArrayInputStream(byteArray);
+            rawStream = new ByteArrayInputStream(byteArray);
+            return new InputStreamReader(rawStream, resource.getEncoding());
         } catch (UnsupportedEncodingException ue) {
+            if (rawStream != null) {
+                try {
+                    rawStream.close();
+                } catch (IOException ioe) {
+                }
+            }
             throw new VelocityException("Could not convert String using encoding " + resource.getEncoding(), ue);
         }
     }

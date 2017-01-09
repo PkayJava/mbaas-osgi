@@ -25,6 +25,7 @@ import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.ContextAware;
 import org.apache.velocity.util.RuntimeServicesAware;
 import org.apache.velocity.util.StringUtils;
+import org.slf4j.Logger;
 
 /**
  * Simple event handler that checks to see if an included page is available.
@@ -46,7 +47,7 @@ import org.apache.velocity.util.StringUtils;
  * </p>
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
- * @version $Id: IncludeNotFound.java 809816 2009-09-01 05:14:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class IncludeNotFound implements IncludeEventHandler, RuntimeServicesAware, ContextAware {
@@ -57,8 +58,10 @@ public class IncludeNotFound implements IncludeEventHandler, RuntimeServicesAwar
     String notfound;
     Context context;
 
+    protected Logger log;
+
     /**
-     * Chseck to see if included file exists, and display "not found" page if it
+     * Check to see if included file exists, and display "not found" page if it
      * doesn't. If "not found" page does not exist, log an error and return
      * null.
      *
@@ -68,6 +71,7 @@ public class IncludeNotFound implements IncludeEventHandler, RuntimeServicesAwar
      * @return message.
      */
     public String includeEvent(
+            Context context,
             String includeResourcePath,
             String currentResourcePath,
             String directiveName) {
@@ -84,7 +88,7 @@ public class IncludeNotFound implements IncludeEventHandler, RuntimeServicesAwar
                 /**
                  * can't find not found, so display nothing
                  */
-                rs.getLog().error("Can't find include not found page: " + notfound);
+                log.error("Can't find include not found page: " + notfound);
                 return null;
             }
         } else
@@ -97,6 +101,7 @@ public class IncludeNotFound implements IncludeEventHandler, RuntimeServicesAwar
      */
     public void setRuntimeServices(RuntimeServices rs) {
         this.rs = rs;
+        log = rs.getLog("event");
         notfound = StringUtils.nullTrim(rs.getString(PROPERTY_NOT_FOUND, DEFAULT_NOT_FOUND));
     }
 

@@ -26,7 +26,7 @@ import java.util.Iterator;
  * behavior in Velocity to be customized.
  *
  * @author <a href="mailto:geirm@apache.org">Geir Magusson Jr.</a>
- * @version $Id: Uberspect.java 774412 2009-05-13 15:54:07Z nbubna $
+ * @version $Id$
  */
 public interface Uberspect {
     /**
@@ -41,7 +41,7 @@ public interface Uberspect {
      * @param info
      * @return An Iterator.
      */
-    public Iterator getIterator(Object obj, Info info) throws Exception;
+    public Iterator getIterator(Object obj, Info info);
 
     /**
      * Returns a general method, corresponding to $foo.bar( $woogie )
@@ -52,7 +52,7 @@ public interface Uberspect {
      * @param info
      * @return A Velocity Method.
      */
-    public VelMethod getMethod(Object obj, String method, Object[] args, Info info) throws Exception;
+    public VelMethod getMethod(Object obj, String method, Object[] args, Info info);
 
     /**
      * Property getter - returns VelPropertyGet appropos for #set($foo = $bar.woogie)
@@ -62,7 +62,7 @@ public interface Uberspect {
      * @param info
      * @return A Velocity Getter.
      */
-    public VelPropertyGet getPropertyGet(Object obj, String identifier, Info info) throws Exception;
+    public VelPropertyGet getPropertyGet(Object obj, String identifier, Info info);
 
     /**
      * Property setter - returns VelPropertySet appropos for #set($foo.bar = "geir")
@@ -73,5 +73,5 @@ public interface Uberspect {
      * @param info
      * @return A Velocity Setter.
      */
-    public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info info) throws Exception;
+    public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info info);
 }

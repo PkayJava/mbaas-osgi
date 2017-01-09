@@ -19,9 +19,7 @@ package org.apache.velocity.util.introspection;
  * under the License.    
  */
 
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Method;
 
@@ -53,23 +51,24 @@ import java.lang.reflect.Method;
  * @author <a href="mailto:szegedia@freemail.hu">Attila Szegedi</a>
  * @author <a href="mailto:paulo.gaspar@krankikom.de">Paulo Gaspar</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: Introspector.java 687177 2008-08-19 22:00:32Z nbubna $
+ * @version $Id$
  */
 public class Introspector extends IntrospectorBase {
     /**
-     * @param log A Log object to use for the introspector.
+     * @param log A Logger object to use for the introspector.
      * @since 1.5
      */
-    public Introspector(final Log log) {
-        super(log);
+    public Introspector(final Logger log) {
+        this(log, null);
     }
 
     /**
-     * @param logger A runtime logger object.
-     * @deprecated RuntimeLogger is deprecated. Use Introspector(Log log).
+     * @param log               A Logger object to use for the introspector.
+     * @param conversionHandler conversion handler
+     * @since 2.0
      */
-    public Introspector(final RuntimeLogger logger) {
-        this(new RuntimeLoggerLog(logger));
+    public Introspector(final Logger log, ConversionHandler conversionHandler) {
+        super(log, conversionHandler);
     }
 
     /**

@@ -30,7 +30,7 @@ import org.apache.velocity.util.introspection.Info;
  * <p>This feature should be regarded as experimental.
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
- * @version $Id: InvalidReferenceEventHandler.java 832324 2009-11-03 07:33:03Z wglass $
+ * @version $Id$
  * @since 1.5
  */
 public interface InvalidReferenceEventHandler extends EventHandler {
@@ -43,7 +43,7 @@ public interface InvalidReferenceEventHandler extends EventHandler {
      * returned.
      *
      * @param context   the context when the reference was found invalid
-     * @param reference string with complete invalid reference. If silent reference, will start with $!
+     * @param reference string with complete invalid reference
      * @param object    the object referred to, or null if not found
      * @param property  the property name from the reference
      * @param info      contains template, line, column details
@@ -75,7 +75,7 @@ public interface InvalidReferenceEventHandler extends EventHandler {
      * the chain until the first non-null value is returned.
      *
      * @param context   the context when the reference was found invalid
-     * @param reference string with complete invalid reference.  If silent reference, will start with $!
+     * @param reference string with complete invalid reference
      * @param object    the object referred to, or null if not found
      * @param method    the name of the (non-existent) method
      * @param info      contains template, line, column details
@@ -83,139 +83,4 @@ public interface InvalidReferenceEventHandler extends EventHandler {
      */
     public Object invalidMethod(Context context, String reference,
                                 Object object, String method, Info info);
-
-
-    /**
-     * Defines the execution strategy for invalidGetMethod
-     */
-    static class InvalidGetMethodExecutor implements EventHandlerMethodExecutor {
-        private Context context;
-        private String reference;
-        private Object object;
-        private String property;
-        private Info info;
-
-        private Object result;
-
-        InvalidGetMethodExecutor(
-                Context context,
-                String reference,
-                Object object,
-                String property,
-                Info info) {
-            this.context = context;
-            this.reference = reference;
-            this.object = object;
-            this.property = property;
-            this.info = info;
-        }
-
-        /**
-         * Call the method invalidGetMethod()
-         *
-         * @param handler call the appropriate method on this handler
-         */
-        public void execute(EventHandler handler) {
-            result = ((InvalidReferenceEventHandler) handler).invalidGetMethod(
-                    context, reference, object, property, info);
-        }
-
-        public Object getReturnValue() {
-            return result;
-        }
-
-        public boolean isDone() {
-            return (result != null);
-        }
-    }
-
-    /**
-     * Defines the execution strategy for invalidGetMethod
-     */
-    static class InvalidSetMethodExecutor implements EventHandlerMethodExecutor {
-        private Context context;
-        private String leftreference;
-        private String rightreference;
-        private Info info;
-
-        private boolean result;
-
-        InvalidSetMethodExecutor(
-                Context context,
-                String leftreference,
-                String rightreference,
-                Info info) {
-            this.context = context;
-            this.leftreference = leftreference;
-            this.rightreference = rightreference;
-            this.info = info;
-        }
-
-        /**
-         * Call the method invalidSetMethod()
-         *
-         * @param handler call the appropriate method on this handler
-         */
-        public void execute(EventHandler handler) {
-            result = ((InvalidReferenceEventHandler) handler).invalidSetMethod(
-                    context, leftreference, rightreference, info);
-        }
-
-        public Object getReturnValue() {
-            return null;
-        }
-
-        public boolean isDone() {
-            return result;
-        }
-
-    }
-
-    /**
-     * Defines the execution strategy for invalidGetMethod
-     */
-    static class InvalidMethodExecutor implements EventHandlerMethodExecutor {
-        private Context context;
-        private String reference;
-        private Object object;
-        private String method;
-        private Info info;
-
-        private Object result;
-        private boolean executed = false;
-
-        InvalidMethodExecutor(
-                Context context,
-                String reference,
-                Object object,
-                String method,
-                Info info) {
-            this.context = context;
-            this.reference = reference;
-            this.object = object;
-            this.method = method;
-            this.info = info;
-        }
-
-        /**
-         * Call the method invalidMethod()
-         *
-         * @param handler call the appropriate method on this handler
-         */
-        public void execute(EventHandler handler) {
-            executed = true;
-            result = ((InvalidReferenceEventHandler) handler).invalidMethod(
-                    context, reference, object, method, info);
-        }
-
-        public Object getReturnValue() {
-            return result;
-        }
-
-        public boolean isDone() {
-            return executed && (result != null);
-        }
-
-    }
-
 }

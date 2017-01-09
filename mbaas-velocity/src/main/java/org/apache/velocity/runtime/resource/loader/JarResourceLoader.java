@@ -16,15 +16,18 @@ package org.apache.velocity.runtime.resource.loader;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
+import org.apache.velocity.util.ExtProperties;
 import org.apache.velocity.util.StringUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -59,7 +62,7 @@ import java.util.Vector;
  *
  * @author <a href="mailto:mailmur@yahoo.com">Aki Nieminen</a>
  * @author <a href="mailto:daveb@miceda-data.com">Dave Bryson</a>
- * @version $Id: JarResourceLoader.java 691884 2008-09-04 06:46:51Z nbubna $
+ * @version $Id$
  */
 public class JarResourceLoader extends ResourceLoader {
     /**
@@ -81,7 +84,7 @@ public class JarResourceLoader extends ResourceLoader {
      *
      * @param configuration
      */
-    public void init(ExtendedProperties configuration) {
+    public void init(ExtProperties configuration) {
         log.trace("JarResourceLoader : initialization starting.");
 
         // rest of Velocity engine still use legacy Vector
@@ -90,23 +93,8 @@ public class JarResourceLoader extends ResourceLoader {
         Vector paths = configuration.getVector("path");
         StringUtils.trimStrings(paths);
 
-        /*
-         *  support the old version but deprecate with a log message
-         */
-
-        if (paths == null || paths.size() == 0) {
-            paths = configuration.getVector("resource.path");
-            StringUtils.trimStrings(paths);
-
-            if (paths != null && paths.size() > 0) {
-                log.debug("JarResourceLoader : you are using a deprecated configuration"
-                        + " property for the JarResourceLoader -> '<name>.resource.loader.resource.path'."
-                        + " Please change to the conventional '<name>.resource.loader.path'.");
-            }
-        }
-
         if (paths != null) {
-            log.debug("JarResourceLoader # of paths : " + paths.size());
+            log.debug("JarResourceLoader # of paths : {}", paths.size());
 
             for (int i = 0; i < paths.size(); i++) {
                 loadJar((String) paths.get(i));
@@ -118,7 +106,7 @@ public class JarResourceLoader extends ResourceLoader {
 
     private void loadJar(String path) {
         if (log.isDebugEnabled()) {
-            log.debug("JarResourceLoader : trying to load \"" + path + "\"");
+            log.debug("JarResourceLoader : trying to load \"{}\"", path);
         }
 
         // Check path information
@@ -141,7 +129,7 @@ public class JarResourceLoader extends ResourceLoader {
         closeJar(path);
 
         // Create a new JarHolder
-        JarHolder temp = new JarHolder(rsvc, path);
+        JarHolder temp = new JarHolder(rsvc, path, log);
         // Add it's entries to the entryCollection
         addEntries(temp.getEntries());
         // Add it to the Jar table
@@ -168,19 +156,21 @@ public class JarResourceLoader extends ResourceLoader {
     }
 
     /**
-     * Get an InputStream so that the Runtime can build a
+     * Get a Reader so that the Runtime can build a
      * template with it.
      *
-     * @param source name of template to get
+     * @param source   name of template to get
+     * @param encoding asked encoding
      * @return InputStream containing the template
      * @throws ResourceNotFoundException if template not found
      *                                   in the file template path.
+     * @since 2.0
      */
-    public InputStream getResourceStream(String source)
+    public Reader getResourceReader(String source, String encoding)
             throws ResourceNotFoundException {
-        InputStream results = null;
+        Reader result = null;
 
-        if (org.apache.commons.lang.StringUtils.isEmpty(source)) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(source)) {
             throw new ResourceNotFoundException("Need to have a resource!");
         }
 
@@ -208,8 +198,20 @@ public class JarResourceLoader extends ResourceLoader {
 
             if (jarfiles.containsKey(jarurl)) {
                 JarHolder holder = (JarHolder) jarfiles.get(jarurl);
-                results = holder.getResource(normalizedPath);
-                return results;
+                InputStream rawStream = holder.getResource(normalizedPath);
+                try {
+                    return buildReader(rawStream, encoding);
+                } catch (Exception e) {
+                    if (rawStream != null) {
+                        try {
+                            rawStream.close();
+                        } catch (IOException ioe) {
+                        }
+                    }
+                    String msg = "JAR resource error : Exception while loading " + source;
+                    log.error(msg, e);
+                    throw new VelocityException(msg, e);
+                }
             }
         }
 
@@ -217,7 +219,6 @@ public class JarResourceLoader extends ResourceLoader {
                 source);
 
     }
-
 
     // TODO: SHOULD BE DELEGATED TO THE JARHOLDER
 

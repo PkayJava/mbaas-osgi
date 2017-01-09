@@ -33,6 +33,7 @@ import java.util.Set;
  * @version $Id$
  */
 public class Scope extends AbstractMap {
+    private static final String setReturnValue = "";
     private Map storage;
     private Object replaced;
     private Scope parent;
@@ -61,6 +62,7 @@ public class Scope extends AbstractMap {
         return getStorage().entrySet();
     }
 
+    @Override
     public Object get(Object key) {
         Object o = super.get(key);
         if (o == null && parent != null && !containsKey(key)) {
@@ -69,8 +71,19 @@ public class Scope extends AbstractMap {
         return o;
     }
 
+    @Override
     public Object put(Object key, Object value) {
         return getStorage().put(key, value);
+    }
+
+    /**
+     * Convenience method to call put(key,val) in a template
+     * without worrying about what is returned/rendered by the call.
+     * This should ALWAYS return an empty string.
+     */
+    public String set(Object key, Object value) {
+        put(key, value);
+        return setReturnValue;
     }
 
     /**
@@ -208,7 +221,7 @@ public class Scope extends AbstractMap {
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if (directive != null) {
                 sb.append('#');
             }

@@ -16,19 +16,19 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.Renderable;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
+import org.apache.velocity.util.StringBuilderWriter;
+import org.apache.velocity.util.StringUtils;
+import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 
 /**
@@ -44,7 +44,7 @@ import java.io.Writer;
  */
 public abstract class Block extends Directive {
     protected Node block;
-    protected Log log;
+    protected Logger log;
     protected int maxDepth;
     protected String key;
 
@@ -62,7 +62,7 @@ public abstract class Block extends Directive {
             throws TemplateInitException {
         super.init(rs, context, node);
 
-        log = rs.getLog();
+        log = rsvc.getLog();
 
         /**
          * No checking is done. We just grab the last child node and assume
@@ -76,9 +76,8 @@ public abstract class Block extends Directive {
         try {
             return block.render(context, writer);
         } catch (IOException e) {
-            String msg = "Failed to render " + id(context) + " to writer "
-                    + " at " + Log.formatFileString(this);
-
+            String msg = "Failed to render " + id(context) + " to writer at " +
+                    StringUtils.formatFileString(this);
             log.error(msg, e);
             throw new RuntimeException(msg, e);
         } catch (StopCommand stop) {
@@ -97,7 +96,7 @@ public abstract class Block extends Directive {
      * different.
      */
     protected String id(InternalContextAdapter context) {
-        StrBuilder str = new StrBuilder(100)
+        StringBuilder str = new StringBuilder(100)
                 .append("block $").append(key);
         if (!context.getCurrentTemplateName().equals(getTemplateName())) {
             str.append(" used in ").append(context.getCurrentTemplateName());
@@ -133,8 +132,7 @@ public abstract class Block extends Directive {
                  * use recursive block definitions and having problems
                  * pulling it off properly.
                  */
-                parent.log.debug("Max recursion depth reached for " + parent.id(context)
-                        + " at " + Log.formatFileString(parent));
+                parent.log.debug("Max recursion depth reached for {} at {}", parent.id(context), StringUtils.formatFileString(parent));
                 depth--;
                 return false;
             } else {
@@ -144,8 +142,15 @@ public abstract class Block extends Directive {
             }
         }
 
+        /**
+         * Makes #if( $blockRef ) true without rendering, so long as we aren't beyond max depth.
+         */
+        public boolean getAsBoolean() {
+            return depth <= parent.maxDepth;
+        }
+
         public String toString() {
-            Writer writer = new StringWriter();
+            Writer writer = new StringBuilderWriter();
             if (render(context, writer)) {
                 return writer.toString();
             }

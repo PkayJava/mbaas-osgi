@@ -21,6 +21,7 @@ package org.apache.velocity.runtime.resource;
 
 import org.apache.velocity.BundleTemplate;
 import org.apache.velocity.Template;
+import org.apache.velocity.exception.VelocityException;
 import org.osgi.framework.Bundle;
 
 /**
@@ -29,7 +30,7 @@ import org.osgi.framework.Bundle;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ResourceFactory.java 463298 2006-10-12 16:10:32Z henning $
+ * @version $Id$
  */
 public class ResourceFactory {
     /**
@@ -48,6 +49,8 @@ public class ResourceFactory {
             case ResourceManager.RESOURCE_CONTENT:
                 resource = new ContentResource();
                 break;
+            default:
+                throw new VelocityException("invalide resource type");
         }
 
         return resource;
@@ -62,8 +65,10 @@ public class ResourceFactory {
                 break;
 
             case ResourceManager.RESOURCE_CONTENT:
-                resource = new BundleContentResource(bundle);
+                resource = new ContentResource();
                 break;
+            default:
+                throw new VelocityException("invalide resource type");
         }
 
         return resource;

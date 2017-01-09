@@ -28,7 +28,7 @@ import org.apache.velocity.runtime.RuntimeServices;
  * Applies to EventHandler and Uberspect implementations.
  *
  * @author <a href="mailto:wglass@wglass@forio.com">Will Glass-Husain</a>
- * @version $Id: RuntimeServicesAware.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public interface RuntimeServicesAware {

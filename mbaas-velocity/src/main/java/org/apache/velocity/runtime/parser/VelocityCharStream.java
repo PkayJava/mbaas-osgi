@@ -144,7 +144,7 @@ public final class VelocityCharStream
     }
 
     /**
-     * @see CharStream#BeginToken()
+     * @see org.apache.velocity.runtime.parser.CharStream#BeginToken()
      */
     public final char BeginToken() throws java.io.IOException {
         tokenBegin = -1;
@@ -189,7 +189,7 @@ public final class VelocityCharStream
     }
 
     /**
-     * @see CharStream#readChar()
+     * @see org.apache.velocity.runtime.parser.CharStream#readChar()
      */
     public final char readChar() throws java.io.IOException {
         if (inBuf > 0) {
@@ -215,51 +215,35 @@ public final class VelocityCharStream
     }
 
     /**
-     * @see CharStream#getColumn()
-     * @deprecated
-     */
-    public final int getColumn() {
-        return bufcolumn[bufpos];
-    }
-
-    /**
-     * @see CharStream#getLine()
-     * @deprecated
-     */
-    public final int getLine() {
-        return bufline[bufpos];
-    }
-
-    /**
-     * @see CharStream#getEndColumn()
+     * @see org.apache.velocity.runtime.parser.CharStream#getEndColumn()
      */
     public final int getEndColumn() {
         return bufcolumn[bufpos];
     }
 
     /**
-     * @see CharStream#getEndLine()
+     * @see org.apache.velocity.runtime.parser.CharStream#getEndLine()
      */
     public final int getEndLine() {
         return bufline[bufpos];
     }
 
     /**
-     * @see CharStream#getBeginColumn()
+     * @see org.apache.velocity.runtime.parser.CharStream#getBeginColumn()
      */
     public final int getBeginColumn() {
         return bufcolumn[tokenBegin];
     }
 
     /**
-     * @see CharStream#getBeginLine()
+     * @see org.apache.velocity.runtime.parser.CharStream#getBeginLine()
      */
     public final int getBeginLine() {
         return bufline[tokenBegin];
     }
 
     /**
-     * @see CharStream#backup(int)
+     * @see org.apache.velocity.runtime.parser.CharStream#backup(int)
      */
     public final void backup(int amount) {
 
@@ -372,7 +356,7 @@ public final class VelocityCharStream
     }
 
     /**
-     * @see CharStream#GetImage()
+     * @see org.apache.velocity.runtime.parser.CharStream#GetImage()
      */
     public final String GetImage() {
         if (bufpos >= tokenBegin) {
@@ -384,7 +368,7 @@ public final class VelocityCharStream
     }
 
     /**
-     * @see CharStream#GetSuffix(int)
+     * @see org.apache.velocity.runtime.parser.CharStream#GetSuffix(int)
      */
     public final char[] GetSuffix(int len) {
         char[] ret = new char[len];
@@ -401,7 +385,7 @@ public final class VelocityCharStream
     }
 
     /**
-     * @see CharStream#Done()
+     * @see org.apache.velocity.runtime.parser.CharStream#Done()
      */
     public void Done() {
         buffer = null;

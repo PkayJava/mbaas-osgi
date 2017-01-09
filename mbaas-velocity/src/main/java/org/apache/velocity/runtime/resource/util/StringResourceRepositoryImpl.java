@@ -19,7 +19,7 @@ package org.apache.velocity.runtime.resource.util;
  * under the License.
  */
 
-import org.apache.velocity.runtime.resource.loader.StringResourceLoader;
+import org.apache.velocity.runtime.RuntimeConstants;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:eelco.hillenius@openedge.nl">Eelco Hillenius</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: StringResourceRepositoryImpl.java 685724 2008-08-13 23:12:12Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class StringResourceRepositoryImpl implements StringResourceRepository {
@@ -43,24 +43,24 @@ public class StringResourceRepositoryImpl implements StringResourceRepository {
     /**
      * Current Repository encoding.
      */
-    private String encoding = StringResourceLoader.REPOSITORY_ENCODING_DEFAULT;
+    private String encoding = RuntimeConstants.ENCODING_DEFAULT;
 
     /**
-     * @see StringResourceRepository#getStringResource(String)
+     * @see StringResourceRepository#getStringResource(java.lang.String)
      */
     public StringResource getStringResource(final String name) {
         return (StringResource) resources.get(name);
     }
 
     /**
-     * @see StringResourceRepository#putStringResource(String, String)
+     * @see StringResourceRepository#putStringResource(java.lang.String, java.lang.String)
      */
     public void putStringResource(final String name, final String body) {
         resources.put(name, new StringResource(body, getEncoding()));
     }
 
     /**
-     * @see StringResourceRepository#putStringResource(String, String, String)
+     * @see StringResourceRepository#putStringResource(java.lang.String, java.lang.String, java.lang.String)
      * @since 1.6
      */
     public void putStringResource(final String name, final String body, final String encoding) {
@@ -68,21 +68,21 @@ public class StringResourceRepositoryImpl implements StringResourceRepository {
     }
 
     /**
-     * @see StringResourceRepository#removeStringResource(String)
+     * @see StringResourceRepository#removeStringResource(java.lang.String)
      */
     public void removeStringResource(final String name) {
         resources.remove(name);
     }
 
     /**
-     * @see StringResourceRepository#getEncoding()
+     * @see org.apache.velocity.runtime.resource.util.StringResourceRepository#getEncoding()
      */
     public String getEncoding() {
         return encoding;
     }
 
     /**
-     * @see StringResourceRepository#setEncoding(String)
+     * @see org.apache.velocity.runtime.resource.util.StringResourceRepository#setEncoding(java.lang.String)
      */
     public void setEncoding(final String encoding) {
         this.encoding = encoding;

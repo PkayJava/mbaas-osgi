@@ -19,7 +19,7 @@ package org.apache.velocity.runtime.directive;
  * under the License.    
  */
 
-import org.apache.velocity.context.EvaluateContext;
+import org.apache.velocity.Template;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -41,7 +41,7 @@ import java.io.Writer;
  * context.
  *
  * @author <a href="mailto:wglass@apache.org">Will Glass-Husain</a>
- * @version $Id: Evaluate.java 898032 2010-01-11 19:51:03Z nbubna $
+ * @version $Id$
  * @since 1.6
  */
 public class Evaluate extends Directive {
@@ -146,10 +146,15 @@ public class Evaluate extends Directive {
          * The new string needs to be parsed since the text has been dynamically generated.
          */
         String templateName = context.getCurrentTemplateName();
+        Template template = (Template) context.getCurrentResource();
+        if (template == null) {
+            template = new Template();
+            template.setName(templateName);
+        }
         SimpleNode nodeTree = null;
 
         try {
-            nodeTree = rsvc.parse(new StringReader(sourceText), templateName, false);
+            nodeTree = rsvc.parse(new StringReader(sourceText), template);
         } catch (ParseException pex) {
             // use the line/column from the template
             Info info = new Info(templateName, node.getLine(), node.getColumn());
@@ -165,30 +170,26 @@ public class Evaluate extends Directive {
          */
 
         if (nodeTree != null) {
-            InternalContextAdapter ica = new EvaluateContext(context, rsvc);
-
-            ica.pushCurrentTemplateName(templateName);
+            context.pushCurrentTemplateName(templateName);
 
             try {
                 try {
-                    nodeTree.init(ica, rsvc);
+                    nodeTree.init(context, rsvc);
                 } catch (TemplateInitException pex) {
                     Info info = new Info(templateName, node.getLine(), node.getColumn());
                     throw new ParseErrorException(pex.getMessage(), info);
                 }
 
                 try {
-                    preRender(ica);
+                    preRender(context);
 
                     /*
                      *  now render, and let any exceptions fly
                      */
-                    nodeTree.render(ica, writer);
+                    nodeTree.render(context, writer);
                 } catch (StopCommand stop) {
                     if (!stop.isFor(this)) {
                         throw stop;
-                    } else if (rsvc.getLog().isDebugEnabled()) {
-                        rsvc.getLog().debug(stop.getMessage());
                     }
                 } catch (ParseErrorException pex) {
                     // convert any parsing errors to the correct line/col
@@ -196,8 +197,8 @@ public class Evaluate extends Directive {
                     throw new ParseErrorException(pex.getMessage(), info);
                 }
             } finally {
-                ica.popCurrentTemplateName();
-                postRender(ica);
+                context.popCurrentTemplateName();
+                postRender(context);
             }
             return true;
         }

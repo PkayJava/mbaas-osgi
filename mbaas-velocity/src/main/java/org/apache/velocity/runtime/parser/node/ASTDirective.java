@@ -16,21 +16,19 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.context.InternalContextAdapter;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.exception.*;
+import org.apache.velocity.runtime.RuntimeConstants.SpaceGobbling;
 import org.apache.velocity.runtime.directive.BlockMacro;
 import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.directive.RuntimeMacro;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
-import org.apache.velocity.util.ExceptionUtils;
+import org.apache.velocity.runtime.parser.ParserConstants;
+import org.apache.velocity.runtime.parser.Token;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -47,13 +45,21 @@ import java.io.Writer;
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:kav@kav.dk">Kasper Nielsen</a>
- * @version $Id: ASTDirective.java 736677 2009-01-22 15:39:02Z nbubna $
+ * @version $Id$
  */
 public class ASTDirective extends SimpleNode {
     private Directive directive = null;
     private String directiveName = "";
     private boolean isDirective;
     private boolean isInitialized;
+
+    private String prefix = "";
+    private String postfix = "";
+
+    /*
+     * '#' and '$' prefix characters eaten by javacc MORE mode
+     */
+    private String morePrefix = "";
 
     /**
      * @param id
@@ -72,21 +78,35 @@ public class ASTDirective extends SimpleNode {
 
 
     /**
-     * @see SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
 
     /**
-     * @see SimpleNode#init(InternalContextAdapter, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
      */
     public synchronized Object init(InternalContextAdapter context, Object data)
             throws TemplateInitException {
+        Token t;
+
         /** method is synchronized to avoid concurrent directive initialization **/
 
         if (!isInitialized) {
             super.init(context, data);
+
+            /*
+             * handle '$' and '#' chars prefix
+             */
+            t = getFirstToken();
+            int pos = -1;
+            while (t != null && (pos = t.image.lastIndexOf('#')) == -1) {
+                t = t.next;
+            }
+            if (t != null && pos > 0) {
+                morePrefix = t.image.substring(0, pos);
+            }
 
             /*
              *  only do things that are not context dependent
@@ -99,32 +119,34 @@ public class ASTDirective extends SimpleNode {
                     directive = (Directive) parser.getDirective(directiveName)
                             .getClass().newInstance();
                 } catch (InstantiationException e) {
-                    throw ExceptionUtils.createRuntimeException("Couldn't initialize " +
-                                    "directive of class " +
+                    throw new VelocityException(
+                            "Couldn't initialize directive of class " +
                                     parser.getDirective(directiveName).getClass().getName(),
                             e);
                 } catch (IllegalAccessException e) {
-                    throw ExceptionUtils.createRuntimeException("Couldn't initialize " +
-                                    "directive of class " +
+                    throw new VelocityException(
+                            "Couldn't initialize directive of class " +
                                     parser.getDirective(directiveName).getClass().getName(),
                             e);
                 }
 
-                directive.setLocation(getLine(), getColumn(), getTemplateName());
+                t = getFirstToken();
+                if (t.kind == ParserConstants.WHITESPACE) t = t.next;
+                directive.setLocation(t.beginLine, t.beginColumn, getTemplate());
                 directive.init(rsvc, context, this);
             } else if (directiveName.startsWith("@")) {
                 if (this.jjtGetNumChildren() > 0) {
                     // block macro call (normal macro call but has AST body)
                     directiveName = directiveName.substring(1);
 
-                    directive = new BlockMacro(directiveName);
-                    directive.setLocation(getLine(), getColumn(), getTemplateName());
+                    directive = new BlockMacro();
+                    directive.setLocation(getLine(), getColumn(), getTemplate());
 
                     try {
-                        directive.init(rsvc, context, this);
+                        ((BlockMacro) directive).init(rsvc, directiveName, context, this);
                     } catch (TemplateInitException die) {
                         throw new TemplateInitException(die.getMessage(),
-                                (ParseException) die.getWrappedThrowable(),
+                                (ParseException) die.getCause(),
                                 die.getTemplateName(),
                                 die.getColumnNumber() + getColumn(),
                                 die.getLineNumber() + getLine());
@@ -139,48 +161,119 @@ public class ASTDirective extends SimpleNode {
                 /**
                  * Create a new RuntimeMacro
                  */
-                directive = new RuntimeMacro(directiveName);
-                directive.setLocation(getLine(), getColumn(), getTemplateName());
+                directive = new RuntimeMacro();
+                directive.setLocation(getLine(), getColumn(), getTemplate());
 
                 /**
                  * Initialize it
                  */
                 try {
-                    directive.init(rsvc, context, this);
+                    ((RuntimeMacro) directive).init(rsvc, directiveName, context, this);
                 }
 
                 /**
                  * correct the line/column number if an exception is caught
                  */ catch (TemplateInitException die) {
                     throw new TemplateInitException(die.getMessage(),
-                            (ParseException) die.getWrappedThrowable(),
+                            (ParseException) die.getCause(),
                             die.getTemplateName(),
                             die.getColumnNumber() + getColumn(),
                             die.getLineNumber() + getLine());
                 }
                 isDirective = true;
+
             }
 
             isInitialized = true;
+
+            saveTokenImages();
+            cleanupParserAndTokens();
+        }
+
+        if (morePrefix.length() == 0 && rsvc.getSpaceGobbling() == SpaceGobbling.STRUCTURED && isInitialized && isDirective && directive.getType() == Directive.BLOCK) {
+            NodeUtils.fixIndentation(this, prefix);
         }
 
         return data;
     }
 
     /**
-     * @see SimpleNode#render(InternalContextAdapter, Writer)
+     * set indentation prefix
+     *
+     * @param prefix
+     */
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    /**
+     * get indentation prefix
+     *
+     * @return indentation prefix
+     */
+    public String getPrefix() {
+        return prefix;
+    }
+
+    /**
+     * set indentation postfix
+     *
+     * @param postfix
+     */
+    public void setPostfix(String postfix) {
+        this.postfix = postfix;
+    }
+
+    /**
+     * get indentation postfix
+     *
+     * @return indentation prefix
+     */
+    public String getPostfix() {
+        return postfix;
+    }
+
+    /**
+     * more prefix getter
+     *
+     * @return more prefix
+     */
+    public String getMorePrefix() {
+        return morePrefix;
+    }
+
+    public int getDirectiveType() {
+        return directive.getType();
+    }
+
+    /**
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException, MethodInvocationException, ResourceNotFoundException, ParseErrorException {
+        SpaceGobbling spaceGobbling = rsvc.getSpaceGobbling();
         /*
          *  normal processing
          */
 
         if (isDirective) {
+            if (morePrefix.length() > 0 || spaceGobbling.compareTo(SpaceGobbling.LINES) < 0) {
+                writer.write(prefix);
+            }
+
+            writer.write(morePrefix);
+
             directive.render(context, writer, this);
+
+            if (morePrefix.length() > 0 || spaceGobbling == SpaceGobbling.NONE) {
+                writer.write(postfix);
+            }
         } else {
+            writer.write(prefix);
+            writer.write(morePrefix);
             writer.write("#");
             writer.write(directiveName);
+            writer.write(postfix);
         }
 
         return true;
@@ -205,14 +298,10 @@ public class ASTDirective extends SimpleNode {
         return directiveName;
     }
 
-    /**
-     * @since 1.5
-     */
+    @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .appendSuper(super.toString())
-                .append("directiveName", getDirectiveName())
-                .toString();
+        return "ASTDirective [" + super.toString() + ", directiveName="
+                + directiveName + "]";
     }
 
 }

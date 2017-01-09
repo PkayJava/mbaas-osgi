@@ -51,16 +51,15 @@ public class ASTIntegerLiteral extends SimpleNode {
         super(p, id);
     }
 
-
     /**
-     * @see SimpleNode#jjtAccept(ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
 
     /**
-     * @see SimpleNode#init(InternalContextAdapter, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
      */
     public Object init(InternalContextAdapter context, Object data)
             throws TemplateInitException {
@@ -75,27 +74,24 @@ public class ASTIntegerLiteral extends SimpleNode {
          */
         String str = getFirstToken().image;
         try {
-            value = new Integer(str);
+            value = Integer.valueOf(str);
         } catch (NumberFormatException E1) {
             try {
-
-                value = new Long(str);
-
+                value = Long.valueOf(str);
             } catch (NumberFormatException E2) {
-
                 // if there's still an Exception it will propogate out
                 value = new BigInteger(str);
             }
         }
+        cleanupParserAndTokens();
 
         return data;
     }
 
     /**
-     * @see SimpleNode#value(InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#value(org.apache.velocity.context.InternalContextAdapter)
      */
     public Object value(InternalContextAdapter context) {
         return value;
     }
-
 }

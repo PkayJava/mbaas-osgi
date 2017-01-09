@@ -21,6 +21,7 @@ package org.apache.velocity.runtime.parser.node;
 
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.parser.Parser;
 
 import java.util.LinkedHashMap;
@@ -31,7 +32,7 @@ import java.util.Map;
  * <p>
  * This class was originally generated from Parset.jjt.
  *
- * @version $Id: ASTMap.java 928475 2010-03-28 18:54:55Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class ASTMap extends SimpleNode {
@@ -51,14 +52,14 @@ public class ASTMap extends SimpleNode {
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#value(InternalContextAdapter)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#value(org.apache.velocity.context.InternalContextAdapter)
      */
     public Object value(InternalContextAdapter context)
             throws MethodInvocationException {
@@ -78,4 +79,15 @@ public class ASTMap extends SimpleNode {
 
         return objectMap;
     }
+
+    /**
+     * @throws TemplateInitException
+     * @see org.apache.velocity.runtime.parser.node.Node#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
+     */
+    public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
+        Object obj = super.init(context, data);
+        cleanupParserAndTokens(); // drop reference to Parser and all JavaCC Tokens
+        return obj;
+    }
+
 }

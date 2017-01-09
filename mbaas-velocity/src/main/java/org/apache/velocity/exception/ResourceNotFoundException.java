@@ -29,7 +29,7 @@ package org.apache.velocity.exception;
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:dlr@finemaltcoding.com">Daniel Rall</a>
- * @version $Id: ResourceNotFoundException.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  */
 public class ResourceNotFoundException extends VelocityException {
     /**

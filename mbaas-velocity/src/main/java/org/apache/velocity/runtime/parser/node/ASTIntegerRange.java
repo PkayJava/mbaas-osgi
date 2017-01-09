@@ -21,8 +21,9 @@ package org.apache.velocity.runtime.parser.node;
 
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.parser.Parser;
+import org.apache.velocity.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,7 @@ public class ASTIntegerRange extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#jjtAccept(ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -83,7 +84,7 @@ public class ASTIntegerRange extends SimpleNode {
             log.error((left == null ? "Left" : "Right")
                     + " side of range operator [n..m] has null value."
                     + " Operation not possible. "
-                    + Log.formatFileString(this));
+                    + StringUtils.formatFileString(this));
             return null;
         }
 
@@ -95,7 +96,7 @@ public class ASTIntegerRange extends SimpleNode {
             log.error((!(left instanceof Number) ? "Left" : "Right")
                     + " side of range operator is not a valid type. "
                     + "Currently only integers (1,2,3...) and the Number type are supported. "
-                    + Log.formatFileString(this));
+                    + StringUtils.formatFileString(this));
             return null;
         }
 
@@ -128,11 +129,21 @@ public class ASTIntegerRange extends SimpleNode {
         int value = l;
 
         for (int i = 0; i < nbrElements; i++) {
-            // TODO: JDK 1.4+ -> valueOf()
-            elements.add(new Integer(value));
+            elements.add(Integer.valueOf(value));
             value += delta;
         }
 
         return elements;
     }
+
+    /**
+     * @throws TemplateInitException
+     * @see org.apache.velocity.runtime.parser.node.Node#init(org.apache.velocity.context.InternalContextAdapter, java.lang.Object)
+     */
+    public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
+        Object obj = super.init(context, data);
+        cleanupParserAndTokens(); // drop reference to Parser and all JavaCC Tokens
+        return obj;
+    }
+
 }

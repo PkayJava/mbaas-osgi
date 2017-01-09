@@ -16,12 +16,9 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.lang.text.StrBuilder;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.runtime.parser.ParserConstants;
 import org.apache.velocity.runtime.parser.Token;
 
@@ -30,19 +27,9 @@ import org.apache.velocity.runtime.parser.Token;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: NodeUtils.java 687386 2008-08-20 16:57:07Z nbubna $
+ * @version $Id$
  */
 public class NodeUtils {
-    /**
-     * @deprecated use getSpecialText(Token t)
-     */
-    public static String specialText(Token t) {
-        if (t.specialToken == null || t.specialToken.image.startsWith("##")) {
-            return "";
-        }
-        return getSpecialText(t).toString();
-    }
-
     /**
      * Collect all the <SPECIAL_TOKEN>s that
      * are carried along with a token. Special
@@ -54,9 +41,10 @@ public class NodeUtils {
      *
      * @param t the Token
      * @return StrBuilder with the special tokens.
+     * @since 2.0.0
      */
-    public static StrBuilder getSpecialText(Token t) {
-        StrBuilder sb = new StrBuilder();
+    public static StringBuilder getSpecialText(Token t) {
+        StringBuilder sb = new StringBuilder();
 
         Token tmp_t = t.specialToken;
 
@@ -133,7 +121,7 @@ public class NodeUtils {
         } else if (t.specialToken == null || t.specialToken.image.startsWith("##")) {
             return t.image;
         } else {
-            StrBuilder special = getSpecialText(t);
+            StringBuilder special = getSpecialText(t);
             if (special.length() > 0) {
                 return special.append(t.image).toString();
             }
@@ -142,61 +130,15 @@ public class NodeUtils {
     }
 
     /**
-     * Utility method to interpolate context variables
-     * into string literals. So that the following will
-     * work:
-     * <p>
-     * #set $name = "candy"
-     * $image.getURI("${name}.jpg")
-     * <p>
-     * And the string literal argument will
-     * be transformed into "candy.jpg" before
-     * the method is executed.
+     * Fix children indentation in structured space gobbling mode.
      *
-     * @param argStr
-     * @param vars
-     * @return Interpoliation result.
-     * @throws MethodInvocationException
-     * @deprecated this method isn't called by any class
+     * @param parent
+     * @param parentIndentation
+     * @param extraIndentation
+     * @return
      */
-    public static String interpolate(String argStr, Context vars) throws MethodInvocationException {
-        // if there's nothing to replace, skip this (saves buffer allocation)
-        if (argStr.indexOf('$') == -1)
-            return argStr;
-
-        StrBuilder argBuf = new StrBuilder();
-
-        for (int cIdx = 0, is = argStr.length(); cIdx < is; ) {
-            char ch = argStr.charAt(cIdx);
-
-            if (ch == '$') {
-                StrBuilder nameBuf = new StrBuilder();
-                for (++cIdx; cIdx < is; ++cIdx) {
-                    ch = argStr.charAt(cIdx);
-                    if (ch == '_' || ch == '-'
-                            || Character.isLetterOrDigit(ch))
-                        nameBuf.append(ch);
-                    else if (ch == '{' || ch == '}')
-                        continue;
-                    else
-                        break;
-                }
-
-                if (nameBuf.length() > 0) {
-                    Object value = vars.get(nameBuf.toString());
-
-                    if (value == null)
-                        argBuf.append("$").append(nameBuf.toString());
-                    else
-                        argBuf.append(value.toString());
-                }
-
-            } else {
-                argBuf.append(ch);
-                ++cIdx;
-            }
-        }
-
-        return argBuf.toString();
+    public static void fixIndentation(SimpleNode parent, String parentIndentation) {
+        IndentationFixer fixer = new IndentationFixer(parentIndentation);
+        parent.childrenAccept(fixer, null);
     }
 }

@@ -40,7 +40,7 @@ import java.util.Stack;
  * is derived from this.
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: InternalContextBase.java 731266 2009-01-04 15:11:20Z byron $
+ * @version $Id$
  */
 class InternalContextBase implements InternalHousekeepingContext, InternalEventContext {
     /**
@@ -56,12 +56,12 @@ class InternalContextBase implements InternalHousekeepingContext, InternalEventC
     /**
      * Template name stack. The stack top contains the current template name.
      */
-    private Stack templateNameStack = new Stack();
+    private Stack<String> templateNameStack = new Stack<String>();
 
     /**
      * Velocimacro name stack. The stack top contains the current macro name.
      */
-    private Stack macroNameStack = new Stack();
+    private Stack<String> macroNameStack = new Stack<String>();
 
     /**
      * EventCartridge we are to carry.  Set by application
@@ -105,16 +105,16 @@ class InternalContextBase implements InternalHousekeepingContext, InternalEventC
         if (templateNameStack.empty())
             return "<undef>";
         else
-            return (String) templateNameStack.peek();
+            return templateNameStack.peek();
     }
 
     /**
      * get the current template name stack
      *
-     * @return Object[] with the template name stack contents.
+     * @return String[] with the template name stack contents.
      */
-    public Object[] getTemplateNameStack() {
-        return templateNameStack.toArray();
+    public String[] getTemplateNameStack() {
+        return templateNameStack.toArray(new String[templateNameStack.size()]);
     }
 
     /**
@@ -142,7 +142,7 @@ class InternalContextBase implements InternalHousekeepingContext, InternalEventC
         if (macroNameStack.empty()) {
             return "<undef>";
         } else {
-            return (String) macroNameStack.peek();
+            return macroNameStack.peek();
         }
     }
 
@@ -158,10 +158,10 @@ class InternalContextBase implements InternalHousekeepingContext, InternalEventC
     /**
      * get the current macro name stack
      *
-     * @return Object[] with the macro name stack contents.
+     * @return String[] with the macro name stack contents.
      */
-    public Object[] getMacroNameStack() {
-        return macroNameStack.toArray();
+    public String[] getMacroNameStack() {
+        return macroNameStack.toArray(new String[macroNameStack.size()]);
     }
 
     /**
@@ -216,7 +216,7 @@ class InternalContextBase implements InternalHousekeepingContext, InternalEventC
 
 
     /**
-     * @see org.apache.velocity.context.InternalEventContext#attachEventCartridge(EventCartridge)
+     * @see org.apache.velocity.context.InternalEventContext#attachEventCartridge(org.apache.velocity.app.event.EventCartridge)
      */
     public EventCartridge attachEventCartridge(EventCartridge ec) {
         EventCartridge temp = eventCartridge;

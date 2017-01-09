@@ -19,7 +19,7 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.    
  */
 
-import org.apache.velocity.runtime.log.Log;
+import org.slf4j.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -35,14 +35,14 @@ import java.lang.reflect.Method;
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@apache.org">Geir Magnusson Jr.</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: SetExecutor.java 685685 2008-08-13 21:43:27Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public abstract class SetExecutor {
     /**
      * Class logger
      */
-    protected Log log = null;
+    protected Logger log = null;
 
     /**
      * Method to be executed.

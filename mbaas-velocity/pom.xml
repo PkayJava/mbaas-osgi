@@ -46,45 +46,20 @@
                     <instructions>
                         <Export-Package>
                             org.apache.velocity;
-                            org.apache.velocity.runtime.log;
-                            org.apache.velocity.runtime.resource;
+                            org.apache.velocity.app;
+                            org.apache.velocity.context;
                             org.apache.velocity.exception;
+                            org.apache.velocity.runtime;
+                            org.apache.velocity.runtime.resource;
                             org.apache.velocity.util.introspection;
                             org.apache.velocity.app.event;
-                            org.apache.velocity.runtime;
-                            org.apache.velocity.context;
-                            org.apache.velocity.app;
-                            org.apache.velocity.runtime.parser.node;
                             org.apache.velocity.runtime.parser;
-                            org.apache.log.format;
-                            org.apache.commons.logging;
-                            org.apache.velocity.runtime.resource.loader;
                             org.apache.velocity.util;
-                            org.apache.log;
-                            org.apache.avalon.framework.logger;
-                            org.apache.velocity.runtime.resource.util;
+                            org.apache.velocity.runtime.parser.node;
                             org.apache.velocity.runtime.directive;
+                            org.apache.velocity.runtime.resource.loader;
+                            org.apache.velocity.runtime.resource.util;
                         </Export-Package>
-                        <Import-Package>
-                            !antlr,
-                            !antlr.collections.impl,
-                            !sun.tools.javac,
-                            !com.sun.tools.javac,
-                            !org.jaxen,
-                            !org.jaxen.jdom,
-                            !oracle.xml.parser,
-                            !oracle.xml.parser.v2,
-                            !javax.jms,
-                            !org.apache.env,
-                            !org.apache.tools.ant.taskdefs.optional,
-                            !org.apache.tools.ant.launch,
-                            !org.apache.tools.ant.util.java15,
-                            !sun.rmi.rmic,
-                            *
-                        </Import-Package>
-                        <Embed-Dependency>
-                            artifactId=ant|logkit|avalon-framework|werken-xpath|jdom|oro|commons-logging;inline=true
-                        </Embed-Dependency>
                     </instructions>
                 </configuration>
             </plugin>
@@ -124,85 +99,85 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.5</version>
         </dependency>
 
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-            <scope>provided</scope>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>log4j</groupId>-->
+            <!--<artifactId>log4j</artifactId>-->
+            <!--<version>1.2.17</version>-->
+            <!--<scope>provided</scope>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>werken-xpath</groupId>
-            <artifactId>werken-xpath</artifactId>
-            <version>0.9.4</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>werken-xpath</groupId>-->
+            <!--<artifactId>werken-xpath</artifactId>-->
+            <!--<version>0.9.4</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>org.jdom</groupId>
-            <artifactId>jdom</artifactId>
-            <version>1.1.3</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.jdom</groupId>-->
+            <!--<artifactId>jdom</artifactId>-->
+            <!--<version>1.1.3</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>oro</groupId>
-            <artifactId>oro</artifactId>
-            <version>2.0.8</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>oro</groupId>-->
+            <!--<artifactId>oro</artifactId>-->
+            <!--<version>2.0.8</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>commons-collections</groupId>
-            <artifactId>commons-collections</artifactId>
-            <version>3.2.2</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>commons-collections</groupId>-->
+            <!--<artifactId>commons-collections</artifactId>-->
+            <!--<version>3.2.2</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>org.apache.ant</groupId>
-            <artifactId>ant</artifactId>
-            <version>1.8.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.ant</groupId>
-                    <artifactId>ant-launcher</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.apache.ant</groupId>-->
+            <!--<artifactId>ant</artifactId>-->
+            <!--<version>1.8.0</version>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.apache.ant</groupId>-->
+                    <!--<artifactId>ant-launcher</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>logkit</groupId>
-            <artifactId>logkit</artifactId>
-            <version>1.0.1</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>logkit</groupId>-->
+            <!--<artifactId>logkit</artifactId>-->
+            <!--<version>1.0.1</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>avalon-framework</groupId>
-            <artifactId>avalon-framework</artifactId>
-            <version>4.1.3</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>avalon-framework</groupId>-->
+            <!--<artifactId>avalon-framework</artifactId>-->
+            <!--<version>4.1.3</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>logkit</groupId>
-                    <artifactId>logkit</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>avalon-framework</groupId>
-                    <artifactId>avalon-framework</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>commons-logging</groupId>-->
+            <!--<artifactId>commons-logging</artifactId>-->
+            <!--<version>1.1</version>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>logkit</groupId>-->
+                    <!--<artifactId>logkit</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>avalon-framework</groupId>-->
+                    <!--<artifactId>avalon-framework</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>javax.servlet</groupId>-->
+                    <!--<artifactId>servlet-api</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
 
     </dependencies>
 </project>

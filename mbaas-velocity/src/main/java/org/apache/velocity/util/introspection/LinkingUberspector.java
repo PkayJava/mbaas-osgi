@@ -52,7 +52,7 @@ public class LinkingUberspector extends AbstractChainableUberspector {
      * Init both wrapped uberspectors
      * </p>
      *
-     * @see Uberspect#init()
+     * @see org.apache.velocity.util.introspection.Uberspect#init()
      */
     //@Override
     public void init() {
@@ -63,12 +63,12 @@ public class LinkingUberspector extends AbstractChainableUberspector {
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getIterator(Object,
-     * Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getIterator(java.lang.Object,
+     * org.apache.velocity.util.introspection.Info)
      */
     //@SuppressWarnings("unchecked")
     //@Override
-    public Iterator getIterator(Object obj, Info i) throws Exception {
+    public Iterator getIterator(Object obj, Info i) {
         Iterator it = leftUberspect.getIterator(obj, i);
         return it != null ? it : rightUberspect.getIterator(obj, i);
     }
@@ -76,12 +76,11 @@ public class LinkingUberspector extends AbstractChainableUberspector {
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getMethod(Object, String,
-     * Object[], Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getMethod(java.lang.Object, java.lang.String,
+     * java.lang.Object[], org.apache.velocity.util.introspection.Info)
      */
     //@Override
-    public VelMethod getMethod(Object obj, String methodName, Object[] args, Info i)
-            throws Exception {
+    public VelMethod getMethod(Object obj, String methodName, Object[] args, Info i) {
         VelMethod method = leftUberspect.getMethod(obj, methodName, args, i);
         return method != null ? method : rightUberspect.getMethod(obj, methodName, args, i);
     }
@@ -89,12 +88,11 @@ public class LinkingUberspector extends AbstractChainableUberspector {
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getPropertyGet(Object, String,
-     * Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getPropertyGet(java.lang.Object, java.lang.String,
+     * org.apache.velocity.util.introspection.Info)
      */
     //@Override
-    public VelPropertyGet getPropertyGet(Object obj, String identifier, Info i)
-            throws Exception {
+    public VelPropertyGet getPropertyGet(Object obj, String identifier, Info i) {
         VelPropertyGet getter = leftUberspect.getPropertyGet(obj, identifier, i);
         return getter != null ? getter : rightUberspect.getPropertyGet(obj, identifier, i);
     }
@@ -102,12 +100,11 @@ public class LinkingUberspector extends AbstractChainableUberspector {
     /**
      * {@inheritDoc}
      *
-     * @see Uberspect#getPropertySet(Object, String,
-     * Object, Info)
+     * @see org.apache.velocity.util.introspection.Uberspect#getPropertySet(java.lang.Object, java.lang.String,
+     * java.lang.Object, org.apache.velocity.util.introspection.Info)
      */
     //@Override
-    public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info i)
-            throws Exception {
+    public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info i) {
         VelPropertySet setter = leftUberspect.getPropertySet(obj, identifier, arg, i);
         return setter != null ? setter : rightUberspect.getPropertySet(obj, identifier, arg, i);
     }

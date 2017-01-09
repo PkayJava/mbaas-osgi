@@ -33,7 +33,7 @@ import java.io.Writer;
  * Represents all comments...
  *
  * @author <a href="mailto:geirm@apache.org">Geir Magnusson Jr.</a>
- * @version $Id: ASTComment.java 731266 2009-01-04 15:11:20Z byron $
+ * @version $Id$
  */
 public class ASTComment extends SimpleNode {
     private static final char[] ZILCH = "".toCharArray();
@@ -56,7 +56,7 @@ public class ASTComment extends SimpleNode {
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -81,11 +81,13 @@ public class ASTComment extends SimpleNode {
             carr = t.image.substring(0, (loc1 == -1) ? loc2 : loc1).toCharArray();
         }
 
+        cleanupParserAndTokens();
+
         return data;
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(InternalContextAdapter, Writer)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException, MethodInvocationException, ParseErrorException, ResourceNotFoundException {

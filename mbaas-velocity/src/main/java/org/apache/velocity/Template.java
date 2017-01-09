@@ -29,9 +29,16 @@ import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceManager;
+import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is used for controlling all template
@@ -53,15 +60,16 @@ import java.util.List;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: Template.java 778045 2009-05-23 22:17:46Z nbubna $
+ * @version $Id$
  */
 public class Template extends Resource {
     /*
      * The name of the variable to use when placing
      * the scope object into the context.
      */
-    private String scopeName = "template";
-    private boolean provideScope = false;
+    protected String scopeName = "template";
+    protected boolean provideScope = false;
+    protected Map<String, Object> macros = new ConcurrentHashMap<>(17, 0.7f);
 
     protected VelocityException errorCondition = null;
 
@@ -72,6 +80,15 @@ public class Template extends Resource {
         super();
 
         setType(ResourceManager.RESOURCE_TEMPLATE);
+    }
+
+    /**
+     * get the map of all macros defined by this template
+     *
+     * @return macros map
+     */
+    public Map<String, Object> getMacros() {
+        return macros;
     }
 
     /**
@@ -87,14 +104,14 @@ public class Template extends Resource {
     public boolean process()
             throws ResourceNotFoundException, ParseErrorException {
         data = null;
-        InputStream is = null;
+        Reader reader = null;
         errorCondition = null;
 
         /*
          *  first, try to get the stream from the loader
          */
         try {
-            is = resourceLoader.getResourceStream(name);
+            reader = resourceLoader.getResourceReader(name, getEncoding());
         } catch (ResourceNotFoundException rnfe) {
             /*
              *  remember and re-throw
@@ -109,22 +126,16 @@ public class Template extends Resource {
          *  forgets to throw a proper exception
          */
 
-        if (is != null) {
+        if (reader != null) {
             /*
              *  now parse the template
              */
 
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(is, encoding));
-                data = rsvc.parse(br, name);
+                BufferedReader br = new BufferedReader(reader);
+                data = rsvc.parse(br, this);
                 initDocument();
                 return true;
-            } catch (UnsupportedEncodingException uce) {
-                String msg = "Template.process : Unsupported input encoding : " + encoding
-                        + " for template " + name;
-
-                errorCondition = new ParseErrorException(msg);
-                throw errorCondition;
             } catch (ParseException pex) {
                 /*
                  *  remember the error and convert
@@ -146,7 +157,7 @@ public class Template extends Resource {
                  *  Make sure to close the inputstream when we are done.
                  */
                 try {
-                    is.close();
+                    reader.close();
                 } catch (IOException e) {
                     // If we are already throwing an exception then we want the original
                     // exception to be continued to be thrown, otherwise, throw a new Exception.
@@ -263,7 +274,8 @@ public class Template extends Resource {
             /**
              * Set the macro libraries
              */
-            ica.setMacroLibraries(macroLibraries);
+            List libTemplates = new ArrayList();
+            ica.setMacroLibraries(libTemplates);
 
             if (macroLibraries != null) {
                 for (int i = 0; i < macroLibraries.size(); i++) {
@@ -271,12 +283,13 @@ public class Template extends Resource {
                      * Build the macro library
                      */
                     try {
-                        rsvc.getTemplate((String) macroLibraries.get(i));
+                        Template t = rsvc.getTemplate((String) macroLibraries.get(i));
+                        libTemplates.add(t);
                     } catch (ResourceNotFoundException re) {
                         /*
                         * the macro lib wasn't found.  Note it and throw
                         */
-                        rsvc.getLog().error("template.merge(): " +
+                        log.error("template.merge(): " +
                                 "cannot find template " +
                                 (String) macroLibraries.get(i));
                         throw re;
@@ -285,9 +298,9 @@ public class Template extends Resource {
                         * the macro lib was found, but didn't parse - syntax error
                         *  note it and throw
                         */
-                        rsvc.getLog().error("template.merge(): " +
+                        rsvc.getLog("parser").error("template.merge(): " +
                                 "syntax error in template " +
-                                (String) macroLibraries.get(i) + ".");
+                                (String) macroLibraries.get(i) + ": {}", pe.getMessage(), pe);
                         throw pe;
                     } catch (Exception e) {
                         throw new RuntimeException("Template.merge(): parse failed in template  " +
@@ -307,8 +320,11 @@ public class Template extends Resource {
             } catch (StopCommand stop) {
                 if (!stop.isFor(this)) {
                     throw stop;
-                } else if (rsvc.getLog().isDebugEnabled()) {
-                    rsvc.getLog().debug(stop.getMessage());
+                } else {
+                    Logger renderingLog = rsvc.getLog("rendering");
+                    if (renderingLog.isDebugEnabled()) {
+                        renderingLog.debug(stop.getMessage());
+                    }
                 }
             } catch (IOException e) {
                 throw new VelocityException("IO Error rendering template '" + name + "'", e);

@@ -19,13 +19,16 @@ package org.apache.velocity.util.introspection;
  * under the License.    
  */
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 /**
  * Method used for regular method invocation
  * <p>
  * $foo.bar()
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: VelMethod.java 510625 2007-02-22 19:06:28Z nbubna $
+ * @version $Id$
  */
 public interface VelMethod {
     /**
@@ -35,10 +38,10 @@ public interface VelMethod {
      * @param o
      * @param params
      * @return The resulting object.
-     * @throws Exception
+     * @throws IllegalAccessException, InvocationTargetException
      */
     public Object invoke(Object o, Object[] params)
-            throws Exception;
+            throws IllegalAccessException, InvocationTargetException;
 
     /**
      * specifies if this VelMethod is cacheable and able to be
@@ -54,6 +57,14 @@ public interface VelMethod {
      * @return The method name used
      */
     public String getMethodName();
+
+    /**
+     * returns the underlying Method
+     *
+     * @return the method
+     * @since 2.0
+     */
+    public Method getMethod();
 
     /**
      * returns the return type of the method invoked

@@ -20,16 +20,15 @@ package org.apache.velocity.runtime.parser;
  */
 
 import org.apache.velocity.exception.ExtendedParseException;
-import org.apache.velocity.runtime.log.Log;
-
+import org.apache.velocity.util.StringUtils;
 
 /**
  * This is an extension of the ParseException, which also takes a
  * template name.
  *
  * @author <a href="hps@intermeta.de">Henning P. Schmiedehausen</a>
- * @version $Id: TemplateParseException.java 703544 2008-10-10 18:15:53Z nbubna $
- * @see ParseException
+ * @version $Id$
+ * @see org.apache.velocity.runtime.parser.ParseException
  * @since 1.5
  */
 public class TemplateParseException
@@ -212,7 +211,7 @@ public class TemplateParseException
      * @param sb
      */
     protected void appendTemplateInfo(final StringBuffer sb) {
-        sb.append(Log.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
+        sb.append(StringUtils.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
         sb.append(eol);
     }
 }

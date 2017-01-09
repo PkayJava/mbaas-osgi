@@ -19,16 +19,16 @@ package org.apache.velocity.runtime;
  * under the License.    
  */
 
+import org.apache.velocity.Template;
 import org.apache.velocity.exception.VelocityException;
+import org.apache.velocity.runtime.directive.Macro;
 import org.apache.velocity.runtime.directive.VelocimacroProxy;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.apache.velocity.util.MapFactory;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages VMs in namespaces.  Currently, two namespace modes are
@@ -44,17 +44,10 @@ import java.util.Set;
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:JFernandez@viquity.com">Jose Alberto Fernandez</a>
- * @version $Id: VelocimacroManager.java 992115 2010-09-02 21:00:10Z nbubna $
+ * @version $Id$
  */
 public class VelocimacroManager {
-    private static String GLOBAL_NAMESPACE = "";
-
     private boolean registerFromLib = false;
-
-    /**
-     * Hash of namespace hashes.
-     */
-    private final Map namespaceHash = MapFactory.create(17, 0.5f, 20, false);
 
     /**
      * reference to global namespace hash
@@ -64,7 +57,7 @@ public class VelocimacroManager {
     /**
      * set of names of library tempates/namespaces
      */
-    private final Set libraries = Collections.synchronizedSet(new HashSet());
+    private final Map libraries = new ConcurrentHashMap(17, 0.5f, 20);
 
     private RuntimeServices rsvc = null;
 
@@ -84,7 +77,7 @@ public class VelocimacroManager {
          *  add the global namespace to the namespace hash. We always have that.
          */
 
-        globalNamespace = addNamespace(GLOBAL_NAMESPACE);
+        globalNamespace = new ConcurrentHashMap(101, 0.5f, 20);
         this.rsvc = rsvc;
     }
 
@@ -93,21 +86,23 @@ public class VelocimacroManager {
      * <p>
      * Called by VelocimacroFactory.addVelociMacro (after parsing and discovery in Macro directive)
      *
-     * @param vmName    Name of the new VelociMacro.
-     * @param macroBody String representation of the macro body.
-     * @param argArray  Array of macro parameters, first parameter is the macro name.
-     * @param namespace The namespace/template from which this macro has been loaded.
+     * @param vmName                Name of the new VelociMacro.
+     * @param macroBody             String representation of the macro body.
+     * @param macroArgs             Array of macro arguments, containing the
+     *                              #macro() arguments and default values.  the 0th is the name.
+     * @param definingTemplate      The template from which this macro has been loaded.
+     * @param canReplaceGlobalMacro whether this macro can replace a global macro
      * @return Whether everything went okay.
      */
-    public boolean addVM(final String vmName, final Node macroBody, final String argArray[],
-                         final String namespace, boolean canReplaceGlobalMacro) {
+    public boolean addVM(final String vmName, final Node macroBody, List<Macro.MacroArg> macroArgs,
+                         final Template definingTemplate, boolean canReplaceGlobalMacro) {
         if (macroBody == null) {
             // happens only if someone uses this class without the Macro directive
             // and provides a null value as an argument
-            throw new VelocityException("Null AST for " + vmName + " in " + namespace);
+            throw new VelocityException("Null AST for " + vmName + " in " + definingTemplate.getName());
         }
 
-        MacroEntry me = new MacroEntry(vmName, macroBody, argArray, namespace, rsvc);
+        MacroEntry me = new MacroEntry(vmName, macroBody, macroArgs, definingTemplate.getName(), rsvc);
 
         me.setFromLibrary(registerFromLib);
         
@@ -123,7 +118,7 @@ public class VelocimacroManager {
         MacroEntry exist = (MacroEntry) globalNamespace.get(vmName);
 
         if (registerFromLib) {
-            libraries.add(namespace);
+            libraries.put(definingTemplate.getName(), definingTemplate);
         } else {
             /*
              *  now, we first want to check to see if this namespace (template)
@@ -133,18 +128,11 @@ public class VelocimacroManager {
              *  global
              */
 
-            isLib = libraries.contains(namespace);
+            isLib = libraries.containsKey(definingTemplate.getName());
         }
 
-        if (!isLib && usingNamespaces(namespace)) {
-            /*
-             *  first, do we have a namespace hash already for this namespace?
-             *  if not, add it to the namespaces, and add the VM
-             */
-
-            Map local = getNamespace(namespace, true);
-            local.put(vmName, me);
-
+        if (!isLib && usingNamespaces()) {
+            definingTemplate.getMacros().put(vmName, me);
             return true;
         } else {
             /*
@@ -170,24 +158,12 @@ public class VelocimacroManager {
     /**
      * Gets a VelocimacroProxy object by the name / source template duple.
      *
-     * @param vmName    Name of the VelocityMacro to look up.
-     * @param namespace Namespace in which to look up the macro.
-     * @return A proxy representing the Macro.
-     */
-    public VelocimacroProxy get(final String vmName, final String namespace) {
-        return (get(vmName, namespace, null));
-    }
-
-    /**
-     * Gets a VelocimacroProxy object by the name / source template duple.
-     *
      * @param vmName            Name of the VelocityMacro to look up.
-     * @param namespace         Namespace in which to look up the macro.
-     * @param renderingTemplate Name of the template we are currently rendering.
+     * @param renderingTemplate Template we are currently rendering.
+     * @param template          Source Template.
      * @return A proxy representing the Macro.
-     * @since 1.6
      */
-    public VelocimacroProxy get(final String vmName, final String namespace, final String renderingTemplate) {
+    public VelocimacroProxy get(final String vmName, final Template renderingTemplate, final Template template) {
         if (inlineReplacesGlobal && renderingTemplate != null) {
             /*
              * if VM_PERM_ALLOW_INLINE_REPLACE_GLOBAL is true (local macros can
@@ -195,69 +171,27 @@ public class VelocimacroManager {
              * moment, check if local namespace contains a macro we are looking for
              * if so, return it instead of the global one
              */
-            Map local = getNamespace(renderingTemplate, false);
-            if (local != null) {
-                MacroEntry me = (MacroEntry) local.get(vmName);
 
-                if (me != null) {
-                    return me.getProxy(namespace);
-                }
+            MacroEntry me = (MacroEntry) renderingTemplate.getMacros().get(vmName);
+            if (me != null) {
+                return me.getProxy();
             }
         }
 
-        if (usingNamespaces(namespace)) {
-            Map local = getNamespace(namespace, false);
-
-            /*
-             *  if we have macros defined for this template
-             */
-
-            if (local != null) {
-                MacroEntry me = (MacroEntry) local.get(vmName);
-
-                if (me != null) {
-                    return me.getProxy(namespace);
-                }
+        if (usingNamespaces() && template != null) {
+            MacroEntry me = (MacroEntry) template.getMacros().get(vmName);
+            if (template.getMacros().size() > 0 && me != null) {
+                return me.getProxy();
             }
         }
-
-        /*
-         * if we didn't return from there, we need to simply see
-         * if it's in the global namespace
-         */
 
         MacroEntry me = (MacroEntry) globalNamespace.get(vmName);
 
         if (me != null) {
-            return me.getProxy(namespace);
+            return me.getProxy();
         }
 
         return null;
-    }
-
-    /**
-     * Removes the VMs and the namespace from the manager.
-     * Used when a template is reloaded to avoid
-     * losing memory.
-     *
-     * @param namespace namespace to dump
-     * @return boolean representing success
-     */
-    public boolean dumpNamespace(final String namespace) {
-        if (usingNamespaces(namespace)) {
-            synchronized (this) {
-                Map h = (Map) namespaceHash.remove(namespace);
-
-                if (h == null) {
-                    return false;
-                }
-
-                h.clear();
-
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -290,59 +224,11 @@ public class VelocimacroManager {
     }
 
     /**
-     * returns the hash for the specified namespace, and if it doesn't exist
-     * will create a new one and add it to the namespaces
-     *
-     * @param namespace name of the namespace :)
-     * @param addIfNew  flag to add a new namespace if it doesn't exist
-     * @return namespace Map of VMs or null if doesn't exist
-     */
-    private Map getNamespace(final String namespace, final boolean addIfNew) {
-        Map h = (Map) namespaceHash.get(namespace);
-
-        if (h == null && addIfNew) {
-            h = addNamespace(namespace);
-        }
-
-        return h;
-    }
-
-    /**
-     * adds a namespace to the namespaces
-     *
-     * @param namespace name of namespace to add
-     * @return Hash added to namespaces, ready for use
-     */
-    private Map addNamespace(final String namespace) {
-        Map h = MapFactory.create(17, 0.5f, 20, false);
-        Object oh;
-
-        if ((oh = namespaceHash.put(namespace, h)) != null) {
-          /*
-           * There was already an entry on the table, restore it!
-           * This condition should never occur, given the code
-           * and the fact that this method is private.
-           * But just in case, this way of testing for it is much
-           * more efficient than testing before hand using get().
-           */
-            namespaceHash.put(namespace, oh);
-          /*
-           * Should't we be returning the old entry (oh)?
-           * The previous code was just returning null in this case.
-           */
-            return null;
-        }
-
-        return h;
-    }
-
-    /**
      * determines if currently using namespaces.
      *
-     * @param namespace currently ignored
      * @return true if using namespaces, false if not
      */
-    private boolean usingNamespaces(final String namespace) {
+    private boolean usingNamespaces() {
         /*
          *  if the big switch turns of namespaces, then ignore the rules
          */
@@ -365,33 +251,21 @@ public class VelocimacroManager {
     /**
      * Return the library name for a given macro.
      *
-     * @param vmName    Name of the Macro to look up.
-     * @param namespace Namespace to look the macro up.
+     * @param vmName   Name of the Macro to look up.
+     * @param template Template
      * @return The name of the library which registered this macro in a namespace.
      */
-    public String getLibraryName(final String vmName, final String namespace) {
-        if (usingNamespaces(namespace)) {
-            Map local = getNamespace(namespace, false);
-
+    public String getLibraryName(final String vmName, Template template) {
+        if (usingNamespaces()) {
             /*
              *  if we have this macro defined in this namespace, then
              *  it is masking the global, library-based one, so
              *  just return null
              */
-
-            if (local != null) {
-                MacroEntry me = (MacroEntry) local.get(vmName);
-
-                if (me != null) {
-                    return null;
-                }
-            }
+            MacroEntry me = (MacroEntry) template.getMacros().get(vmName);
+            if (me != null)
+                return null;
         }
-
-        /*
-         * if we didn't return from there, we need to simply see
-         * if it's in the global namespace
-         */
 
         MacroEntry me = (MacroEntry) globalNamespace.get(vmName);
 
@@ -415,25 +289,25 @@ public class VelocimacroManager {
      */
     private static class MacroEntry {
         private final String vmName;
-        private final String[] argArray;
+        private final List<Macro.MacroArg> macroArgs;
         private final String sourceTemplate;
         private SimpleNode nodeTree = null;
         private boolean fromLibrary = false;
         private VelocimacroProxy vp;
 
         private MacroEntry(final String vmName, final Node macro,
-                           final String argArray[], final String sourceTemplate,
+                           List<Macro.MacroArg> macroArgs, final String sourceTemplate,
                            RuntimeServices rsvc) {
             this.vmName = vmName;
-            this.argArray = argArray;
+            this.macroArgs = macroArgs;
             this.nodeTree = (SimpleNode) macro;
             this.sourceTemplate = sourceTemplate;
 
             vp = new VelocimacroProxy();
             vp.setName(this.vmName);
-            vp.setArgArray(this.argArray);
+            vp.setMacroArgs(this.macroArgs);
             vp.setNodeTree(this.nodeTree);
-            vp.setLocation(macro.getLine(), macro.getColumn(), macro.getTemplateName());
+            vp.setLocation(macro.getLine(), macro.getColumn(), macro.getTemplate());
             vp.init(rsvc);
         }
 
@@ -455,29 +329,11 @@ public class VelocimacroManager {
             return fromLibrary;
         }
 
-        /**
-         * Returns the node tree for this macro.
-         *
-         * @return The node tree for this macro.
-         */
-        public SimpleNode getNodeTree() {
-            return nodeTree;
-        }
-
-        /**
-         * Returns the source template name for this macro.
-         *
-         * @return The source template name for this macro.
-         */
         public String getSourceTemplate() {
             return sourceTemplate;
         }
 
-        VelocimacroProxy getProxy(final String namespace) {
-            /*
-             * FIXME: namespace data is omitted, this probably 
-             * breaks some error reporting?
-             */
+        VelocimacroProxy getProxy() {
             return vp;
         }
     }

@@ -19,24 +19,14 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.
  */
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.io.UnicodeInputStream;
 import org.apache.velocity.runtime.resource.Resource;
+import org.apache.velocity.util.ExtProperties;
 import org.apache.velocity.util.StringUtils;
+
+import java.io.*;
+import java.util.*;
 
 /**
  * A loader for templates stored on the file system.  Treats the template
@@ -46,10 +36,9 @@ import org.apache.velocity.util.StringUtils;
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
  * @author <a href="mailto:mailmur@yahoo.com">Aki Nieminen</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
- * @version $Id: FileResourceLoader.java 743616 2009-02-12 04:38:53Z nbubna $
+ * @version $Id$
  */
-public class FileResourceLoader extends ResourceLoader
-{
+public class FileResourceLoader extends ResourceLoader {
     /**
      * The paths to search for templates.
      */
@@ -63,110 +52,92 @@ public class FileResourceLoader extends ResourceLoader
      */
     private Map templatePaths = Collections.synchronizedMap(new HashMap());
 
-    /** Shall we inspect unicode files to see what encoding they contain?. */
-    private boolean unicode = false;
-
     /**
-     * @see ResourceLoader#init(ExtendedProperties)
+     * @see ResourceLoader#init(org.apache.velocity.util.ExtProperties)
      */
-    public void init( ExtendedProperties configuration)
-    {
-        if (log.isTraceEnabled())
-        {
+    public void init(ExtProperties configuration) {
+        if (log.isTraceEnabled()) {
             log.trace("FileResourceLoader : initialization starting.");
         }
 
-        paths.addAll( configuration.getVector("path") );
+        paths.addAll(configuration.getVector("path"));
 
-        // unicode files may have a BOM marker at the start, but Java
-        // has problems recognizing the UTF-8 bom. Enabling unicode will
-        // recognize all unicode boms.
-        unicode = configuration.getBoolean("unicode", false);
+        // unicode files may have a BOM marker at the start,
 
-        if (log.isDebugEnabled())
-        {
-            log.debug("Do unicode file recognition:  " + unicode);
-        }
-
-        if (log.isDebugEnabled())
-        {
+        if (log.isDebugEnabled()) {
             // trim spaces from all paths
             StringUtils.trimStrings(paths);
 
             // this section lets tell people what paths we will be using
             int sz = paths.size();
-            for( int i=0; i < sz; i++)
-            {
-                log.debug("FileResourceLoader : adding path '" + (String) paths.get(i) + "'");
+            for (int i = 0; i < sz; i++) {
+                log.debug("FileResourceLoader : adding path '{}'", (String) paths.get(i));
             }
             log.trace("FileResourceLoader : initialization complete.");
         }
     }
 
     /**
-     * Get an InputStream so that the Runtime can build a
+     * Get a Reader so that the Runtime can build a
      * template with it.
      *
      * @param templateName name of template to get
-     * @return InputStream containing the template
+     * @return Reader containing the template
      * @throws ResourceNotFoundException if template not found
-     *         in the file template path.
+     *                                   in the file template path.
+     * @since 2.0
      */
-    public InputStream getResourceStream(String templateName)
-        throws ResourceNotFoundException
-    {
+    public Reader getResourceReader(String templateName, String encoding)
+            throws ResourceNotFoundException {
         /*
          * Make sure we have a valid templateName.
          */
-        if (org.apache.commons.lang.StringUtils.isEmpty(templateName))
-        {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(templateName)) {
             /*
              * If we don't get a properly formed templateName then
              * there's not much we can do. So we'll forget about
              * trying to search any more paths for the template.
              */
             throw new ResourceNotFoundException(
-                "Need to specify a file name or file path!");
+                    "Need to specify a file name or file path!");
         }
 
         String template = StringUtils.normalizePath(templateName);
-        if ( template == null || template.length() == 0 )
-        {
+        if (template == null || template.length() == 0) {
             String msg = "File resource error : argument " + template +
-                " contains .. and may be trying to access " +
-                "content outside of template root.  Rejected.";
+                    " contains .. and may be trying to access " +
+                    "content outside of template root.  Rejected.";
 
             log.error("FileResourceLoader : " + msg);
 
-            throw new ResourceNotFoundException ( msg );
+            throw new ResourceNotFoundException(msg);
         }
 
         int size = paths.size();
-        for (int i = 0; i < size; i++)
-        {
+        for (int i = 0; i < size; i++) {
             String path = (String) paths.get(i);
-            InputStream inputStream = null;
+            InputStream rawStream = null;
+            Reader reader = null;
 
-            try
-            {
-                inputStream = findTemplate(path, template);
-            }
-            catch (IOException ioe)
-            {
+            try {
+                rawStream = findTemplate(path, template);
+                if (rawStream != null) {
+                    reader = buildReader(rawStream, encoding);
+                }
+            } catch (IOException ioe) {
+                closeQuiet(rawStream);
                 String msg = "Exception while loading Template " + template;
                 log.error(msg, ioe);
                 throw new VelocityException(msg, ioe);
             }
-
-            if (inputStream != null)
-            {
+            if (reader != null) {
                 /*
                  * Store the path that this template came
                  * from so that we can check its modification
                  * time.
                  */
                 templatePaths.put(templateName, path);
-                return inputStream;
+                return reader;
             }
         }
 
@@ -175,41 +146,33 @@ public class FileResourceLoader extends ResourceLoader
          * templates and we didn't find anything so
          * throw an exception.
          */
-         throw new ResourceNotFoundException("FileResourceLoader : cannot find " + template);
+        throw new ResourceNotFoundException("FileResourceLoader : cannot find " + template);
     }
 
     /**
      * Overrides superclass for better performance.
+     *
      * @since 1.6
      */
-    public boolean resourceExists(String name)
-    {
-        if (name == null)
-        {
+    public boolean resourceExists(String name) {
+        if (name == null) {
             return false;
         }
         name = StringUtils.normalizePath(name);
-        if (name == null || name.length() == 0)
-        {
+        if (name == null || name.length() == 0) {
             return false;
         }
 
         int size = paths.size();
-        for (int i = 0; i < size; i++)
-        {
-            String path = (String)paths.get(i);
-            try
-            {
+        for (int i = 0; i < size; i++) {
+            String path = (String) paths.get(i);
+            try {
                 File file = getFile(path, name);
-                if (file.canRead())
-                {
+                if (file.canRead()) {
                     return true;
                 }
-            }
-            catch (Exception ioe)
-            {
-                String msg = "Exception while checking for template " + name;
-                log.debug(msg, ioe);
+            } catch (Exception ioe) {
+                log.debug("Exception while checking for template {}", name);
             }
         }
         return false;
@@ -218,64 +181,28 @@ public class FileResourceLoader extends ResourceLoader
     /**
      * Try to find a template given a normalized path.
      *
-     * @param path a normalized path
+     * @param path     a normalized path
      * @param template name of template to find
      * @return InputStream input stream that will be parsed
-     *
      */
     private InputStream findTemplate(final String path, final String template)
-        throws IOException
-    {
-        try
-        {
-            File file = getFile(path,template);
+            throws IOException {
+        try {
+            File file = getFile(path, template);
 
-            if (file.canRead())
-            {
+            if (file.canRead()) {
                 FileInputStream fis = null;
-                try
-                {
+                try {
                     fis = new FileInputStream(file.getAbsolutePath());
-
-                    if (unicode)
-                    {
-                        UnicodeInputStream uis = null;
-
-                        try
-                        {
-                            uis = new UnicodeInputStream(fis, true);
-
-                            if (log.isDebugEnabled())
-                            {
-                                log.debug("File Encoding for " + file + " is: " + uis.getEncodingFromStream());
-                            }
-
-                            return new BufferedInputStream(uis);
-                        }
-                        catch(IOException e)
-                        {
-                            closeQuiet(uis);
-                            throw e;
-                        }
-                    }
-                    else
-                    {
-                        return new BufferedInputStream(fis);
-                    }
-                }
-                catch (IOException e)
-                {
+                    return fis;
+                } catch (IOException e) {
                     closeQuiet(fis);
                     throw e;
                 }
-            }
-            else
-            {
+            } else {
                 return null;
             }
-        }
-        catch(FileNotFoundException fnfe)
-        {
+        } catch (FileNotFoundException fnfe) {
             /*
              *  log and convert to a general Velocity ResourceNotFoundException
              */
@@ -283,16 +210,11 @@ public class FileResourceLoader extends ResourceLoader
         }
     }
 
-    private void closeQuiet(final InputStream is)
-    {
-        if (is != null)
-        {
-            try
-            {
+    private void closeQuiet(final InputStream is) {
+        if (is != null) {
+            try {
                 is.close();
-            }
-            catch(IOException ioe)
-            {
+            } catch (IOException ioe) {
                 // Ignore
             }
         }
@@ -305,11 +227,11 @@ public class FileResourceLoader extends ResourceLoader
      * path; so we should search the path and see if
      * the file we find that way is the same as the one
      * that we have cached.
+     *
      * @param resource
      * @return True if the source has been modified.
      */
-    public boolean isSourceModified(Resource resource)
-    {
+    public boolean isSourceModified(Resource resource) {
         /*
          * we assume that the file needs to be reloaded;
          * if we find the original file and it's unchanged,
@@ -321,18 +243,15 @@ public class FileResourceLoader extends ResourceLoader
         String path = (String) templatePaths.get(fileName);
         File currentFile = null;
 
-        for (int i = 0; currentFile == null && i < paths.size(); i++)
-        {
+        for (int i = 0; currentFile == null && i < paths.size(); i++) {
             String testPath = (String) paths.get(i);
             File testFile = getFile(testPath, fileName);
-            if (testFile.canRead())
-            {
+            if (testFile.canRead()) {
                 currentFile = testFile;
             }
         }
         File file = getFile(path, fileName);
-        if (currentFile == null || !file.exists())
-        {
+        if (currentFile == null || !file.exists()) {
             /*
              * noop: if the file is missing now (either the cached
              * file is gone, or the file can no longer be found)
@@ -341,9 +260,7 @@ public class FileResourceLoader extends ResourceLoader
              * a new template or fail with an appropriate message
              * about how the file couldn't be found.
              */
-        }
-        else if (currentFile.equals(file) && file.canRead())
-        {
+        } else if (currentFile.equals(file) && file.canRead()) {
             /*
              * if only if currentFile is the same as file and
              * file.lastModified() is the same as
@@ -362,17 +279,13 @@ public class FileResourceLoader extends ResourceLoader
     /**
      * @see ResourceLoader#getLastModified(org.apache.velocity.runtime.resource.Resource)
      */
-    public long getLastModified(Resource resource)
-    {
+    public long getLastModified(Resource resource) {
         String path = (String) templatePaths.get(resource.getName());
         File file = getFile(path, resource.getName());
 
-        if (file.canRead())
-        {
+        if (file.canRead()) {
             return file.lastModified();
-        }
-        else
-        {
+        } else {
             return 0;
         }
     }
@@ -381,26 +294,21 @@ public class FileResourceLoader extends ResourceLoader
     /**
      * Create a File based on either a relative path if given, or absolute path otherwise
      */
-    private File getFile(String path, String template)
-    {
+    private File getFile(String path, String template) {
 
         File file = null;
 
-        if("".equals(path))
-        {
-            file = new File( template );
-        }
-        else
-        {
+        if ("".equals(path)) {
+            file = new File(template);
+        } else {
             /*
              *  if a / leads off, then just nip that :)
              */
-            if (template.startsWith("/"))
-            {
+            if (template.startsWith("/")) {
                 template = template.substring(1);
             }
 
-            file = new File ( path, template );
+            file = new File(path, template);
         }
 
         return file;

@@ -31,7 +31,7 @@ import org.osgi.framework.Bundle;
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:paulo.gaspar@krankikom.de">Paulo Gaspar</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ResourceManager.java 898050 2010-01-11 20:15:31Z nbubna $
+ * @version $Id$
  */
 public interface ResourceManager {
     /**

@@ -24,8 +24,9 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.runtime.RuntimeConstants.SpaceGobbling;
 import org.apache.velocity.runtime.parser.Parser;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.util.introspection.Info;
 
 import java.io.IOException;
@@ -36,15 +37,21 @@ import java.io.Writer;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTSetDirective.java 720228 2008-11-24 16:58:33Z nbubna $
+ * @version $Id$
  */
 public class ASTSetDirective extends SimpleNode {
     private String leftReference = "";
     private Node right = null;
     private ASTReference left = null;
-    boolean logOnNull = false;
-    private boolean allowNull = false;
     private boolean isInitialized;
+    private String prefix = "";
+    private String postfix = "";
+
+    /*
+     * '#' and '$' prefix characters eaten by javacc MORE mode
+     */
+    private String morePrefix = "";
+
 
     /**
      * This is really immutable after the init, so keep one for this node
@@ -72,7 +79,7 @@ public class ASTSetDirective extends SimpleNode {
     }
 
     /**
-     * @see SimpleNode#jjtAccept(ParserVisitor, Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
      */
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
@@ -96,6 +103,19 @@ public class ASTSetDirective extends SimpleNode {
              */
 
             super.init(context, data);
+    
+            /*
+             * handle '$' and '#' chars prefix
+             */
+            Token t = getFirstToken();
+            int pos = -1;
+            while (t != null && (pos = t.image.lastIndexOf('#')) == -1) {
+                t = t.next;
+            }
+            if (t != null && pos > 0) {
+                morePrefix = t.image.substring(0, pos);
+            }
+
 
             uberInfo = new Info(getTemplateName(),
                     getLine(), getColumn());
@@ -103,20 +123,72 @@ public class ASTSetDirective extends SimpleNode {
             right = getRightHandSide();
             left = getLeftHandSide();
 
-            logOnNull = rsvc.getBoolean(RuntimeConstants.RUNTIME_LOG_REFERENCE_LOG_INVALID, true);
-            allowNull = rsvc.getBoolean(RuntimeConstants.SET_NULL_ALLOWED, false);
             strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
-            if (strictRef) allowNull = true;  // strictRef implies allowNull
             
             /*
              *  grab this now.  No need to redo each time
              */
-            leftReference = left.getFirstToken().image.substring(1);
+            leftReference = left.firstImage.substring(1);
+
+            /* handle backward compatible space gobbling if asked so */
+            if (rsvc.getSpaceGobbling() == SpaceGobbling.BC) {
+                Node previousNode = null;
+                for (int brother = 0; brother < parent.jjtGetNumChildren(); ++brother) {
+                    Node node = parent.jjtGetChild(brother);
+                    if (node == this) break;
+                    previousNode = node;
+                }
+                if (previousNode == null) prefix = "";
+                else if (previousNode instanceof ASTText) {
+                    ASTText text = (ASTText) previousNode;
+                    if (text.getCtext().matches("[ \t]*")) {
+                        text.setCtext("");
+                    }
+                } else prefix = "";
+            }
 
             isInitialized = true;
+
+            cleanupParserAndTokens();
         }
 
         return data;
+    }
+
+    /**
+     * set indentation prefix
+     *
+     * @param prefix
+     */
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    /**
+     * get indentation prefix
+     *
+     * @return indentation prefix
+     */
+    public String getPrefix() {
+        return prefix;
+    }
+
+    /**
+     * set indentation postfix
+     *
+     * @param postfix
+     */
+    public void setPostfix(String postfix) {
+        this.postfix = postfix;
+    }
+
+    /**
+     * get indentation postfix
+     *
+     * @return indentation prefix
+     */
+    public String getPostfix() {
+        return postfix;
     }
 
     /**
@@ -130,76 +202,40 @@ public class ASTSetDirective extends SimpleNode {
      */
     public boolean render(InternalContextAdapter context, Writer writer)
             throws IOException, MethodInvocationException {
+        SpaceGobbling spaceGobbling = rsvc.getSpaceGobbling();
+
+        /* Velocity 1.x space gobbling for #set is rather wacky:
+           prefix is eaten *only* if previous token is not a text node.
+           We handle this by appropriately emptying the prefix in BC mode.
+         */
+
+        if (morePrefix.length() > 0 || spaceGobbling.compareTo(SpaceGobbling.LINES) < 0) {
+            writer.write(prefix);
+        }
+
+        writer.write(morePrefix);
+
         /*
          *  get the RHS node, and its value
          */
 
         Object value = right.value(context);
 
-        /*
-         * it's an error if we don't have a value of some sort AND
-         * it is not allowed by configuration
-         */
-
-        if (!allowNull) {
-            if (value == null) {
-                /*
-                 *  first, are we supposed to say anything anyway?
-                 */
-                if (logOnNull) {
-                    boolean doit = EventHandlerUtil.shouldLogOnNullSet(rsvc, context, left.literal(), right.literal());
-
-                    if (doit && rsvc.getLog().isDebugEnabled()) {
-                        rsvc.getLog().debug("RHS of #set statement is null. Context will not be modified. "
-                                + Log.formatFileString(this));
-                    }
-                }
-
-                String rightReference = null;
-                if (right instanceof ASTExpression) {
-                    rightReference = ((ASTExpression) right).getLastToken().image;
-                }
-                EventHandlerUtil.invalidSetMethod(rsvc, context, leftReference, rightReference, uberInfo);
-
-                return false;
-            }
-        }
-
         if (value == null && !strictRef) {
             String rightReference = null;
             if (right instanceof ASTExpression) {
-                rightReference = ((ASTExpression) right).getLastToken().image;
+                rightReference = ((ASTExpression) right).lastImage;
             }
             EventHandlerUtil.invalidSetMethod(rsvc, context, leftReference, rightReference, uberInfo);
-
-            /*
-             * if RHS is null, remove simple LHS from context
-             * or call setValue() with a null value for complex LHS
-             */
-            if (left.jjtGetNumChildren() == 0) {
-                context.remove(leftReference);
-            } else {
-                left.setValue(context, null);
-            }
-
-            return false;
-
-        } else {
-            /*
-             *  if the LHS is simple, just punch the value into the context
-             *  otherwise, use the setValue() method do to it.
-             *  Maybe we should always use setValue()
-             */
-
-            if (left.jjtGetNumChildren() == 0) {
-                context.put(leftReference, value);
-            } else {
-                left.setValue(context, value);
-            }
         }
 
-        return true;
+        if (morePrefix.length() > 0 || spaceGobbling == SpaceGobbling.NONE) {
+            writer.write(postfix);
+        }
+
+        return left.setValue(context, value);
     }
+
 
     /**
      * returns the ASTReference that is the LHS of the set statememt

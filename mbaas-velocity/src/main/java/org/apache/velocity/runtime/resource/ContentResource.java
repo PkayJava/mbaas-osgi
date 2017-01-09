@@ -21,10 +21,10 @@ package org.apache.velocity.runtime.resource;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
+import org.apache.velocity.util.StringBuilderWriter;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
+import java.io.Writer;
 
 /**
  * This class represent a general text resource that may have been
@@ -35,7 +35,7 @@ import java.io.StringWriter;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ContentResource.java 687177 2008-08-19 22:00:32Z nbubna $
+ * @version $Id$
  */
 public class ContentResource extends Resource {
     /**
@@ -59,11 +59,9 @@ public class ContentResource extends Resource {
         BufferedReader reader = null;
 
         try {
-            StringWriter sw = new StringWriter();
+            Writer sw = new StringBuilderWriter();
 
-            reader = new BufferedReader(
-                    new InputStreamReader(resourceLoader.getResourceStream(name),
-                            encoding));
+            reader = new BufferedReader(resourceLoader.getResourceReader(name, encoding));
 
             char buf[] = new char[1024];
             int len = 0;
@@ -80,7 +78,7 @@ public class ContentResource extends Resource {
             throw e;
         } catch (Exception e) {
             String msg = "Cannot process content resource";
-            rsvc.getLog().error(msg, e);
+            log.error(msg, e);
             throw new VelocityException(msg, e);
         } finally {
             if (reader != null) {

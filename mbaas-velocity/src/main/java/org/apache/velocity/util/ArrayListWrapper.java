@@ -26,7 +26,7 @@ import java.util.AbstractList;
  * A class that wraps an array with a List interface.
  *
  * @author Chris Schultz &lt;chris@christopherschultz.net$gt;
- * @version $Revision: 685685 $ $Date: 2006-04-14 19:40:41 $
+ * @version $Revision$ $Date: 2006-04-14 19:40:41 $
  * @since 1.6
  */
 public class ArrayListWrapper extends AbstractList {
@@ -48,6 +48,10 @@ public class ArrayListWrapper extends AbstractList {
 
     public int size() {
         return Array.getLength(array);
+    }
+
+    public boolean isEmpty() {
+        return Array.getLength(array) == 0;
     }
 
 }

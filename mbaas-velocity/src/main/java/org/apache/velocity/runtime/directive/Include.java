@@ -27,10 +27,10 @@ import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.resource.Resource;
+import org.apache.velocity.util.StringUtils;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -68,7 +68,7 @@ import java.io.Writer;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:kav@kav.dk">Kasper Nielsen</a>
- * @version $Id: Include.java 746438 2009-02-21 05:41:24Z nbubna $
+ * @version $Id$
  */
 public class Include extends InputBase {
     private String outputMsgStart = "";
@@ -162,8 +162,8 @@ public class Include extends InputBase {
                             + " please see log.");
             } else {
                 String msg = "invalid #include() argument '"
-                        + n.toString() + "' at " + Log.formatFileString(this);
-                rsvc.getLog().error(msg);
+                        + n.toString() + "' at " + StringUtils.formatFileString(this);
+                log.error(msg);
                 outputErrorToStream(writer, "error with arg " + i
                         + " please see log.");
                 throw new VelocityException(msg);
@@ -189,7 +189,7 @@ public class Include extends InputBase {
             throws IOException, MethodInvocationException,
             ResourceNotFoundException {
         if (node == null) {
-            rsvc.getLog().error("#include() null argument");
+            log.error("#include() null argument");
             return false;
         }
 
@@ -198,7 +198,7 @@ public class Include extends InputBase {
          */
         Object value = node.value(context);
         if (value == null) {
-            rsvc.getLog().error("#include() null argument");
+            log.error("#include() null argument");
             return false;
         }
 
@@ -230,21 +230,21 @@ public class Include extends InputBase {
             /*
              * the arg wasn't found.  Note it and throw
              */
-            rsvc.getLog().error("#include(): cannot find resource '" + arg +
-                    "', called at " + Log.formatFileString(this));
+            log.error("#include(): cannot find resource '" + arg +
+                    "', called at " + StringUtils.formatFileString(this));
             throw rnfe;
         }
 
         /**
          * pass through application level runtime exceptions
          */ catch (RuntimeException e) {
-            rsvc.getLog().error("#include(): arg = '" + arg +
-                    "', called at " + Log.formatFileString(this));
+            log.error("#include(): arg = '" + arg +
+                    "', called at " + StringUtils.formatFileString(this));
             throw e;
         } catch (Exception e) {
             String msg = "#include(): arg = '" + arg +
-                    "', called at " + Log.formatFileString(this);
-            rsvc.getLog().error(msg, e);
+                    "', called at " + StringUtils.formatFileString(this);
+            log.error(msg, e);
             throw new VelocityException(msg, e);
         }
 

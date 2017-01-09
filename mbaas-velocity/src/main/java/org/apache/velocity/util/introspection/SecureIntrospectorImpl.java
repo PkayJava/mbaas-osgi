@@ -19,7 +19,7 @@ package org.apache.velocity.util.introspection;
  * under the License.
  */
 
-import org.apache.velocity.runtime.log.Log;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Method;
 
@@ -33,14 +33,14 @@ import java.lang.reflect.Method;
  * more information on specific classes and methods blocked.
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
- * @version $Id: SecureIntrospectorImpl.java 705375 2008-10-16 22:06:30Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class SecureIntrospectorImpl extends Introspector implements SecureIntrospectorControl {
     private String[] badClasses;
     private String[] badPackages;
 
-    public SecureIntrospectorImpl(String[] badClasses, String[] badPackages, Log log) {
+    public SecureIntrospectorImpl(String[] badClasses, String[] badPackages, Logger log) {
         super(log);
         this.badClasses = badClasses;
         this.badPackages = badPackages;
@@ -60,9 +60,8 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     public Method getMethod(Class clazz, String methodName, Object[] params)
             throws IllegalArgumentException {
         if (!checkObjectExecutePermission(clazz, methodName)) {
-            log.warn("Cannot retrieve method " + methodName +
-                    " from object of class " + clazz.getName() +
-                    " due to security restrictions.");
+            log.warn("Cannot retrieve method {} from object of class {} due to security restrictions."
+                    , methodName, clazz.getName());
             return null;
         } else {
             return super.getMethod(clazz, methodName, params);
@@ -78,7 +77,7 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
      *
      * @param clazz      Class on which method will be called
      * @param methodName Name of method to be called
-     * @see org.apache.velocity.util.introspection.SecureIntrospectorControl#checkObjectExecutePermission(Class, String)
+     * @see org.apache.velocity.util.introspection.SecureIntrospectorControl#checkObjectExecutePermission(java.lang.Class, java.lang.String)
      */
     public boolean checkObjectExecutePermission(Class clazz, String methodName) {
         /**

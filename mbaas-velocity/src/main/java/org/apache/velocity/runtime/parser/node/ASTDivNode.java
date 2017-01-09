@@ -33,7 +33,7 @@ import org.apache.velocity.runtime.parser.Parser;
  * @author <a href="mailto:pero@antaramusic.de">Peter Romianowski</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTDivNode.java 691048 2008-09-01 20:26:11Z nbubna $
+ * @version $Id$
  */
 public class ASTDivNode extends ASTMathNode {
     /**
@@ -49,6 +49,11 @@ public class ASTDivNode extends ASTMathNode {
      */
     public ASTDivNode(Parser p, int id) {
         super(p, id);
+    }
+
+    @Override
+    public String getLiteralOperator() {
+        return "/";
     }
 
     public Number perform(Number left, Number right, InternalContextAdapter context) {

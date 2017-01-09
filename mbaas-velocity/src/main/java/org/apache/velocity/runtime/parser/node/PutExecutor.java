@@ -20,8 +20,8 @@ package org.apache.velocity.runtime.parser.node;
  */
 
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.util.introspection.Introspector;
+import org.slf4j.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -35,7 +35,7 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: PutExecutor.java 687177 2008-08-19 22:00:32Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class PutExecutor extends SetExecutor {
@@ -49,7 +49,7 @@ public class PutExecutor extends SetExecutor {
      * @param arg
      * @param property
      */
-    public PutExecutor(final Log log, final Introspector introspector,
+    public PutExecutor(final Logger log, final Introspector introspector,
                        final Class clazz, final Object arg, final String property) {
         this.log = log;
         this.introspector = introspector;
@@ -94,7 +94,7 @@ public class PutExecutor extends SetExecutor {
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SetExecutor#execute(Object, Object)
+     * @see org.apache.velocity.runtime.parser.node.SetExecutor#execute(java.lang.Object, java.lang.Object)
      */
     public Object execute(final Object o, final Object value)
             throws IllegalAccessException, InvocationTargetException {

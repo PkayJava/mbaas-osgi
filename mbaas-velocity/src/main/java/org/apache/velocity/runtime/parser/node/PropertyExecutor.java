@@ -16,15 +16,14 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
+import org.apache.velocity.util.ArrayListWrapper;
 import org.apache.velocity.util.introspection.Introspector;
+import org.slf4j.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -33,6 +32,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class PropertyExecutor extends AbstractExecutor {
     private final Introspector introspector;
+    private final boolean wrapArray;
 
     /**
      * @param log
@@ -41,10 +41,24 @@ public class PropertyExecutor extends AbstractExecutor {
      * @param property
      * @since 1.5
      */
-    public PropertyExecutor(final Log log, final Introspector introspector,
+    public PropertyExecutor(final Logger log, final Introspector introspector,
                             final Class clazz, final String property) {
+        this(log, introspector, clazz, property, false);
+    }
+
+    /**
+     * @param log
+     * @param introspector
+     * @param clazz
+     * @param property
+     * @param wrapArray
+     * @since 1.5
+     */
+    public PropertyExecutor(final Logger log, final Introspector introspector,
+                            final Class clazz, final String property, final boolean wrapArray) {
         this.log = log;
         this.introspector = introspector;
+        this.wrapArray = wrapArray;
 
         // Don't allow passing in the empty string or null because
         // it will either fail with a StringIndexOutOfBounds error
@@ -52,18 +66,6 @@ public class PropertyExecutor extends AbstractExecutor {
         if (StringUtils.isNotEmpty(property)) {
             discover(clazz, property);
         }
-    }
-
-    /**
-     * @param r
-     * @param introspector
-     * @param clazz
-     * @param property
-     * @deprecated RuntimeLogger is deprecated. Use the other constructor.
-     */
-    public PropertyExecutor(final RuntimeLogger r, final Introspector introspector,
-                            final Class clazz, final String property) {
-        this(new RuntimeLoggerLog(r), introspector, clazz, property);
     }
 
     /**
@@ -119,10 +121,13 @@ public class PropertyExecutor extends AbstractExecutor {
     }
 
     /**
-     * @see AbstractExecutor#execute(Object)
+     * @see org.apache.velocity.runtime.parser.node.AbstractExecutor#execute(java.lang.Object)
      */
     public Object execute(Object o)
             throws IllegalAccessException, InvocationTargetException {
+        if (wrapArray) {
+            o = new ArrayListWrapper(o);
+        }
         return isAlive() ? getMethod().invoke(o, ((Object[]) null)) : null;
     }
 }

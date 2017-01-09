@@ -1,26 +1,22 @@
 package org.apache.velocity;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.osgi.framework.Bundle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.URL;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
 
 /**
- * Created by socheatkhauv on 1/8/17.
+ * Created by socheatkhauv on 1/9/17.
  */
 public class BundleTemplate extends Template {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BundleTemplate.class);
-
-    private final Bundle bundle;
+    private Bundle bundle;
 
     public BundleTemplate(Bundle bundle) {
         this.bundle = bundle;
@@ -28,24 +24,15 @@ public class BundleTemplate extends Template {
 
     @Override
     public boolean process() throws ResourceNotFoundException, ParseErrorException {
-        LOGGER.info("BundleTemplate.process()");
         data = null;
-        InputStream is = null;
+        Reader reader = null;
         errorCondition = null;
 
         /*
          *  first, try to get the stream from the loader
          */
         try {
-            LOGGER.info("bundle id {} resource {}", this.bundle.getSymbolicName(), name);
-            URL url = this.bundle.getResource(name);
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            try (InputStream inputStream = url.openStream()) {
-                IOUtils.copy(inputStream, outputStream);
-                is = new ByteArrayInputStream(outputStream.toByteArray());
-            } catch (IOException e) {
-                is = new ByteArrayInputStream("NULL".getBytes());
-            }
+            reader = resourceLoader.getResourceReader(bundle, name, getEncoding());
         } catch (ResourceNotFoundException rnfe) {
             /*
              *  remember and re-throw
@@ -60,22 +47,16 @@ public class BundleTemplate extends Template {
          *  forgets to throw a proper exception
          */
 
-        if (is != null) {
+        if (reader != null) {
             /*
              *  now parse the template
              */
 
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(is, encoding));
-                data = rsvc.parse(br, name);
+                BufferedReader br = new BufferedReader(reader);
+                data = rsvc.parse(br, this);
                 initDocument();
                 return true;
-            } catch (UnsupportedEncodingException uce) {
-                String msg = "Template.process : Unsupported input encoding : " + encoding
-                        + " for template " + name;
-
-                errorCondition = new ParseErrorException(msg);
-                throw errorCondition;
             } catch (ParseException pex) {
                 /*
                  *  remember the error and convert
@@ -97,7 +78,7 @@ public class BundleTemplate extends Template {
                  *  Make sure to close the inputstream when we are done.
                  */
                 try {
-                    is.close();
+                    reader.close();
                 } catch (IOException e) {
                     // If we are already throwing an exception then we want the original
                     // exception to be continued to be thrown, otherwise, throw a new Exception.

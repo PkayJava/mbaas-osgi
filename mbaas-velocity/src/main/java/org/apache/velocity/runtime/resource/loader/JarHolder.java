@@ -22,7 +22,7 @@ package org.apache.velocity.runtime.resource.loader;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,27 +37,27 @@ import java.util.jar.JarFile;
  * A small wrapper around a Jar
  *
  * @author <a href="mailto:daveb@miceda-data.com">Dave Bryson</a>
- * @version $Id: JarHolder.java 687177 2008-08-19 22:00:32Z nbubna $
+ * @version $Id$
  */
 public class JarHolder {
     private String urlpath = null;
     private JarFile theJar = null;
     private JarURLConnection conn = null;
 
-    private Log log = null;
+    private Logger log = null;
 
     /**
      * @param rs
      * @param urlpath
      */
-    public JarHolder(RuntimeServices rs, String urlpath) {
-        this.log = rs.getLog();
+    public JarHolder(RuntimeServices rs, String urlpath, Logger log) {
+        this.log = log;
 
         this.urlpath = urlpath;
         init();
 
         if (log.isDebugEnabled()) {
-            log.debug("JarHolder: initialized JAR: " + urlpath);
+            log.debug("JarHolder: initialized JAR: {}", urlpath);
         }
     }
 
@@ -67,7 +67,7 @@ public class JarHolder {
     public void init() {
         try {
             if (log.isDebugEnabled()) {
-                log.debug("JarHolder: attempting to connect to " + urlpath);
+                log.debug("JarHolder: attempting to connect to {}", urlpath);
             }
             URL url = new URL(urlpath);
             conn = (JarURLConnection) url.openConnection();

@@ -25,7 +25,7 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.parser.Parser;
-import org.apache.velocity.util.TemplateNumber;
+import org.apache.velocity.util.DuckType;
 
 /**
  * Helps handle math<br><br>
@@ -40,7 +40,7 @@ import org.apache.velocity.util.TemplateNumber;
  * @author Nathan Bubna
  * @version $Id: ASTMathNode.java 517553 2007-03-13 06:09:58Z wglass $
  */
-public abstract class ASTMathNode extends SimpleNode {
+public abstract class ASTMathNode extends ASTBinaryOperator {
     protected boolean strictMode = false;
 
     public ASTMathNode(int id) {
@@ -57,6 +57,7 @@ public abstract class ASTMathNode extends SimpleNode {
     public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
         super.init(context, data);
         strictMode = rsvc.getBoolean(RuntimeConstants.STRICT_MATH, false);
+        cleanupParserAndTokens();
         return data;
     }
 
@@ -86,14 +87,14 @@ public abstract class ASTMathNode extends SimpleNode {
             return special;
         }
 
-        /*
-         * convert to Number if applicable
-         */
-        if (left instanceof TemplateNumber) {
-            left = ((TemplateNumber) left).getAsNumber();
+        // coerce to Number type, if possible
+        try {
+            left = DuckType.asNumber(left);
+        } catch (NumberFormatException nfe) {
         }
-        if (right instanceof TemplateNumber) {
-            right = ((TemplateNumber) right).getAsNumber();
+        try {
+            right = DuckType.asNumber(right);
+        } catch (NumberFormatException nfe) {
         }
 
         /*

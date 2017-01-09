@@ -20,12 +20,13 @@ package org.apache.velocity.runtime.directive;
  */
 
 import org.apache.velocity.context.InternalContextAdapter;
-import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.runtime.parser.ParseException;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 
 import java.io.Writer;
+import java.util.ArrayList;
 
 /**
  * This class implements the #stop directive which allows
@@ -67,15 +68,10 @@ public class Stop extends Directive {
     public void init(RuntimeServices rs, InternalContextAdapter context, Node node) {
         super.init(rs, context, node);
 
-        int kids = node.jjtGetNumChildren();
-        if (kids > 1) {
-            throw new VelocityException("The #stop directive only accepts a single message parameter at "
-                    + Log.formatFileString(this));
-        } else {
-            hasMessage = (kids == 1);
-        }
+        hasMessage = (node.jjtGetNumChildren() == 1);
     }
 
+    @Override
     public boolean render(InternalContextAdapter context, Writer writer, Node node) {
         if (!hasMessage) {
             throw STOP_ALL;
@@ -87,5 +83,16 @@ public class Stop extends Directive {
         throw new StopCommand(String.valueOf(argument));
     }
 
-}
+    /**
+     * Called by the parser to check the argument types
+     */
+    public void checkArgs(ArrayList<Integer> argtypes, Token t, String templateName)
+            throws ParseException {
+        int kids = argtypes.size();
+        if (kids > 1) {
+            throw new MacroParseException("The #stop directive only accepts a single message parameter",
+                    templateName, t);
+        }
+    }
 
+}

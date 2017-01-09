@@ -16,21 +16,21 @@ package org.apache.velocity.runtime.resource.loader;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
-import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
-import org.apache.velocity.util.ExceptionUtils;
+import org.apache.velocity.util.ExtProperties;
 import org.apache.velocity.util.StringUtils;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.sql.*;
 
 /**
@@ -119,7 +119,7 @@ import java.sql.*;
  * @author <a href="mailto:paulo.gaspar@krankikom.de">Paulo Gaspar</a>
  * @author <a href="mailto:lachiewicz@plusnet.pl">Sylwester Lachiewicz</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
- * @version $Id: DataSourceResourceLoader.java 991660 2010-09-01 19:13:46Z nbubna $
+ * @version $Id$
  * @since 1.5
  */
 public class DataSourceResourceLoader extends ResourceLoader {
@@ -132,9 +132,9 @@ public class DataSourceResourceLoader extends ResourceLoader {
     private DataSource dataSource;
 
     /**
-     * @see ResourceLoader#init(ExtendedProperties)
+     * @see ResourceLoader#init(org.apache.velocity.util.ExtProperties)
      */
-    public void init(ExtendedProperties configuration) {
+    public void init(ExtProperties configuration) {
         dataSourceName = StringUtils.nullTrim(configuration.getString("resource.datasource"));
         tableName = StringUtils.nullTrim(configuration.getString("resource.table"));
         keyColumn = StringUtils.nullTrim(configuration.getString("resource.keycolumn"));
@@ -143,21 +143,15 @@ public class DataSourceResourceLoader extends ResourceLoader {
 
         if (dataSource != null) {
             if (log.isDebugEnabled()) {
-                log.debug("DataSourceResourceLoader: using dataSource instance with table \""
-                        + tableName + "\"");
-                log.debug("DataSourceResourceLoader: using columns \""
-                        + keyColumn + "\", \"" + templateColumn + "\" and \""
-                        + timestampColumn + "\"");
+                log.debug("DataSourceResourceLoader: using dataSource instance with table \"{}\"", tableName);
+                log.debug("DataSourceResourceLoader: using columns \"{}\", \"{}\" and \"{}\"", keyColumn, templateColumn, timestampColumn);
             }
 
             log.trace("DataSourceResourceLoader initialized.");
         } else if (dataSourceName != null) {
             if (log.isDebugEnabled()) {
-                log.debug("DataSourceResourceLoader: using \"" + dataSourceName
-                        + "\" datasource with table \"" + tableName + "\"");
-                log.debug("DataSourceResourceLoader: using columns \""
-                        + keyColumn + "\", \"" + templateColumn + "\" and \""
-                        + timestampColumn + "\"");
+                log.debug("DataSourceResourceLoader: using \"{}\" datasource with table \"{}\"", dataSourceName, tableName);
+                log.debug("DataSourceResourceLoader: using columns \"{}\", \"{}\" and \"{}\"", keyColumn, templateColumn, timestampColumn);
             }
 
             log.trace("DataSourceResourceLoader initialized.");
@@ -197,13 +191,15 @@ public class DataSourceResourceLoader extends ResourceLoader {
      * Get an InputStream so that the Runtime can build a
      * template with it.
      *
-     * @param name name of template
+     * @param name     name of template
+     * @param encoding asked encoding
      * @return InputStream containing template
      * @throws ResourceNotFoundException
+     * @since 2.0
      */
-    public synchronized InputStream getResourceStream(final String name)
+    public synchronized Reader getResourceReader(final String name, String encoding)
             throws ResourceNotFoundException {
-        if (org.apache.commons.lang.StringUtils.isEmpty(name)) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(name)) {
             throw new ResourceNotFoundException("DataSourceResourceLoader: Template name was empty or null");
         }
 
@@ -212,18 +208,29 @@ public class DataSourceResourceLoader extends ResourceLoader {
         PreparedStatement ps = null;
         try {
             conn = openDbConnection();
-            ps = getStatement(conn, templateColumn, name);
+            ps = getStatement(conn, templateColumn, tableName, keyColumn, name);
             rs = ps.executeQuery();
 
             if (rs.next()) {
-                InputStream stream = rs.getBinaryStream(templateColumn);
-                if (stream == null) {
+                InputStream rawStream = rs.getAsciiStream(templateColumn);
+                if (rawStream == null) {
                     throw new ResourceNotFoundException("DataSourceResourceLoader: "
                             + "template column for '"
                             + name + "' is null");
                 }
-
-                return new BufferedInputStream(stream);
+                try {
+                    return buildReader(rawStream, encoding);
+                } catch (Exception e) {
+                    if (rawStream != null) {
+                        try {
+                            rawStream.close();
+                        } catch (IOException ioe) {
+                        }
+                    }
+                    String msg = "Exception while loading Template column for " + name;
+                    log.error(msg, e);
+                    throw new VelocityException(msg, e);
+                }
             } else {
                 throw new ResourceNotFoundException("DataSourceResourceLoader: "
                         + "could not find resource '"
@@ -272,7 +279,7 @@ public class DataSourceResourceLoader extends ResourceLoader {
 
             try {
                 conn = openDbConnection();
-                ps = getStatement(conn, timestampColumn, name);
+                ps = getStatement(conn, timestampColumn, tableName, keyColumn, name);
                 rs = ps.executeQuery();
 
                 if (rs.next()) {
@@ -289,13 +296,13 @@ public class DataSourceResourceLoader extends ResourceLoader {
                         + operation + " of '" + name + "': ";
 
                 log.error(msg, sqle);
-                throw ExceptionUtils.createRuntimeException(msg, sqle);
+                throw new VelocityException(msg, sqle);
             } catch (NamingException ne) {
                 String msg = "DataSourceResourceLoader: database problem while "
                         + operation + " of '" + name + "': ";
 
                 log.error(msg, ne);
-                throw ExceptionUtils.createRuntimeException(msg, ne);
+                throw new VelocityException(msg, ne);
             } finally {
                 closeResultSet(rs);
                 closeStatement(ps);
@@ -387,12 +394,16 @@ public class DataSourceResourceLoader extends ResourceLoader {
      *
      * @param conn         connection to datasource
      * @param columnNames  columns to fetch from datasource
+     * @param tableName    table to fetch from
+     * @param keyColumn    column whose value should match templateName
      * @param templateName name of template to fetch
      * @return PreparedStatement
      */
-    private PreparedStatement getStatement(final Connection conn,
-                                           final String columnNames,
-                                           final String templateName) throws SQLException {
+    protected PreparedStatement getStatement(final Connection conn,
+                                             final String columnNames,
+                                             final String tableName,
+                                             final String keyColumn,
+                                             final String templateName) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("SELECT " + columnNames + " FROM " + tableName + " WHERE " + keyColumn + " = ?");
         ps.setString(1, templateName);
         return ps;

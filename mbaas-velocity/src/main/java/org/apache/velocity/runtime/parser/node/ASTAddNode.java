@@ -21,6 +21,7 @@ package org.apache.velocity.runtime.parser.node;
 
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.runtime.parser.Parser;
+import org.apache.velocity.util.DuckType;
 
 /**
  * Handles number addition of nodes.<br><br>
@@ -32,7 +33,7 @@ import org.apache.velocity.runtime.parser.Parser;
  * @author <a href="mailto:pero@antaramusic.de">Peter Romianowski</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: ASTAddNode.java 712887 2008-11-11 00:27:50Z nbubna $
+ * @version $Id$
  */
 public class ASTAddNode extends ASTMathNode {
     /**
@@ -50,20 +51,25 @@ public class ASTAddNode extends ASTMathNode {
         super(p, id);
     }
 
-    //@Override
+    @Override
     protected Object handleSpecial(Object left, Object right, InternalContextAdapter context) {
-        /*
-         * shall we try for strings?
-         */
-        if (left instanceof String || right instanceof String) {
-            if (left == null) {
-                left = jjtGetChild(0).literal();
-            } else if (right == null) {
-                right = jjtGetChild(1).literal();
+        // check for strings, but don't coerce
+        String lstr = DuckType.asString(left, false);
+        String rstr = DuckType.asString(right, false);
+        if (lstr != null || rstr != null) {
+            if (lstr == null) {
+                lstr = left != null ? left.toString() : jjtGetChild(0).literal();
+            } else if (rstr == null) {
+                rstr = right != null ? right.toString() : jjtGetChild(1).literal();
             }
-            return left.toString().concat(right.toString());
+            return lstr.concat(rstr);
         }
         return null;
+    }
+
+    @Override
+    public String getLiteralOperator() {
+        return "+";
     }
 
     public Number perform(Number left, Number right, InternalContextAdapter context) {
