@@ -3,7 +3,6 @@ package org.angkorteam.mbaas.login.controller;
 import org.angkorteam.mbaas.login.view.LoginView;
 import org.angkorteam.mbaas.servlet.Connection;
 import org.angkorteam.mbaas.servlet.Controller;
-import org.osgi.framework.Bundle;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -14,32 +13,10 @@ import java.util.Map;
 /**
  * Created by socheatkhauv on 1/7/17.
  */
-public class LoginController implements Controller {
+public class LoginController extends Controller {
 
-    private final Bundle bundle;
-
-    public LoginController(Bundle bundle) {
-        this.bundle = bundle;
-    }
-
-    @Override
-    public String method() {
-        return GET;
-    }
-
-    @Override
-    public String id() {
-        return LoginController.class.getName();
-    }
-
-    @Override
-    public Bundle bundle() {
-        return this.bundle;
-    }
-
-    @Override
-    public String path() {
-        return "/login";
+    public LoginController() {
+        super(LoginController.class.getName(), GET, "/login");
     }
 
     @Override

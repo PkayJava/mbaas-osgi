@@ -22,7 +22,6 @@ package org.apache.velocity.runtime.resource;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.osgi.framework.Bundle;
 
 /**
  * Class to manage the text resource for the Velocity
@@ -66,9 +65,6 @@ public interface ResourceManager {
      *                                   to syntax (or other) error.
      */
     public Resource getResource(String resourceName, int resourceType, String encoding)
-            throws ResourceNotFoundException, ParseErrorException;
-
-    public Resource getResource(Bundle bundle, String resourceName, int resourceType, String encoding)
             throws ResourceNotFoundException, ParseErrorException;
 
     /**

@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.angkorteam.mbaas.servlet.Controller;
 import org.angkorteam.mbaas.servlet.ControllerMapping;
+import org.angkorteam.mbaas.servlet.HtmlTag;
 import org.angkorteam.mbaas.servlet.ViewMapping;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
@@ -41,15 +42,12 @@ public class MainServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-
         Velocity.init();
     }
 
-    public static void main(String[] args) {
-        Velocity.init();
-    }
-
-    public MainServlet(DataSource dataSource, Map<String, ControllerMapping> controllerDictionary, Map<String, ViewMapping> viewDictionary) {
+    public MainServlet(DataSource dataSource,
+                       Map<String, ControllerMapping> controllerDictionary,
+                       Map<String, ViewMapping> viewDictionary) {
         this.dataSource = dataSource;
         this.controllerDictionary = controllerDictionary;
         this.viewDictionary = viewDictionary;
@@ -95,6 +93,8 @@ public class MainServlet extends HttpServlet {
             }
         }
 
+        Map<String, HtmlTag> header = Maps.newHashMap();
+
         try (Connection connection = this.dataSource.getConnection()) {
             List<AutoCloseable> closeables = Lists.newArrayList();
             Controller controller = requestMapping.getController();
@@ -114,21 +114,21 @@ public class MainServlet extends HttpServlet {
                 ViewMapping view = this.viewDictionary.get(viewId);
 
                 if (view == null) {
-                    LOGGER.info("view id {} is not found in the registry", viewId);
+                    LOGGER.info("view getId {} is not found in the registry", viewId);
                 }
 
                 if (!Strings.isNullOrEmpty(view.getParentId())) {
-                    StringWriter writer = processView(view, request, response);
+                    StringWriter writer = processView(header, view, request, response);
                     response.getWriter().write(writer.getBuffer().toString());
                 } else {
-                    VelocityContext velocityContext = view.getView().velocityContext(request, response);
-                    Template template = Velocity.getTemplate(view.getView().bundle(), view.getTemplate());
+                    VelocityContext velocityContext = view.getView().velocityContext(header, request, response);
+                    BundleTemplate template = new BundleTemplate(view.getView());
                     template.merge(velocityContext, response.getWriter());
                 }
 
             } catch (Throwable e) {
                 e.printStackTrace();
-                LOGGER.info("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.path(), e.getMessage());
+                LOGGER.info("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (SQLException e) {
@@ -137,33 +137,33 @@ public class MainServlet extends HttpServlet {
         }
     }
 
-    protected StringWriter processView(ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
+    protected StringWriter processView(Map<String, HtmlTag> header, ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
 
         ViewMapping parentView = null;
         if (!Strings.isNullOrEmpty(view.getParentId())) {
             parentView = this.viewDictionary.get(view.getParentId());
             if (parentView == null) {
-                LOGGER.info("parent id {} is not found in the registry", view.getParentId());
+                LOGGER.info("parent getId {} is not found in the registry", view.getParentId());
             }
             if (!Strings.isNullOrEmpty(parentView.getParentId())) {
-                return processView(this.viewDictionary.get(parentView.getParentId()), request, response);
+                return processView(header, this.viewDictionary.get(parentView.getParentId()), request, response);
             }
         }
 
         VelocityContext parentVelocityContext = null;
         if (parentView != null) {
-            parentVelocityContext = parentView.getView().velocityContext(request, response);
+            parentVelocityContext = parentView.getView().velocityContext(header, request, response);
         }
-        VelocityContext velocityContext = view.getView().velocityContext(request, response);
+        VelocityContext velocityContext = view.getView().velocityContext(header, request, response);
         StringWriter writer = new StringWriter();
         {
             if (velocityContext == null) {
                 velocityContext = new VelocityContext();
             }
 
-            buildBlock(velocityContext, view, request, response);
+            buildBlock(header, velocityContext, view, request, response);
 
-            Template template = Velocity.getTemplate(view.getView().bundle(), view.getTemplate());
+            Template template = new BundleTemplate(view.getView());
             template.merge(velocityContext, writer);
         }
 
@@ -172,10 +172,10 @@ public class MainServlet extends HttpServlet {
                 parentVelocityContext = new VelocityContext();
             }
 
-            buildBlock(parentVelocityContext, parentView, request, response);
+            buildBlock(header, parentVelocityContext, parentView, request, response);
 
             StringWriter parentWriter = new StringWriter();
-            Template template = Velocity.getTemplate(parentView.getView().bundle(), parentView.getTemplate());
+            Template template = new BundleTemplate(parentView.getView());
             parentVelocityContext.put("child", writer.getBuffer());
             template.merge(parentVelocityContext, parentWriter);
             return parentWriter;
@@ -184,22 +184,22 @@ public class MainServlet extends HttpServlet {
         }
     }
 
-    protected void buildBlock(VelocityContext velocityContext, ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
-        Map<String, String> blocks = view.getView().blocks();
+    protected void buildBlock(Map<String, HtmlTag> header, VelocityContext velocityContext, ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
+        Map<String, String> blocks = view.getView().getBlocks();
         if (blocks != null && !blocks.isEmpty()) {
             for (Map.Entry<String, String> block : blocks.entrySet()) {
                 String name = block.getKey();
                 String viewId = block.getValue();
                 ViewMapping blockView = this.viewDictionary.get(viewId);
                 if (blockView == null) {
-                    LOGGER.info("block id {} is not found in registry", viewId);
+                    LOGGER.info("block getId {} is not found in registry", viewId);
                 } else {
-                    VelocityContext blockVelocityContext = blockView.getView().velocityContext(request, response);
+                    VelocityContext blockVelocityContext = blockView.getView().velocityContext(header, request, response);
                     if (blockVelocityContext == null) {
                         blockVelocityContext = new VelocityContext();
                     }
                     StringWriter blockWriter = new StringWriter();
-                    Template blockTemplate = Velocity.getTemplate(blockView.getView().bundle(), blockView.getTemplate());
+                    Template blockTemplate = new BundleTemplate(blockView.getView());
                     blockTemplate.merge(blockVelocityContext, blockWriter);
                     velocityContext.put(name, blockWriter.getBuffer());
                 }

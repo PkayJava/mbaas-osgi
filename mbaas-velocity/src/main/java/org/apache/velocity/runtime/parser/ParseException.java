@@ -23,11 +23,11 @@ package org.apache.velocity.runtime.parser;
  * This exception is thrown when parse errors are encountered.
  * It is intended to be caught and typically will be rethrown
  * as a ParseErrorException.
- *
+ * <p>
  * <p>You can explicitly create objects of this exception type by
  * calling the method generateParseException in the generated
  * parser.
- *
+ * <p>
  * You can modify this class to customize your error reporting
  * mechanisms so long as you retain the public fields.
  */
@@ -45,7 +45,7 @@ public class ParseException extends Exception {
      * This constructor calls its super class with the empty string
      * to force the "toString" method of parent class "Throwable" to
      * print the error message in the form:
-     *     ParseException: <result of getMessage>
+     * ParseException: <result of getMessage>
      */
     public ParseException(Token currentTokenVal,
                           int[][] expectedTokenSequencesVal,

@@ -48,8 +48,8 @@ import org.apache.velocity.util.introspection.VelMethod;
  */
 
 /**
- *  This node is responsible for the bracket notation at the end of
- *  a reference, e.g., $foo[1]
+ * This node is responsible for the bracket notation at the end of
+ * a reference, e.g., $foo[1]
  */
 
 public class ASTIndex extends SimpleNode {
@@ -81,12 +81,13 @@ public class ASTIndex extends SimpleNode {
     private final static Class[] noTypes = {};
 
     /**
-     * If argument is an Integer and negative, then return (o.size() - argument). 
+     * If argument is an Integer and negative, then return (o.size() - argument).
      * Otherwise return the original argument.  We use this to calculate the true
      * index of a negative index e.g., $foo[-1]. If no size() method is found on the
      * 'o' object, then we throw an VelocityException.
+     *
      * @param context Used to access the method cache.
-     * @param node  ASTNode used for error reporting.
+     * @param node    ASTNode used for error reporting.
      */
     public static Object adjMinusIndexArg(Object argument, Object o,
                                           InternalContextAdapter context, SimpleNode node) {

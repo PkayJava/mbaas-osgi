@@ -41,7 +41,6 @@ import org.apache.velocity.util.StringUtils;
 import org.apache.velocity.util.introspection.ChainableUberspector;
 import org.apache.velocity.util.introspection.LinkingUberspector;
 import org.apache.velocity.util.introspection.Uberspect;
-import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1320,15 +1319,6 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices {
         if (encoding == null) encoding = getDefaultEncoding();
         return (Template)
                 resourceManager.getResource(name,
-                        ResourceManager.RESOURCE_TEMPLATE, encoding);
-    }
-
-    public Template getTemplate(Bundle bundle, String name, String encoding)
-            throws ResourceNotFoundException, ParseErrorException {
-        requireInitialization();
-        if (encoding == null) encoding = getDefaultEncoding();
-        return (Template)
-                resourceManager.getResource(bundle, name,
                         ResourceManager.RESOURCE_TEMPLATE, encoding);
     }
 

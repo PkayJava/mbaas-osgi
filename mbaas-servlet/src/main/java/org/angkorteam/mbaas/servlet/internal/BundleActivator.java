@@ -3,10 +3,7 @@ package org.angkorteam.mbaas.servlet.internal;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.angkorteam.mbaas.servlet.Controller;
-import org.angkorteam.mbaas.servlet.ControllerMapping;
-import org.angkorteam.mbaas.servlet.View;
-import org.angkorteam.mbaas.servlet.ViewMapping;
+import org.angkorteam.mbaas.servlet.*;
 import org.angkorteam.mbaas.servlet.block.MenuView;
 import org.angkorteam.mbaas.servlet.layout.TemplateView;
 import org.apache.commons.lang3.StringUtils;
@@ -15,7 +12,6 @@ import org.osgi.service.jdbc.DataSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.Filter;
 import javax.servlet.Servlet;
 import javax.sql.DataSource;
 import java.util.*;
@@ -36,6 +32,8 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
     private Map<String, ControllerMapping> controllerDictionary;
 
     private Map<String, ViewMapping> viewDictionary;
+
+    private Map<String, AssetMapping> assetDictionary;
 
     public static final List<Character> CHARACTERS = new ArrayList<>();
     public static final List<Character> NUMBERS = new ArrayList<>();
@@ -88,6 +86,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         this.context = context;
         this.controllerDictionary = Maps.newHashMap();
         this.viewDictionary = Maps.newHashMap();
+        this.assetDictionary = Maps.newHashMap();
         context.addServiceListener(this);
 
         {
@@ -104,14 +103,15 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             Dictionary<String, Object> props = new Hashtable<>();
             props.put("alias", "/asset");
             props.put("servlet-name", "Asset Servlet");
-            this.assetServlet = context.registerService(Servlet.class, new AssetServlet(), props);
+            this.assetServlet = context.registerService(Servlet.class, new AssetServlet(Collections.unmodifiableMap(this.assetDictionary)), props);
         }
 
         {
             Dictionary<String, Object> props = new Hashtable<>();
             props.put("alias", "/");
             props.put("servlet-name", "Main Servlet");
-            this.mainServlet = context.registerService(Servlet.class, new MainServlet(this.dataSource, this.controllerDictionary, this.viewDictionary), props);
+            MainServlet servlet = new MainServlet(this.dataSource, Collections.unmodifiableMap(this.controllerDictionary), Collections.unmodifiableMap(this.viewDictionary));
+            this.mainServlet = context.registerService(Servlet.class, servlet, props);
         }
 
         {
@@ -120,12 +120,9 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         }
 
         {
-            Dictionary<String, Object> props = new Hashtable<>();
-            String[] urls = {"/whiteboard"};
-            props.put("filter-name", "My Crazy Filter");
-            props.put("urlPatterns", urls);
-            context.registerService(Filter.class, new SimpleFilter(), props);
+            context.registerService(MBaaS.class, new MBaaSImpl(), new Hashtable<>());
         }
+
     }
 
     public void stop(BundleContext context) throws Exception {
@@ -204,19 +201,19 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         int eventType = event.getType();
 
         if (eventType == ServiceEvent.UNREGISTERING) {
-            this.controllerDictionary.remove(controller.id());
+            this.controllerDictionary.remove(controller.getId());
             return;
         }
 
         if (eventType == ServiceEvent.MODIFIED) {
-            this.controllerDictionary.remove(controller.id());
+            this.controllerDictionary.remove(controller.getId());
             eventType = ServiceEvent.REGISTERED;
         }
 
         if (eventType == ServiceEvent.REGISTERED) {
-            boolean valid = isValid(controller.method(), controller.path());
+            boolean valid = isValid(controller.getMethod(), controller.getPath());
             if (valid) {
-                String[] segments = StringUtils.split(controller.path(), "/");
+                String[] segments = StringUtils.split(controller.getPath(), "/");
                 List<String> newSegments = Lists.newLinkedList();
                 for (String segment : segments) {
                     if (!Strings.isNullOrEmpty(segment)) {
@@ -228,10 +225,10 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
                     }
                 }
                 String pathVariable = "/" + StringUtils.join(newSegments, "/");
-                int segment = StringUtils.countMatches(controller.path(), '/');
-                ControllerMapping controllerMapping = new ControllerMapping(segment, controller.method(), controller.path(), pathVariable, controller);
-                LOGGER.info("register {} {} {}", controller.id(), controller.path(), controller.getClass().getName());
-                this.controllerDictionary.put(controller.id(), controllerMapping);
+                int segment = StringUtils.countMatches(controller.getPath(), '/');
+                ControllerMapping controllerMapping = new ControllerMapping(segment, controller.getMethod(), controller.getPath(), pathVariable, controller);
+                LOGGER.info("register {} {} {}", controller.getId(), controller.getPath(), controller.getClass().getName());
+                this.controllerDictionary.put(controller.getId(), controllerMapping);
             }
         }
     }
@@ -240,19 +237,39 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         int eventType = event.getType();
 
         if (eventType == ServiceEvent.UNREGISTERING) {
-            this.viewDictionary.remove(view.id());
+            this.viewDictionary.remove(view.getId());
             return;
         }
 
         if (eventType == ServiceEvent.MODIFIED) {
-            this.controllerDictionary.remove(view.id());
+            this.controllerDictionary.remove(view.getId());
             eventType = ServiceEvent.REGISTERED;
         }
 
         if (eventType == ServiceEvent.REGISTERED) {
-            ViewMapping viewMapping = new ViewMapping(view.id(), view.template(), view.parentId(), view.blocks(), view);
-            LOGGER.info("registered view {} template {} parent id {}", view.id(), view.template(), view.parentId());
-            this.viewDictionary.put(view.id(), viewMapping);
+            ViewMapping viewMapping = new ViewMapping(view.getId(), view.getTemplate(), view.getParentId(), view.getBlocks(), view);
+            LOGGER.info("registered view {} getTemplate {} parent getId {}", view.getId(), view.getTemplate(), view.getParentId());
+            this.viewDictionary.put(view.getId(), viewMapping);
+        }
+    }
+
+    public void serviceChanged(ServiceEvent event, Asset asset) {
+        int eventType = event.getType();
+
+        if (eventType == ServiceEvent.UNREGISTERING) {
+            this.assetDictionary.remove(asset.getId());
+            return;
+        }
+
+        if (eventType == ServiceEvent.MODIFIED) {
+            this.assetDictionary.remove(asset.getId());
+            eventType = ServiceEvent.REGISTERED;
+        }
+
+        if (eventType == ServiceEvent.REGISTERED) {
+            AssetMapping assetMapping = new AssetMapping(asset.getBundle(), asset.getPath());
+            LOGGER.info("registered bundle {} path {}", asset.getBundle().getSymbolicName(), "/" + asset.getBundle().getBundleId() + asset.getPath());
+            this.assetDictionary.put(asset.getId(), assetMapping);
         }
     }
 
@@ -277,6 +294,8 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             serviceChanged(event, (Controller) object);
         } else if (object instanceof View) {
             serviceChanged(event, (View) object);
+        } else if (object instanceof Asset) {
+            serviceChanged(event, (Asset) object);
         }
 
     }

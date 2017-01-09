@@ -283,16 +283,6 @@ public class Velocity implements RuntimeConstants {
         return RuntimeSingleton.getTemplate(name, encoding);
     }
 
-    public static Template getTemplate(Bundle bundle, String name, String encoding)
-            throws ResourceNotFoundException, ParseErrorException {
-        return RuntimeSingleton.getTemplate(bundle, name, encoding);
-    }
-
-    public static Template getTemplate(Bundle bundle, String name)
-            throws ResourceNotFoundException, ParseErrorException {
-        return RuntimeSingleton.getTemplate(bundle, name, "UTF-8");
-    }
-
     /**
      * <p>Determines whether a resource is accessible via the
      * currently configured resource loaders.  {@link

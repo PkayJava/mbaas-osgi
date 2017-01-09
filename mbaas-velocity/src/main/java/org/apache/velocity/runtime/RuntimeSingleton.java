@@ -279,11 +279,6 @@ public class RuntimeSingleton implements RuntimeConstants {
         return ri.getTemplate(name, encoding);
     }
 
-    public static Template getTemplate(Bundle bundle, String name, String encoding)
-            throws ResourceNotFoundException, ParseErrorException {
-        return ri.getTemplate(bundle, name, encoding);
-    }
-
     /**
      * Returns a static content resource from the
      * resource manager.  Uses the current value

@@ -395,6 +395,7 @@ public final class VelocityCharStream
 
     /**
      * Method to adjust line and column numbers for the start of a token.<BR>
+     *
      * @param newLine
      * @param newCol
      */

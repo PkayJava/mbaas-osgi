@@ -1,7 +1,5 @@
 package org.angkorteam.mbaas.servlet;
 
-import org.osgi.framework.Bundle;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -11,24 +9,40 @@ import java.util.Map;
 /**
  * Created by socheatkhauv on 1/7/17.
  */
-public interface Controller {
+public abstract class Controller {
 
-    String GET = "GET";
+    public static final String GET = "GET";
 
-    String POST = "POST";
+    public static final String POST = "POST";
 
-    String DELETE = "DELETE";
+    public static final String DELETE = "DELETE";
 
-    String PUT = "PUT";
+    public static final String PUT = "PUT";
 
-    String id();
+    private final String id;
 
-    String method();
+    private final String method;
 
-    String path();
+    private final String path;
 
-    Bundle bundle();
+    protected Controller(String id, String method, String path) {
+        this.id = id;
+        this.method = method;
+        this.path = path;
+    }
 
-    String execute(Connection connection, Map<String, String> pathVariables, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException;
+    public final String getId() {
+        return this.id;
+    }
+
+    public final String getMethod() {
+        return this.method;
+    }
+
+    public final String getPath() {
+        return this.path;
+    }
+
+    public abstract String execute(Connection connection, Map<String, String> pathVariables, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException;
 
 }

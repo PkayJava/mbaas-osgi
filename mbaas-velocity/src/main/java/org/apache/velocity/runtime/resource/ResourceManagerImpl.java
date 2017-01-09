@@ -345,87 +345,6 @@ public class ResourceManagerImpl
         return resource;
     }
 
-    public Resource getResource(Bundle bundle, final String resourceName, final int resourceType, final String encoding)
-            throws ResourceNotFoundException,
-            ParseErrorException {
-        /*
-         * Check to see if the resource was placed in the cache.
-         * If it was placed in the cache then we will use
-         * the cached version of the resource. If not we
-         * will load it.
-         *
-         * Note: the type is included in the key to differentiate ContentResource
-         * (static content from #include) with a Template.
-         */
-
-        String resourceKey = resourceType + resourceName + bundle.getLastModified();
-        Resource resource = globalCache.get(resourceKey);
-
-        if (resource != null) {
-            try {
-                // avoids additional method call to refreshResource
-                if (resource.requiresChecking()) {
-                    /*
-                     * both loadResource() and refreshResource() now return
-                     * a new Resource instance when they are called
-                     * (put in the cache when appropriate) in order to allow
-                     * several threads to parse the same template simultaneously.
-                     * It is redundant work and will cause more garbage collection but the
-                     * benefit is that it allows concurrent parsing and processing
-                     * without race conditions when multiple requests try to
-                     * refresh/load the same template at the same time.
-                     *
-                     * Another alternative is to limit template parsing/retrieval
-                     * so that only one thread can parse each template at a time
-                     * but that creates a scalability bottleneck.
-                     *
-                     * See VELOCITY-606, VELOCITY-595 and VELOCITY-24
-                     */
-                    resource = refreshResource(resource, encoding);
-                }
-            } catch (ResourceNotFoundException rnfe) {
-                /*
-                 *  something exceptional happened to that resource
-                 *  this could be on purpose,
-                 *  so clear the cache and try again
-                 */
-
-                globalCache.remove(resourceKey);
-
-                return getResource(bundle, resourceName, resourceType, encoding);
-            } catch (ParseErrorException pee) {
-                log.error("ResourceManager.getResource() exception", pee);
-                throw pee;
-            } catch (RuntimeException re) {
-                log.error("ResourceManager.getResource() exception", re);
-                throw re;
-            }
-        } else {
-            try {
-                /*
-                 *  it's not in the cache, so load it.
-                 */
-                resource = loadResource(bundle, resourceName, resourceType, encoding);
-
-                if (resource.getResourceLoader().isCachingOn()) {
-                    globalCache.put(resourceKey, resource);
-                }
-            } catch (ResourceNotFoundException rnfe) {
-                log.error("ResourceManager : unable to find resource '" +
-                        resourceName + "' in any resource loader.");
-                throw rnfe;
-            } catch (ParseErrorException pee) {
-                log.error("ResourceManager: parse exception: {}", pee.getMessage());
-                throw pee;
-            } catch (RuntimeException re) {
-                log.error("ResourceManager.getResource() load exception", re);
-                throw re;
-            }
-        }
-
-        return resource;
-    }
-
     /**
      * Create a new Resource of the specified type.
      *
@@ -436,10 +355,6 @@ public class ResourceManagerImpl
      */
     protected Resource createResource(String resourceName, int resourceType) {
         return ResourceFactory.getResource(resourceName, resourceType);
-    }
-
-    protected Resource createResource(Bundle bundle, String resourceName, int resourceType) {
-        return ResourceFactory.getResource(bundle, resourceName, resourceType);
     }
 
     /**
@@ -456,81 +371,6 @@ public class ResourceManagerImpl
             throws ResourceNotFoundException,
             ParseErrorException {
         Resource resource = createResource(resourceName, resourceType);
-        resource.setRuntimeServices(rsvc);
-        resource.setName(resourceName);
-        resource.setEncoding(encoding);
-
-        /*
-         * Now we have to try to find the appropriate
-         * loader for this resource. We have to cycle through
-         * the list of available resource loaders and see
-         * which one gives us a stream that we can use to
-         * make a resource with.
-         */
-
-        long howOldItWas = 0;
-
-        for (Iterator it = resourceLoaders.iterator(); it.hasNext(); ) {
-            ResourceLoader resourceLoader = (ResourceLoader) it.next();
-            resource.setResourceLoader(resourceLoader);
-
-            /*
-             *  catch the ResourceNotFound exception
-             *  as that is ok in our new multi-loader environment
-             */
-
-            try {
-
-                if (resource.process()) {
-                    /*
-                     *  FIXME  (gmj)
-                     *  moved in here - technically still
-                     *  a problem - but the resource needs to be
-                     *  processed before the loader can figure
-                     *  it out due to to the new
-                     *  multi-path support - will revisit and fix
-                     */
-
-                    if (logWhenFound && log.isDebugEnabled()) {
-                        log.debug("ResourceManager: found {} with loader {}",
-                                resourceName, resourceLoader.getClassName());
-                    }
-
-                    howOldItWas = resourceLoader.getLastModified(resource);
-
-                    break;
-                }
-            } catch (ResourceNotFoundException rnfe) {
-                /*
-                 *  that's ok - it's possible to fail in
-                 *  multi-loader environment
-                 */
-            }
-        }
-
-        /*
-         * Return null if we can't find a resource.
-         */
-        if (resource.getData() == null) {
-            throw new ResourceNotFoundException("Unable to find resource '" + resourceName + "'");
-        }
-
-        /*
-         *  some final cleanup
-         */
-
-        resource.setLastModified(howOldItWas);
-        resource.setModificationCheckInterval(resource.getResourceLoader().getModificationCheckInterval());
-
-        resource.touch();
-
-        return resource;
-    }
-
-    protected Resource loadResource(Bundle bundle, String resourceName, int resourceType, String encoding)
-            throws ResourceNotFoundException,
-            ParseErrorException {
-        Resource resource = createResource(bundle, resourceName, resourceType);
         resource.setRuntimeServices(rsvc);
         resource.setName(resourceName);
         resource.setEncoding(encoding);

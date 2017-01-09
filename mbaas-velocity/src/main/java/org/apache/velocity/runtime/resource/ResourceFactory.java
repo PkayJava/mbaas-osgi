@@ -19,10 +19,8 @@ package org.apache.velocity.runtime.resource;
  * under the License.    
  */
 
-import org.apache.velocity.BundleTemplate;
 import org.apache.velocity.Template;
 import org.apache.velocity.exception.VelocityException;
-import org.osgi.framework.Bundle;
 
 /**
  * Class responsible for instantiating <code>Resource</code> objects,
@@ -44,24 +42,6 @@ public class ResourceFactory {
         switch (resourceType) {
             case ResourceManager.RESOURCE_TEMPLATE:
                 resource = new Template();
-                break;
-
-            case ResourceManager.RESOURCE_CONTENT:
-                resource = new ContentResource();
-                break;
-            default:
-                throw new VelocityException("invalide resource type");
-        }
-
-        return resource;
-    }
-
-    public static Resource getResource(Bundle bundle, String resourceName, int resourceType) {
-        Resource resource = null;
-
-        switch (resourceType) {
-            case ResourceManager.RESOURCE_TEMPLATE:
-                resource = new BundleTemplate(bundle);
                 break;
 
             case ResourceManager.RESOURCE_CONTENT:

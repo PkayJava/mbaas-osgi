@@ -106,6 +106,7 @@ public class ASTIfStatement extends SimpleNode {
 
     /**
      * set indentation prefix
+     *
      * @param prefix
      */
     public void setPrefix(String prefix) {
@@ -114,6 +115,7 @@ public class ASTIfStatement extends SimpleNode {
 
     /**
      * get indentation prefix
+     *
      * @return prefix
      */
     public String getPrefix() {
@@ -122,6 +124,7 @@ public class ASTIfStatement extends SimpleNode {
 
     /**
      * set indentation postfix
+     *
      * @param postfix
      */
     public void setPostfix(String postfix) {
@@ -130,6 +133,7 @@ public class ASTIfStatement extends SimpleNode {
 
     /**
      * get indentation postfix
+     *
      * @return postfix
      */
     public String getPostfix() {

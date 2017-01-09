@@ -38,19 +38,19 @@ import java.util.Iterator;
  */
 public class UberspectPublicFields implements Uberspect, RuntimeServicesAware {
     /**
-     *  Our runtime logger.
+     * Our runtime logger.
      */
     protected Logger log;
 
     /**
-     *  the default Velocity introspector
+     * the default Velocity introspector
      */
     protected Introspector introspector;
 
     /**
-     *  init - generates the Introspector. As the setup code
-     *  makes sure that the log gets set before this is called,
-     *  we can initialize the Introspector using the log object.
+     * init - generates the Introspector. As the setup code
+     * makes sure that the log gets set before this is called,
+     * we can initialize the Introspector using the log object.
      */
     public void init() {
         introspector = new Introspector(log);
@@ -58,6 +58,7 @@ public class UberspectPublicFields implements Uberspect, RuntimeServicesAware {
 
     /**
      * Property getter
+     *
      * @param obj
      * @param identifier
      * @param i
@@ -78,6 +79,7 @@ public class UberspectPublicFields implements Uberspect, RuntimeServicesAware {
 
     /**
      * Property setter
+     *
      * @param obj
      * @param identifier
      * @param arg

@@ -17,7 +17,6 @@ public final class ViewMapping {
 
     private final View view;
 
-
     public ViewMapping(String id, String template, String parentId, Map<String, String> blocks, View view) {
         this.id = id;
         this.template = template;

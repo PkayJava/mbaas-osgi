@@ -29,6 +29,6 @@
     <modules>
         <module>mbaas-velocity</module>
         <module>mbaas-servlet</module>
-        <!--<module>mbaas-login</module>-->
+        <module>mbaas-login</module>
     </modules>
 </project>

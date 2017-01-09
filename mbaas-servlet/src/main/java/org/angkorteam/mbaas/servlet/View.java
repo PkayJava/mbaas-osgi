@@ -1,27 +1,63 @@
 package org.angkorteam.mbaas.servlet;
 
+import com.google.common.collect.Maps;
 import org.apache.velocity.VelocityContext;
 import org.osgi.framework.Bundle;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Collections;
 import java.util.Map;
 
 /**
  * Created by socheatkhauv on 1/8/17.
  */
-public interface View {
+public abstract class View {
 
-    String id();
+    private final Bundle bundle;
 
-    String template();
+    private final String id;
 
-    String parentId();
+    private final String parentId;
 
-    Bundle bundle();
+    private final String template;
 
-    Map<String, String> blocks();
+    protected final Map<String, String> blocks = Maps.newHashMap();
 
-    VelocityContext velocityContext(HttpServletRequest request, HttpServletResponse response);
+    protected View(Bundle bundle, String id, String template) {
+        this.bundle = bundle;
+        this.id = id;
+        this.template = template;
+        this.parentId = null;
+    }
+
+    protected View(String parentId, Bundle bundle, String id, String template) {
+        this.bundle = bundle;
+        this.parentId = parentId;
+        this.id = id;
+        this.template = template;
+    }
+
+    public final String getId() {
+        return this.id;
+    }
+
+    public final String getTemplate() {
+        return this.template;
+    }
+
+    public final String getParentId() {
+        return this.parentId;
+    }
+
+    public final Bundle getBundle() {
+        return this.bundle;
+    }
+
+    public final Map<String, String> getBlocks() {
+        return Collections.unmodifiableMap(this.blocks);
+    }
+
+    public abstract VelocityContext velocityContext(Map<String, HtmlTag> header, HttpServletRequest request, HttpServletResponse response);
 
 }
