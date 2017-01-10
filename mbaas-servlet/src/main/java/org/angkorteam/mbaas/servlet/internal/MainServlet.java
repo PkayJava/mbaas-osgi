@@ -74,6 +74,9 @@ public class MainServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         String path = lookupPath(request);
+        if (Strings.isNullOrEmpty(path) || StringUtils.equalsIgnoreCase("/", path)) {
+            path = "/index";
+        }
         String[] segments = StringUtils.split(path, "/");
         ControllerMapping requestMapping = lookupRequestMapping(method, path);
         if (requestMapping == null) {
