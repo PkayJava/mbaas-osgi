@@ -3,7 +3,6 @@ package org.angkorteam.mbaas.login.internal;
 import org.angkorteam.mbaas.login.block.MenuView;
 import org.angkorteam.mbaas.login.controller.LoginController;
 import org.angkorteam.mbaas.login.view.LoginView;
-import org.angkorteam.mbaas.servlet.Asset;
 import org.angkorteam.mbaas.servlet.Controller;
 import org.angkorteam.mbaas.servlet.MBaaSPlugin;
 import org.angkorteam.mbaas.servlet.View;
@@ -21,11 +20,6 @@ public class BundleActivator extends MBaaSPlugin {
     @Override
     public void registerController(BundleContext context) {
         context.registerService(Controller.class, new LoginController(), new Hashtable<>());
-    }
-
-    @Override
-    public void registerAsset(BundleContext context) {
-        context.registerService(Asset.class, new Asset(context.getBundle(), String.valueOf(context.getBundle().getBundleId()), "/asset/block.vm"), new Hashtable<>());
     }
 
     @Override

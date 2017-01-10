@@ -1,13 +1,7 @@
 package org.angkorteam.mbaas.servlet;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Map;
-
 /**
- * Created by socheatkhauv on 1/7/17.
+ * Created by socheatkhauv on 1/9/17.
  */
 public abstract class Controller {
 
@@ -25,7 +19,7 @@ public abstract class Controller {
 
     private final String path;
 
-    protected Controller(String id, String method, String path) {
+    public Controller(String id, String method, String path) {
         this.id = id;
         this.method = method;
         this.path = path;
@@ -42,7 +36,4 @@ public abstract class Controller {
     public final String getPath() {
         return this.path;
     }
-
-    public abstract String execute(Connection connection, Map<String, String> pathVariables, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException;
-
 }

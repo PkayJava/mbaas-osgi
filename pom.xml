@@ -28,7 +28,7 @@
 
     <modules>
         <module>mbaas-velocity</module>
-        <module>mbaas-layout</module>
+        <module>mbaas-adminlte</module>
         <module>mbaas-servlet</module>
         <module>mbaas-login</module>
     </modules>

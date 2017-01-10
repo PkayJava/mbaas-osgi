@@ -2,7 +2,7 @@ package org.angkorteam.mbaas.login.controller;
 
 import org.angkorteam.mbaas.login.view.LoginView;
 import org.angkorteam.mbaas.servlet.Connection;
-import org.angkorteam.mbaas.servlet.Controller;
+import org.angkorteam.mbaas.servlet.LogicController;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Created by socheatkhauv on 1/7/17.
  */
-public class LoginController extends Controller {
+public class LoginController extends LogicController {
 
     public LoginController() {
         super(LoginController.class.getName(), GET, "/login");

@@ -33,8 +33,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
 
     private Map<String, ViewMapping> viewDictionary;
 
-    private Map<String, AssetMapping> assetDictionary;
-
     public static final List<Character> CHARACTERS = new ArrayList<>();
     public static final List<Character> NUMBERS = new ArrayList<>();
     public static final List<Character> CURLLY_BRACES = new ArrayList<>();
@@ -69,6 +67,32 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         CHARACTERS.add('w');
         CHARACTERS.add('y');
         CHARACTERS.add('z');
+        CHARACTERS.add('A');
+        CHARACTERS.add('B');
+        CHARACTERS.add('C');
+        CHARACTERS.add('D');
+        CHARACTERS.add('E');
+        CHARACTERS.add('F');
+        CHARACTERS.add('G');
+        CHARACTERS.add('H');
+        CHARACTERS.add('I');
+        CHARACTERS.add('J');
+        CHARACTERS.add('K');
+        CHARACTERS.add('L');
+        CHARACTERS.add('M');
+        CHARACTERS.add('N');
+        CHARACTERS.add('O');
+        CHARACTERS.add('P');
+        CHARACTERS.add('Q');
+        CHARACTERS.add('R');
+        CHARACTERS.add('S');
+        CHARACTERS.add('T');
+        CHARACTERS.add('U');
+        CHARACTERS.add('V');
+        CHARACTERS.add('X');
+        CHARACTERS.add('W');
+        CHARACTERS.add('Y');
+        CHARACTERS.add('Z');
         CHARACTERS.add('-');
         NUMBERS.add('0');
         NUMBERS.add('1');
@@ -86,7 +110,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         this.context = context;
         this.controllerDictionary = Maps.newHashMap();
         this.viewDictionary = Maps.newHashMap();
-        this.assetDictionary = Maps.newHashMap();
         context.addServiceListener(this);
 
         {
@@ -97,13 +120,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             properties.setProperty(DataSourceFactory.JDBC_USER, "root");
             properties.setProperty(DataSourceFactory.JDBC_PASSWORD, "password");
             this.dataSource = service.createDataSource(properties);
-        }
-
-        {
-            Dictionary<String, Object> props = new Hashtable<>();
-            props.put("alias", "/asset");
-            props.put("servlet-name", "Asset Servlet");
-            this.assetServlet = context.registerService(Servlet.class, new AssetServlet(Collections.unmodifiableMap(this.assetDictionary)), props);
         }
 
         {
@@ -147,8 +163,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
                 || StringUtils.startsWithIgnoreCase(path, "/system")
                 || StringUtils.startsWithIgnoreCase(path, "/features")
                 || StringUtils.startsWithIgnoreCase(path, "/gogo")
-                || StringUtils.startsWithIgnoreCase(path, "/instance")
-                || StringUtils.startsWithIgnoreCase(path, "/asset")) {
+                || StringUtils.startsWithIgnoreCase(path, "/instance")) {
             return false;
         }
 
@@ -211,6 +226,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         }
 
         if (eventType == ServiceEvent.REGISTERED) {
+            LOGGER.info("controller {}", controller.getPath());
             boolean valid = isValid(controller.getMethod(), controller.getPath());
             if (valid) {
                 String[] segments = StringUtils.split(controller.getPath(), "/");
@@ -253,25 +269,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         }
     }
 
-    public void serviceChanged(ServiceEvent event, Asset asset) {
-        int eventType = event.getType();
-
-        if (eventType == ServiceEvent.UNREGISTERING) {
-            this.assetDictionary.remove(asset.getId());
-            return;
-        }
-
-        if (eventType == ServiceEvent.MODIFIED) {
-            this.assetDictionary.remove(asset.getId());
-            eventType = ServiceEvent.REGISTERED;
-        }
-
-        if (eventType == ServiceEvent.REGISTERED) {
-            AssetMapping assetMapping = new AssetMapping(asset.getBundle(), asset.getPath());
-            this.assetDictionary.put(asset.getId(), assetMapping);
-        }
-    }
-
     public void serviceChanged(ServiceEvent event) {
         ServiceReference<?> serviceReference = event.getServiceReference();
         if (serviceReference == null) {
@@ -293,8 +290,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             serviceChanged(event, (Controller) object);
         } else if (object instanceof View) {
             serviceChanged(event, (View) object);
-        } else if (object instanceof Asset) {
-            serviceChanged(event, (Asset) object);
         }
 
     }

@@ -11,7 +11,6 @@ public abstract class MBaaSPlugin implements BundleActivator, BundleListener, Se
     public final void start(BundleContext context) throws Exception {
         context.addBundleListener(this);
         context.addServiceListener(this);
-        registerAsset(context);
         registerView(context);
         registerController(context);
     }
@@ -22,8 +21,6 @@ public abstract class MBaaSPlugin implements BundleActivator, BundleListener, Se
     }
 
     public abstract void registerController(BundleContext context);
-
-    public abstract void registerAsset(BundleContext context);
 
     public abstract void registerView(BundleContext context);
 

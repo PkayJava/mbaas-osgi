@@ -3,10 +3,7 @@ package org.angkorteam.mbaas.servlet.internal;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.angkorteam.mbaas.servlet.Controller;
-import org.angkorteam.mbaas.servlet.ControllerMapping;
-import org.angkorteam.mbaas.servlet.HtmlTag;
-import org.angkorteam.mbaas.servlet.ViewMapping;
+import org.angkorteam.mbaas.servlet.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -55,22 +52,22 @@ public class MainServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(Controller.POST, req, resp);
+        doExecute(LogicController.POST, req, resp);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(Controller.GET, req, resp);
+        doExecute(LogicController.GET, req, resp);
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(Controller.PUT, req, resp);
+        doExecute(LogicController.PUT, req, resp);
     }
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(Controller.DELETE, req, resp);
+        doExecute(LogicController.DELETE, req, resp);
     }
 
     protected void doExecute(String method, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -95,48 +92,52 @@ public class MainServlet extends HttpServlet {
 
         Map<String, HtmlTag> header = Maps.newHashMap();
 
-        try (Connection connection = this.dataSource.getConnection()) {
-            List<AutoCloseable> closeables = Lists.newArrayList();
-            Controller controller = requestMapping.getController();
-            try {
-                org.angkorteam.mbaas.servlet.Connection delegate = new org.angkorteam.mbaas.servlet.Connection(connection, closeables);
-                String viewId = controller.execute(delegate, pathVariables, request, response);
-                for (AutoCloseable closeable : closeables) {
-                    try {
-                        closeable.close();
-                    } catch (Throwable e) {
-                        LOGGER.debug("could not close " + closeable.getClass().getName() + " due to this reason {}", e.getMessage());
+        Controller controller = requestMapping.getController();
+        LOGGER.info("controller path {}", controller.getPath());
+        if (controller instanceof LogicController) {
+            try (Connection connection = this.dataSource.getConnection()) {
+                try {
+                    List<AutoCloseable> closeables = Lists.newArrayList();
+                    org.angkorteam.mbaas.servlet.Connection delegate = new org.angkorteam.mbaas.servlet.Connection(connection, closeables);
+                    String viewId = ((LogicController) controller).execute(delegate, pathVariables, request, response);
+                    for (AutoCloseable closeable : closeables) {
+                        try {
+                            closeable.close();
+                        } catch (Throwable e) {
+                            LOGGER.debug("could not close " + closeable.getClass().getName() + " due to this reason {}", e.getMessage());
+                        }
                     }
+
+                    response.setContentType("text/html");
+
+                    ViewMapping view = this.viewDictionary.get(viewId);
+
+                    if (view == null) {
+                        LOGGER.debug("view id {} is not found in the registry", viewId);
+                    }
+
+                    LOGGER.info("view id {}", viewId);
+
+                    if (!Strings.isNullOrEmpty(view.getParentId())) {
+                        LOGGER.info("view parent id {}", view.getParentId());
+                        StringWriter writer = processView(header, view, request, response);
+                        response.getWriter().write(writer.getBuffer().toString());
+                    } else {
+                        VelocityContext velocityContext = view.getView().velocityContext(header, request, response);
+                        BundleTemplate template = new BundleTemplate(view.getView());
+                        template.merge(velocityContext, response.getWriter());
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    LOGGER.debug("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
+                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 }
-
-                response.setContentType("text/html");
-
-                ViewMapping view = this.viewDictionary.get(viewId);
-
-                if (view == null) {
-                    LOGGER.debug("view id {} is not found in the registry", viewId);
-                }
-
-                LOGGER.info("view id {}", viewId);
-
-                if (!Strings.isNullOrEmpty(view.getParentId())) {
-                    LOGGER.info("view parent id {}", view.getParentId());
-                    StringWriter writer = processView(header, view, request, response);
-                    response.getWriter().write(writer.getBuffer().toString());
-                } else {
-                    VelocityContext velocityContext = view.getView().velocityContext(header, request, response);
-                    BundleTemplate template = new BundleTemplate(view.getView());
-                    template.merge(velocityContext, response.getWriter());
-                }
-
-            } catch (Throwable e) {
-                e.printStackTrace();
-                LOGGER.debug("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
+            } catch (SQLException e) {
+                LOGGER.debug("could open connection due to this reason {}", e.getMessage());
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
-        } catch (SQLException e) {
-            LOGGER.debug("could open connection due to this reason {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        } else if (controller instanceof AssetController) {
+            ((AssetController) controller).execute(pathVariables, request, response);
         }
     }
 
