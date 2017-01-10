@@ -4,6 +4,13 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.angkorteam.mbaas.servlet.*;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -17,10 +24,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-import java.io.IOException;
-import java.io.StringWriter;
+import java.io.*;
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +45,8 @@ public class MainServlet extends HttpServlet {
 
     private Map<String, ViewMapping> viewDictionary;
 
+    private DiskFileItemFactory factory = new DiskFileItemFactory();
+
     @Override
     public void init(ServletConfig config) throws ServletException {
         Velocity.init();
@@ -48,29 +58,138 @@ public class MainServlet extends HttpServlet {
         this.dataSource = dataSource;
         this.controllerDictionary = controllerDictionary;
         this.viewDictionary = viewDictionary;
+        this.factory.setRepository(FileUtils.getTempDirectory());
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(LogicController.POST, req, resp);
+        Map<String, String[]> item = Maps.newHashMap();
+        Map<String, FileItem[]> file = Maps.newHashMap();
+
+        if (StringUtils.startsWithIgnoreCase(req.getContentType(), "application/x-www-form-urlencoded")) {
+            try (InputStream inputStream = req.getInputStream()) {
+                String raws = IOUtils.toString(inputStream, "UTF-8");
+                String[] params = StringUtils.split(raws, '&');
+                if (params != null && params.length > 0) {
+                    for (String temp : params) {
+                        String[] param = StringUtils.split(temp, '=');
+                        String name = null;
+                        String value = null;
+                        if (param != null) {
+                            if (param.length > 0) {
+                                name = URLDecoder.decode(param[0], "UTF-8");
+                            }
+                            if (param.length > 1) {
+                                value = URLDecoder.decode(param[1], "UTF-8");
+                            }
+                        }
+                        if (!Strings.isNullOrEmpty(name)) {
+                            if (!item.containsKey(name)) {
+                                item.put(name, new String[]{});
+                            }
+                            if (!Strings.isNullOrEmpty(value)) {
+                                String[] values = item.get(name);
+                                String[] newValues = Arrays.copyOf(values, values.length + 1);
+                                newValues[newValues.length - 1] = value;
+                                item.put(name, newValues);
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (ServletFileUpload.isMultipartContent(req)) {
+            ServletFileUpload upload = new ServletFileUpload(factory);
+            List<FileItem> items = null;
+            try {
+                items = upload.parseRequest(req);
+            } catch (FileUploadException e) {
+                throw new IOException(e);
+            }
+            if (items != null && !items.isEmpty()) {
+                for (FileItem temp : items) {
+                    if (temp.isFormField()) {
+                        String name = temp.getFieldName();
+                        String value = temp.getString();
+                        if (!Strings.isNullOrEmpty(name)) {
+                            if (!item.containsKey(name)) {
+                                item.put(name, new String[]{});
+                            }
+                            if (!Strings.isNullOrEmpty(value)) {
+                                String[] values = item.get(name);
+                                String[] newValues = Arrays.copyOf(values, values.length + 1);
+                                newValues[newValues.length - 1] = value;
+                                item.put(name, newValues);
+                            }
+                        }
+                    } else {
+                        String name = temp.getFieldName();
+                        FileItem value = temp;
+                        if (!Strings.isNullOrEmpty(name)) {
+                            if (!item.containsKey(name)) {
+                                file.put(name, new FileItem[]{});
+                            }
+                            if (value.getSize() > 0) {
+                                FileItem[] values = file.get(name);
+                                FileItem[] newValues = Arrays.copyOf(values, values.length + 1);
+                                newValues[newValues.length - 1] = value;
+                                file.put(name, newValues);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        QueryString queryString = new QueryString(req);
+        FormItem formItem = new FormItem(item);
+        FormFile formFile = new FormFile(file);
+
+        File requestBody = null;
+        String address = "";
+        doExecute(LogicController.POST, address, queryString, formItem, formFile, requestBody, req, resp);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(LogicController.GET, req, resp);
+        QueryString queryString = new QueryString(req);
+        FormItem formItem = new FormItem(Maps.newHashMap());
+        FormFile formFile = new FormFile(Maps.newHashMap());
+        String address = "";
+        File requestBody = null;
+        doExecute(LogicController.GET, address, queryString, formItem, formFile, requestBody, req, resp);
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(LogicController.PUT, req, resp);
+        if (StringUtils.startsWithIgnoreCase(req.getContentType(), "application/json")) {
+            QueryString queryString = new QueryString(req);
+            FormItem formItem = new FormItem(Maps.newHashMap());
+            FormFile formFile = new FormFile(Maps.newHashMap());
+            String address = "";
+            File requestBody = new File(FileUtils.getTempDirectoryPath(), System.currentTimeMillis() + RandomStringUtils.randomAlphabetic(50) + ".json");
+            try (FileOutputStream outputStream = FileUtils.openOutputStream(requestBody)) {
+                IOUtils.copy(req.getInputStream(), outputStream);
+            }
+            doExecute(LogicController.PUT, address, queryString, formItem, formFile, requestBody, req, resp);
+            FileUtils.deleteQuietly(requestBody);
+        } else {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
     }
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doExecute(LogicController.DELETE, req, resp);
+        QueryString queryString = new QueryString(req);
+        FormItem formItem = new FormItem(Maps.newHashMap());
+        FormFile formFile = new FormFile(Maps.newHashMap());
+        String address = "";
+        File requestBody = null;
+        doExecute(LogicController.DELETE, address, queryString, formItem, formFile, requestBody, req, resp);
     }
 
-    protected void doExecute(String method, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doExecute(String method, String address, QueryString queryString, FormItem formItem, FormFile formFile, File requestBody, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         String path = lookupPath(request);

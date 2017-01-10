@@ -28,6 +28,10 @@ public class AssetController extends Controller {
 
     public void execute(Map<String, String> pathVariables, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         URL url = this.bundle.getResource(this.resourcePrefix + request.getRequestURI());
+        if (url == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
         try (InputStream inputStream = url.openStream()) {
             IOUtils.copy(inputStream, response.getOutputStream());
         }
