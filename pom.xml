@@ -31,5 +31,6 @@
         <module>mbaas-adminlte</module>
         <module>mbaas-servlet</module>
         <module>mbaas-login</module>
+        <module>mbaas-openshop</module>
     </modules>
 </project>

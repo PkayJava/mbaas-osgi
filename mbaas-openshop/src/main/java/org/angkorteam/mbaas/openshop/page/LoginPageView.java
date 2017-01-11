@@ -1,11 +1,10 @@
-package org.angkorteam.mbaas.login.view;
+package org.angkorteam.mbaas.login.page;
 
-import org.angkorteam.mbaas.login.block.MenuView;
+import org.angkorteam.mbaas.login.layout.LoginLayoutView;
 import org.angkorteam.mbaas.servlet.FormItem;
 import org.angkorteam.mbaas.servlet.HtmlTag;
 import org.angkorteam.mbaas.servlet.QueryString;
 import org.angkorteam.mbaas.servlet.View;
-import org.angkorteam.mbaas.servlet.layout.TemplateView;
 import org.apache.velocity.VelocityContext;
 import org.osgi.framework.Bundle;
 
@@ -18,17 +17,15 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * Created by socheatkhauv on 1/8/17.
+ * Created by socheatkhauv on 1/11/17.
  */
-public class LoginView extends View {
+public class LoginPageView extends View {
 
-    public static final String TEMPLATE = "/asset/login.vm";
-    public static final String ID = LoginView.class.getName();
+    public static final String TEMPLATE = "/page/login.vm";
+    public static final String ID = LoginPageView.class.getName();
 
-    public LoginView(Bundle bundle) {
-        super(TemplateView.ID, bundle, ID, TEMPLATE);
-        this.blocks.put("block", MenuView.ID);
-        this.blocks.put("blocka", org.angkorteam.mbaas.servlet.block.MenuView.ID);
+    public LoginPageView(Bundle bundle) {
+        super(LoginLayoutView.ID, bundle, ID, TEMPLATE);
     }
 
     @Override
@@ -38,4 +35,5 @@ public class LoginView extends View {
         velocityContext.put("server", dateFormat.format(new Date()));
         return velocityContext;
     }
+
 }

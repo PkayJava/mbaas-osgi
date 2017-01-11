@@ -15,12 +15,12 @@ import java.util.Map;
 /**
  * Created by socheatkhauv on 1/8/17.
  */
-public class MenuView extends View {
+public class MenuBlockView extends View {
 
-    public static final String TEMPLATE = "/asset/block.vm";
-    public static final String ID = MenuView.class.getName();
+    public static final String TEMPLATE = "/block/menu.vm";
+    public static final String ID = MenuBlockView.class.getName();
 
-    public MenuView(Bundle bundle) {
+    public MenuBlockView(Bundle bundle) {
         super(bundle, ID, TEMPLATE);
     }
 

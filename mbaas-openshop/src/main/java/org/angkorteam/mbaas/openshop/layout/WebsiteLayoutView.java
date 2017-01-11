@@ -1,4 +1,4 @@
-package org.angkorteam.mbaas.login.block;
+package org.angkorteam.mbaas.login.layout;
 
 import org.angkorteam.mbaas.servlet.FormItem;
 import org.angkorteam.mbaas.servlet.HtmlTag;
@@ -13,14 +13,14 @@ import java.sql.Connection;
 import java.util.Map;
 
 /**
- * Created by socheatkhauv on 1/8/17.
+ * Created by socheatkhauv on 1/11/17.
  */
-public class MenuView extends View {
+public class WebsiteLayoutView extends View {
 
-    public static final String TEMPLATE = "/asset/block.vm";
-    public static final String ID = MenuView.class.getName();
+    public static final String TEMPLATE = "/layout/website.vm";
+    public static final String ID = WebsiteLayoutView.class.getName();
 
-    public MenuView(Bundle bundle) {
+    public WebsiteLayoutView(Bundle bundle) {
         super(bundle, ID, TEMPLATE);
     }
 

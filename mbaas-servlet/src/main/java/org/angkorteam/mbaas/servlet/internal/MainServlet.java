@@ -47,6 +47,8 @@ public class MainServlet extends HttpServlet {
 
     private DiskFileItemFactory factory = new DiskFileItemFactory();
 
+    private Map<String, ControllerMapping> cached;
+
     @Override
     public void init(ServletConfig config) throws ServletException {
         Velocity.init();
@@ -54,18 +56,19 @@ public class MainServlet extends HttpServlet {
 
     public MainServlet(DataSource dataSource,
                        Map<String, ControllerMapping> controllerDictionary,
-                       Map<String, ViewMapping> viewDictionary) {
+                       Map<String, ViewMapping> viewDictionary,
+                       Map<String, ControllerMapping> cached) {
+        this.factory.setRepository(FileUtils.getTempDirectory());
         this.dataSource = dataSource;
+        this.cached = cached;
         this.controllerDictionary = controllerDictionary;
         this.viewDictionary = viewDictionary;
-        this.factory.setRepository(FileUtils.getTempDirectory());
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Map<String, String[]> item = Maps.newHashMap();
         Map<String, FileItem[]> file = Maps.newHashMap();
-
         if (StringUtils.startsWithIgnoreCase(req.getContentType(), "application/x-www-form-urlencoded")) {
             try (InputStream inputStream = req.getInputStream()) {
                 String raws = IOUtils.toString(inputStream, "UTF-8");
@@ -145,20 +148,15 @@ public class MainServlet extends HttpServlet {
         QueryString queryString = new QueryString(req);
         FormItem formItem = new FormItem(item);
         FormFile formFile = new FormFile(file);
-
-        File requestBody = null;
         String address = "";
-        doExecute(LogicController.POST, address, queryString, formItem, formFile, requestBody, req, resp);
+        doExecute(LogicController.POST, address, queryString, formItem, formFile, null, req, resp);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         QueryString queryString = new QueryString(req);
-        FormItem formItem = new FormItem(Maps.newHashMap());
-        FormFile formFile = new FormFile(Maps.newHashMap());
         String address = "";
-        File requestBody = null;
-        doExecute(LogicController.GET, address, queryString, formItem, formFile, requestBody, req, resp);
+        doExecute(LogicController.GET, address, queryString, null, null, null, req, resp);
     }
 
     @Override
@@ -168,12 +166,12 @@ public class MainServlet extends HttpServlet {
             FormItem formItem = new FormItem(Maps.newHashMap());
             FormFile formFile = new FormFile(Maps.newHashMap());
             String address = "";
-            File requestBody = new File(FileUtils.getTempDirectoryPath(), System.currentTimeMillis() + RandomStringUtils.randomAlphabetic(50) + ".json");
-            try (FileOutputStream outputStream = FileUtils.openOutputStream(requestBody)) {
+            File fileBody = new File(FileUtils.getTempDirectoryPath(), System.currentTimeMillis() + RandomStringUtils.randomAlphabetic(50) + ".json");
+            try (FileOutputStream outputStream = FileUtils.openOutputStream(fileBody)) {
                 IOUtils.copy(req.getInputStream(), outputStream);
             }
-            doExecute(LogicController.PUT, address, queryString, formItem, formFile, requestBody, req, resp);
-            FileUtils.deleteQuietly(requestBody);
+            doExecute(LogicController.PUT, address, queryString, formItem, formFile, fileBody, req, resp);
+            FileUtils.deleteQuietly(fileBody);
         } else {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
@@ -182,26 +180,29 @@ public class MainServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         QueryString queryString = new QueryString(req);
-        FormItem formItem = new FormItem(Maps.newHashMap());
-        FormFile formFile = new FormFile(Maps.newHashMap());
         String address = "";
-        File requestBody = null;
-        doExecute(LogicController.DELETE, address, queryString, formItem, formFile, requestBody, req, resp);
+        doExecute(LogicController.DELETE, address, queryString, null, null, null, req, resp);
     }
 
-    protected void doExecute(String method, String address, QueryString queryString, FormItem formItem, FormFile formFile, File requestBody, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doExecute(String method, String address, QueryString queryString, FormItem formItem, FormFile formFile, File fileBody, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         String path = lookupPath(request);
         if (Strings.isNullOrEmpty(path) || StringUtils.equalsIgnoreCase("/", path)) {
             path = "/index";
         }
+        String cachedKey = method + ">" + path;
+        ControllerMapping requestMapping = this.cached.get(cachedKey);
         String[] segments = StringUtils.split(path, "/");
-        ControllerMapping requestMapping = lookupRequestMapping(method, path);
+        if (requestMapping == null) {
+            requestMapping = lookupRequestMapping(method, path);
+        }
         if (requestMapping == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
+        this.cached.put(cachedKey, requestMapping);
+
         Map<String, String> pathVariables = Maps.newHashMap();
         String[] candidateSegments = StringUtils.split(requestMapping.getPath(), '/');
         for (int i = 0; i < candidateSegments.length; i++) {
@@ -216,54 +217,85 @@ public class MainServlet extends HttpServlet {
 
         Controller controller = requestMapping.getController();
         LOGGER.info("controller path {}", controller.getPath());
+
+        boolean granted;
+        if (!controller.isSecure()) {
+            granted = true;
+        } else {
+            granted = controller.hasAccess(request, response);
+        }
+
+        if (!granted) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         if (controller instanceof LogicController) {
             try (Connection connection = this.dataSource.getConnection()) {
+                connection.setAutoCommit(false);
                 try {
-                    List<AutoCloseable> closeables = Lists.newArrayList();
-                    org.angkorteam.mbaas.servlet.Connection delegate = new org.angkorteam.mbaas.servlet.Connection(connection, closeables);
-                    String viewId = ((LogicController) controller).execute(delegate, pathVariables, request, response);
-                    for (AutoCloseable closeable : closeables) {
-                        try {
-                            closeable.close();
-                        } catch (Throwable e) {
-                            LOGGER.debug("could not close " + closeable.getClass().getName() + " due to this reason {}", e.getMessage());
+                    String meta = ((LogicController) controller).execute(connection, address, pathVariables, queryString, formItem, formFile, fileBody, request, response);
+                    if (Strings.isNullOrEmpty(meta)) {
+                        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        return;
+                    }
+                    if (StringUtils.startsWithIgnoreCase(meta, Controller.VIEW)) {
+                        String viewId = StringUtils.substring(meta, Controller.VIEW.length(), meta.length());
+                        response.setContentType("text/html");
+                        ViewMapping view = this.viewDictionary.get(viewId);
+                        if (view == null) {
+                            LOGGER.debug("view id {} is not found in the registry", viewId);
                         }
-                    }
-
-                    response.setContentType("text/html");
-
-                    ViewMapping view = this.viewDictionary.get(viewId);
-
-                    if (view == null) {
-                        LOGGER.debug("view id {} is not found in the registry", viewId);
-                    }
-
-                    LOGGER.info("view id {}", viewId);
-
-                    if (!Strings.isNullOrEmpty(view.getParentId())) {
-                        LOGGER.info("view parent id {}", view.getParentId());
-                        StringWriter writer = processView(header, view, request, response);
-                        response.getWriter().write(writer.getBuffer().toString());
+                        LOGGER.info("view id {}", viewId);
+                        if (!Strings.isNullOrEmpty(view.getParentId())) {
+                            LOGGER.info("view parent id {}", view.getParentId());
+                            StringWriter writer = processView(header, view, connection, address, pathVariables, queryString, formItem, request, response);
+                            response.getWriter().write(writer.getBuffer().toString());
+                        } else {
+                            VelocityContext velocityContext = view.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
+                            BundleTemplate template = new BundleTemplate(view.getView());
+                            template.merge(velocityContext, response.getWriter());
+                        }
+                    } else if (StringUtils.startsWithIgnoreCase(meta, Controller.REDIRECT)) {
+                        String redirect = StringUtils.substring(meta, Controller.REDIRECT.length(), meta.length());
+                        response.sendRedirect(redirect);
                     } else {
-                        VelocityContext velocityContext = view.getView().velocityContext(header, request, response);
-                        BundleTemplate template = new BundleTemplate(view.getView());
-                        template.merge(velocityContext, response.getWriter());
+                        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        return;
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
                     LOGGER.debug("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
                     response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                } finally {
+                    connection.rollback();
                 }
             } catch (SQLException e) {
                 LOGGER.debug("could open connection due to this reason {}", e.getMessage());
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         } else if (controller instanceof AssetController) {
-            ((AssetController) controller).execute(pathVariables, request, response);
+            ((AssetController) controller).execute(address, pathVariables, queryString, request, response);
+        } else if (controller instanceof ServiceController) {
+            try (Connection connection = this.dataSource.getConnection()) {
+                connection.setAutoCommit(false);
+                try {
+                    ((ServiceController) controller).execute(connection, address, pathVariables, queryString, formItem, formFile, fileBody, request, response);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    LOGGER.debug("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
+                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                } finally {
+                    connection.rollback();
+                }
+            } catch (SQLException e) {
+                LOGGER.debug("could open connection due to this reason {}", e.getMessage());
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
         }
     }
 
-    protected StringWriter processView(Map<String, HtmlTag> header, ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
+    protected StringWriter processView(Map<String, HtmlTag> header, ViewMapping view, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
 
         ViewMapping parentView = null;
         if (!Strings.isNullOrEmpty(view.getParentId())) {
@@ -272,22 +304,22 @@ public class MainServlet extends HttpServlet {
                 LOGGER.debug("parent id {} is not found in the registry", view.getParentId());
             }
             if (!Strings.isNullOrEmpty(parentView.getParentId())) {
-                return processView(header, this.viewDictionary.get(parentView.getParentId()), request, response);
+                return processView(header, this.viewDictionary.get(parentView.getParentId()), connection, address, pathVariables, queryString, formItem, request, response);
             }
         }
 
         VelocityContext parentVelocityContext = null;
         if (parentView != null) {
-            parentVelocityContext = parentView.getView().velocityContext(header, request, response);
+            parentVelocityContext = parentView.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
         }
-        VelocityContext velocityContext = view.getView().velocityContext(header, request, response);
+        VelocityContext velocityContext = view.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
         StringWriter writer = new StringWriter();
         {
             if (velocityContext == null) {
                 velocityContext = new VelocityContext();
             }
 
-            buildBlock(header, velocityContext, view, request, response);
+            buildBlock(header, velocityContext, view, connection, address, pathVariables, queryString, formItem, request, response);
 
             Template template = new BundleTemplate(view.getView());
             template.merge(velocityContext, writer);
@@ -298,7 +330,7 @@ public class MainServlet extends HttpServlet {
                 parentVelocityContext = new VelocityContext();
             }
 
-            buildBlock(header, parentVelocityContext, parentView, request, response);
+            buildBlock(header, parentVelocityContext, parentView, connection, address, pathVariables, queryString, formItem, request, response);
 
             StringWriter parentWriter = new StringWriter();
 
@@ -314,7 +346,7 @@ public class MainServlet extends HttpServlet {
         }
     }
 
-    protected void buildBlock(Map<String, HtmlTag> header, VelocityContext velocityContext, ViewMapping view, HttpServletRequest request, HttpServletResponse response) {
+    protected void buildBlock(Map<String, HtmlTag> header, VelocityContext velocityContext, ViewMapping view, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
         Map<String, String> blocks = view.getView().getBlocks();
         if (!blocks.isEmpty()) {
             for (Map.Entry<String, String> block : blocks.entrySet()) {
@@ -325,7 +357,7 @@ public class MainServlet extends HttpServlet {
                     LOGGER.debug("block id {} is not found in registry", viewId);
                 } else {
                     LOGGER.info("symbolicName {} template {}", blockView.getView().getBundle().getSymbolicName(), blockView.getTemplate());
-                    VelocityContext blockVelocityContext = blockView.getView().velocityContext(header, request, response);
+                    VelocityContext blockVelocityContext = blockView.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
                     if (blockVelocityContext == null) {
                         blockVelocityContext = new VelocityContext();
                     }

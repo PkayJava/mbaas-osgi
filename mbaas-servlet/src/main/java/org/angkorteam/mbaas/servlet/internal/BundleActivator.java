@@ -33,6 +33,8 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
 
     private Map<String, ViewMapping> viewDictionary;
 
+    private Map<String, ControllerMapping> cached;
+
     public static final List<Character> CHARACTERS = new ArrayList<>();
     public static final List<Character> NUMBERS = new ArrayList<>();
     public static final List<Character> CURLLY_BRACES = new ArrayList<>();
@@ -110,6 +112,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         this.context = context;
         this.controllerDictionary = Maps.newHashMap();
         this.viewDictionary = Maps.newHashMap();
+        this.cached = Maps.newConcurrentMap();
         context.addServiceListener(this);
 
         {
@@ -126,7 +129,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             Dictionary<String, Object> props = new Hashtable<>();
             props.put("alias", "/");
             props.put("servlet-name", "Main Servlet");
-            MainServlet servlet = new MainServlet(this.dataSource, Collections.unmodifiableMap(this.controllerDictionary), Collections.unmodifiableMap(this.viewDictionary));
+            MainServlet servlet = new MainServlet(this.dataSource, Collections.unmodifiableMap(this.controllerDictionary), Collections.unmodifiableMap(this.viewDictionary), this.cached);
             this.mainServlet = context.registerService(Servlet.class, servlet, props);
         }
 
@@ -287,6 +290,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             return;
         }
         if (object instanceof Controller) {
+            this.cached.clear();
             serviceChanged(event, (Controller) object);
         } else if (object instanceof View) {
             serviceChanged(event, (View) object);

@@ -6,6 +6,7 @@ import org.osgi.framework.Bundle;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.sql.Connection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -58,6 +59,6 @@ public abstract class View {
         return Collections.unmodifiableMap(this.blocks);
     }
 
-    public abstract VelocityContext velocityContext(Map<String, HtmlTag> header, HttpServletRequest request, HttpServletResponse response);
+    public abstract VelocityContext velocityContext(Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response);
 
 }

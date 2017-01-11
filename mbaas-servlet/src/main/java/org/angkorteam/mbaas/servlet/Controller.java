@@ -1,5 +1,8 @@
 package org.angkorteam.mbaas.servlet;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Created by socheatkhauv on 1/9/17.
  */
@@ -13,20 +16,21 @@ public abstract class Controller {
 
     public static final String PUT = "PUT";
 
-    private final String id;
+    public static final String VIEW = "view:";
+
+    public static final String REDIRECT = "redirect:";
 
     private final String method;
 
     private final String path;
 
-    public Controller(String id, String method, String path) {
-        this.id = id;
+    public Controller(String method, String path) {
         this.method = method;
         this.path = path;
     }
 
     public final String getId() {
-        return this.id;
+        return getMethod() + getPath();
     }
 
     public final String getMethod() {
@@ -36,4 +40,13 @@ public abstract class Controller {
     public final String getPath() {
         return this.path;
     }
+
+    public boolean isSecure() {
+        return false;
+    }
+
+    public boolean hasAccess(HttpServletRequest request, HttpServletResponse response) {
+        return true;
+    }
+
 }

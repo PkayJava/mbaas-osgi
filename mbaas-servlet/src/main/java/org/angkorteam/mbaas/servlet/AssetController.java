@@ -20,13 +20,13 @@ public class AssetController extends Controller {
 
     private final String resourcePrefix;
 
-    public AssetController(Bundle bundle, String id, String resourcePrefix, String path) {
-        super(id, GET, path);
+    public AssetController(Bundle bundle, String resourcePrefix, String path) {
+        super(GET, path);
         this.bundle = bundle;
         this.resourcePrefix = resourcePrefix;
     }
 
-    public void execute(Map<String, String> pathVariables, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void execute(String address, Map<String, String> pathVariables, QueryString queryString, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         URL url = this.bundle.getResource(this.resourcePrefix + request.getRequestURI());
         if (url == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
