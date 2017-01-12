@@ -155,7 +155,12 @@ public class MainServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        FormItem formItem = (FormItem) req.getSession(true).getAttribute(CYCLE);
+        HttpSession session = req.getSession(true);
+        FormItem formItem = (FormItem) session.getAttribute(CYCLE);
+        session.removeAttribute(CYCLE);
+        if (formItem == null) {
+            formItem = new FormItem(Maps.newHashMap());
+        }
         doExecute(LogicController.GET, formItem, null, null, req, resp);
     }
 
