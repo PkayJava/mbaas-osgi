@@ -1,7 +1,9 @@
 package org.angkorteam.mbaas.servlet;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.angkorteam.mbaas.servlet.internal.MainServlet;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +16,10 @@ import java.util.*;
 public class QueryString implements Serializable {
 
     private Map<String, String[]> query;
+
+    private boolean cached = false;
+
+    private String url;
 
     public QueryString(HttpServletRequest request) {
         this.query = Maps.newHashMap();
@@ -34,7 +40,7 @@ public class QueryString implements Serializable {
                                 value = param[1];
                             }
                         }
-                        if (!Strings.isNullOrEmpty(name)) {
+                        if (!Strings.isNullOrEmpty(name) && !MainServlet.CYCLE.equals(name)) {
                             if (!query.containsKey(name)) {
                                 query.put(name, new String[]{});
                             }
@@ -67,6 +73,25 @@ public class QueryString implements Serializable {
 
     public Map<String, String[]> getParameterMap() {
         return Collections.unmodifiableMap(this.query);
+    }
+
+    public String toQuery() {
+        if (this.cached) {
+            return this.url;
+        }
+        List<String> items = Lists.newArrayList();
+        for (Map.Entry<String, String[]> item : this.query.entrySet()) {
+            for (String value : item.getValue()) {
+                items.add(item.getKey() + "=" + value);
+            }
+        }
+        if (items.isEmpty()) {
+            this.url = "";
+        } else {
+            this.url = "?" + StringUtils.join(items, "&");
+        }
+        this.cached = true;
+        return url;
     }
 
 }

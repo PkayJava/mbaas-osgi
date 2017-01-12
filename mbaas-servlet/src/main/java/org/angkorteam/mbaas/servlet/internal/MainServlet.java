@@ -50,7 +50,7 @@ public class MainServlet extends HttpServlet {
 
     private Map<String, ControllerMapping> cached;
 
-    private static final String CYCLE = "cycle";
+    public static final String CYCLE = "cycle";
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -155,9 +155,13 @@ public class MainServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String cycle = req.getParameter(CYCLE);
         HttpSession session = req.getSession(true);
-        FormItem formItem = (FormItem) session.getAttribute(CYCLE);
-        session.removeAttribute(CYCLE);
+        FormItem formItem = null;
+        if (!Strings.isNullOrEmpty(cycle)) {
+            formItem = (FormItem) session.getAttribute(cycle);
+            session.removeAttribute(cycle);
+        }
         if (formItem == null) {
             formItem = new FormItem(Maps.newHashMap());
         }

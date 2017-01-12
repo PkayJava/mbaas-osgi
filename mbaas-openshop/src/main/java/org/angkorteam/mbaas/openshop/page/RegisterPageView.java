@@ -29,13 +29,9 @@ public class RegisterPageView extends View {
     public VelocityContext velocityContext(Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
         VelocityContext velocityContext = new VelocityContext();
         velocityContext.put("address", address);
-        velocityContext.put("queryString", request.getQueryString() == null ? "" : "?" + request.getQueryString());
+        velocityContext.put("queryString", queryString.toQuery());
         velocityContext.put("request", request);
-        request.setAttribute("fullname", "Socheat KHAUV");
-        request.setAttribute("email", "pkayjava@gmail.com");
-        request.setAttribute("password", "123123a");
-        request.setAttribute("retypePassword", "123123a");
-        request.setAttribute("agreement", "checked=\"checked\"");
+        velocityContext.put("formItem", formItem);
         return velocityContext;
     }
 }

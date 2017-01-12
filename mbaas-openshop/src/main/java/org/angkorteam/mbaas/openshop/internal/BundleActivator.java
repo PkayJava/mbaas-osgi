@@ -3,6 +3,7 @@ package org.angkorteam.mbaas.openshop.internal;
 import org.angkorteam.mbaas.openshop.block.MenuBlockView;
 import org.angkorteam.mbaas.openshop.controller.IndexController;
 import org.angkorteam.mbaas.openshop.controller.RegisterGetController;
+import org.angkorteam.mbaas.openshop.controller.RegisterPostController;
 import org.angkorteam.mbaas.openshop.layout.*;
 import org.angkorteam.mbaas.openshop.page.IndexPageView;
 import org.angkorteam.mbaas.openshop.page.LoginPageView;
@@ -25,6 +26,7 @@ public class BundleActivator extends MBaaSPlugin {
     public void registerController(BundleContext context) {
         context.registerService(Controller.class, new IndexController(), new Hashtable<>());
         context.registerService(Controller.class, new RegisterGetController(), new Hashtable<>());
+        context.registerService(Controller.class, new RegisterPostController(), new Hashtable<>());
     }
 
     @Override
