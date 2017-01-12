@@ -299,9 +299,6 @@ public class MainServlet extends HttpServlet {
         ViewMapping parentView = null;
         if (!Strings.isNullOrEmpty(view.getParentId())) {
             parentView = this.viewDictionary.get(view.getParentId());
-            if (parentView == null) {
-                LOGGER.debug("parent id {} is not found in the registry", view.getParentId());
-            }
             if (!Strings.isNullOrEmpty(parentView.getParentId())) {
                 return processView(header, this.viewDictionary.get(parentView.getParentId()), connection, address, pathVariables, queryString, formItem, request, response);
             }
@@ -336,7 +333,9 @@ public class MainServlet extends HttpServlet {
                 template.merge(childVelocityContext, childWriter);
             }
             int index = parentWriter.getBuffer().indexOf(childBlock);
-            parentWriter.getBuffer().replace(index, index + childBlock.length(), childWriter.getBuffer().toString());
+            if (index >= 0) {
+                parentWriter.getBuffer().replace(index, index + childBlock.length(), childWriter.getBuffer().toString());
+            }
             return parentWriter;
         } else {
             StringWriter childWriter = new StringWriter();

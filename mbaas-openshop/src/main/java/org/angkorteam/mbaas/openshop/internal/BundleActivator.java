@@ -2,12 +2,11 @@ package org.angkorteam.mbaas.openshop.internal;
 
 import org.angkorteam.mbaas.openshop.block.MenuBlockView;
 import org.angkorteam.mbaas.openshop.controller.IndexController;
-import org.angkorteam.mbaas.openshop.layout.AdminLayoutView;
-import org.angkorteam.mbaas.openshop.layout.LoginLayoutView;
-import org.angkorteam.mbaas.openshop.layout.VendorLayoutView;
-import org.angkorteam.mbaas.openshop.layout.WebsiteLayoutView;
+import org.angkorteam.mbaas.openshop.controller.RegisterGetController;
+import org.angkorteam.mbaas.openshop.layout.*;
 import org.angkorteam.mbaas.openshop.page.IndexPageView;
 import org.angkorteam.mbaas.openshop.page.LoginPageView;
+import org.angkorteam.mbaas.openshop.page.RegisterPageView;
 import org.angkorteam.mbaas.servlet.Controller;
 import org.angkorteam.mbaas.servlet.MBaaSPlugin;
 import org.angkorteam.mbaas.servlet.View;
@@ -25,6 +24,7 @@ public class BundleActivator extends MBaaSPlugin {
     @Override
     public void registerController(BundleContext context) {
         context.registerService(Controller.class, new IndexController(), new Hashtable<>());
+        context.registerService(Controller.class, new RegisterGetController(), new Hashtable<>());
     }
 
     @Override
@@ -34,8 +34,11 @@ public class BundleActivator extends MBaaSPlugin {
         context.registerService(View.class, new LoginLayoutView(context.getBundle()), new Hashtable<>());
         context.registerService(View.class, new VendorLayoutView(context.getBundle()), new Hashtable<>());
         context.registerService(View.class, new WebsiteLayoutView(context.getBundle()), new Hashtable<>());
+        context.registerService(View.class, new RegisterLayoutView(context.getBundle()), new Hashtable<>());
+
         context.registerService(View.class, new IndexPageView(context.getBundle()), new Hashtable<>());
         context.registerService(View.class, new LoginPageView(context.getBundle()), new Hashtable<>());
+        context.registerService(View.class, new RegisterPageView(context.getBundle()), new Hashtable<>());
     }
 
     @Override
