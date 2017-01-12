@@ -26,7 +26,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
-    <name>mbaas-login</name>
+    <name>mbaas-openshop</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -35,7 +35,7 @@
     </properties>
 
     <build>
-        <finalName>mbaas-login</finalName>
+        <finalName>mbaas-openshop</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.felix</groupId>
@@ -44,7 +44,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Bundle-Activator>org.angkorteam.mbaas.login.internal.BundleActivator</Bundle-Activator>
+                        <Bundle-Activator>org.angkorteam.mbaas.openshop.internal.BundleActivator</Bundle-Activator>
                     </instructions>
                 </configuration>
             </plugin>

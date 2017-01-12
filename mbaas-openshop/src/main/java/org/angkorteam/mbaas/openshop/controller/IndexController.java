@@ -1,6 +1,6 @@
-package org.angkorteam.mbaas.login.controller;
+package org.angkorteam.mbaas.openshop.controller;
 
-import org.angkorteam.mbaas.login.page.IndexPageView;
+import org.angkorteam.mbaas.openshop.page.IndexPageView;
 import org.angkorteam.mbaas.servlet.FormFile;
 import org.angkorteam.mbaas.servlet.FormItem;
 import org.angkorteam.mbaas.servlet.LogicController;

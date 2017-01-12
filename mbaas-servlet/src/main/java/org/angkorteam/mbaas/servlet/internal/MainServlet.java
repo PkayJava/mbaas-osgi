@@ -23,6 +23,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 import java.io.*;
 import java.net.URLDecoder;
@@ -48,6 +49,8 @@ public class MainServlet extends HttpServlet {
     private DiskFileItemFactory factory = new DiskFileItemFactory();
 
     private Map<String, ControllerMapping> cached;
+
+    private static final String CYCLE = "cycle";
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -145,32 +148,25 @@ public class MainServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        QueryString queryString = new QueryString(req);
         FormItem formItem = new FormItem(item);
         FormFile formFile = new FormFile(file);
-        String address = "";
-        doExecute(LogicController.POST, address, queryString, formItem, formFile, null, req, resp);
+        doExecute(LogicController.POST, formItem, formFile, null, req, resp);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        QueryString queryString = new QueryString(req);
-        String address = "";
-        doExecute(LogicController.GET, address, queryString, null, null, null, req, resp);
+        FormItem formItem = (FormItem) req.getSession(true).getAttribute(CYCLE);
+        doExecute(LogicController.GET, formItem, null, null, req, resp);
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (StringUtils.startsWithIgnoreCase(req.getContentType(), "application/json")) {
-            QueryString queryString = new QueryString(req);
-            FormItem formItem = new FormItem(Maps.newHashMap());
-            FormFile formFile = new FormFile(Maps.newHashMap());
-            String address = "";
             File fileBody = new File(FileUtils.getTempDirectoryPath(), System.currentTimeMillis() + RandomStringUtils.randomAlphabetic(50) + ".json");
             try (FileOutputStream outputStream = FileUtils.openOutputStream(fileBody)) {
                 IOUtils.copy(req.getInputStream(), outputStream);
             }
-            doExecute(LogicController.PUT, address, queryString, formItem, formFile, fileBody, req, resp);
+            doExecute(LogicController.PUT, null, null, fileBody, req, resp);
             FileUtils.deleteQuietly(fileBody);
         } else {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -179,12 +175,10 @@ public class MainServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        QueryString queryString = new QueryString(req);
-        String address = "";
-        doExecute(LogicController.DELETE, address, queryString, null, null, null, req, resp);
+        doExecute(LogicController.DELETE, null, null, null, req, resp);
     }
 
-    protected void doExecute(String method, String address, QueryString queryString, FormItem formItem, FormFile formFile, File fileBody, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doExecute(String method, FormItem formItem, FormFile formFile, File fileBody, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         String path = lookupPath(request);
@@ -202,6 +196,11 @@ public class MainServlet extends HttpServlet {
             return;
         }
         this.cached.put(cachedKey, requestMapping);
+
+        QueryString queryString = new QueryString(request);
+        String requestURL = request.getRequestURL().toString();
+        String requestURI = request.getRequestURI();
+        String address = requestURL.substring(0, requestURL.length() - requestURI.length());
 
         Map<String, String> pathVariables = Maps.newHashMap();
         String[] candidateSegments = StringUtils.split(requestMapping.getPath(), '/');
@@ -243,9 +242,6 @@ public class MainServlet extends HttpServlet {
                         String viewId = StringUtils.substring(meta, Controller.VIEW.length(), meta.length());
                         response.setContentType("text/html");
                         ViewMapping view = this.viewDictionary.get(viewId);
-                        if (view == null) {
-                            LOGGER.debug("view id {} is not found in the registry", viewId);
-                        }
                         LOGGER.info("view id {}", viewId);
                         if (!Strings.isNullOrEmpty(view.getParentId())) {
                             LOGGER.info("view parent id {}", view.getParentId());
@@ -258,7 +254,10 @@ public class MainServlet extends HttpServlet {
                         }
                     } else if (StringUtils.startsWithIgnoreCase(meta, Controller.REDIRECT)) {
                         String redirect = StringUtils.substring(meta, Controller.REDIRECT.length(), meta.length());
-                        response.sendRedirect(redirect);
+                        HttpSession session = request.getSession(true);
+                        String cycle = RandomStringUtils.randomAlphabetic(20);
+                        session.setAttribute(cycle, formItem);
+                        response.sendRedirect(redirect + "?" + CYCLE + "=" + cycle);
                     } else {
                         response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                         return;
@@ -312,37 +311,41 @@ public class MainServlet extends HttpServlet {
         if (parentView != null) {
             parentVelocityContext = parentView.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
         }
-        VelocityContext velocityContext = view.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
-        StringWriter writer = new StringWriter();
-        {
-            if (velocityContext == null) {
-                velocityContext = new VelocityContext();
-            }
+        if (parentVelocityContext == null) {
+            parentVelocityContext = new VelocityContext();
+        }
 
-            buildBlock(header, velocityContext, view, connection, address, pathVariables, queryString, formItem, request, response);
-
-            Template template = new BundleTemplate(view.getView());
-            template.merge(velocityContext, writer);
+        VelocityContext childVelocityContext = view.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
+        if (childVelocityContext == null) {
+            childVelocityContext = new VelocityContext();
         }
 
         if (parentView != null) {
-            if (parentVelocityContext == null) {
-                parentVelocityContext = new VelocityContext();
-            }
-
             buildBlock(header, parentVelocityContext, parentView, connection, address, pathVariables, queryString, formItem, request, response);
-
+            String childBlock = RandomStringUtils.randomAlphabetic(20);
             StringWriter parentWriter = new StringWriter();
-
-            Template template = new BundleTemplate(parentView.getView());
-
-            parentVelocityContext.put("child", writer.getBuffer());
-
-            template.merge(parentVelocityContext, parentWriter);
-
+            {
+                Template template = new BundleTemplate(parentView.getView());
+                parentVelocityContext.put("child", childBlock);
+                template.merge(parentVelocityContext, parentWriter);
+            }
+            StringWriter childWriter = new StringWriter();
+            {
+                buildBlock(header, childVelocityContext, view, connection, address, pathVariables, queryString, formItem, request, response);
+                Template template = new BundleTemplate(view.getView());
+                template.merge(childVelocityContext, childWriter);
+            }
+            int index = parentWriter.getBuffer().indexOf(childBlock);
+            parentWriter.getBuffer().replace(index, index + childBlock.length(), childWriter.getBuffer().toString());
             return parentWriter;
         } else {
-            return writer;
+            StringWriter childWriter = new StringWriter();
+            {
+                buildBlock(header, childVelocityContext, view, connection, address, pathVariables, queryString, formItem, request, response);
+                Template template = new BundleTemplate(view.getView());
+                template.merge(childVelocityContext, childWriter);
+            }
+            return childWriter;
         }
     }
 

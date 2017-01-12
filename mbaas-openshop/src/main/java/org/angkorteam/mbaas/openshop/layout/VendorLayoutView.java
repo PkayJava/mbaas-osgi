@@ -1,4 +1,4 @@
-package org.angkorteam.mbaas.login.layout;
+package org.angkorteam.mbaas.openshop.layout;
 
 import org.angkorteam.mbaas.servlet.FormItem;
 import org.angkorteam.mbaas.servlet.HtmlTag;

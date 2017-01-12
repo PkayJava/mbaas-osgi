@@ -4,8 +4,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.angkorteam.mbaas.servlet.*;
-import org.angkorteam.mbaas.servlet.block.MenuView;
-import org.angkorteam.mbaas.servlet.layout.TemplateView;
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.framework.*;
 import org.osgi.service.jdbc.DataSourceFactory;
@@ -131,11 +129,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             props.put("servlet-name", "Main Servlet");
             MainServlet servlet = new MainServlet(this.dataSource, Collections.unmodifiableMap(this.controllerDictionary), Collections.unmodifiableMap(this.viewDictionary), this.cached);
             this.mainServlet = context.registerService(Servlet.class, servlet, props);
-        }
-
-        {
-            context.registerService(View.class, new TemplateView(context.getBundle()), new Hashtable<>());
-            context.registerService(View.class, new MenuView(context.getBundle()), new Hashtable<>());
         }
 
         {

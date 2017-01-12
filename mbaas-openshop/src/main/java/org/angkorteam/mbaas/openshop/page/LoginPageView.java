@@ -1,6 +1,6 @@
-package org.angkorteam.mbaas.login.page;
+package org.angkorteam.mbaas.openshop.page;
 
-import org.angkorteam.mbaas.login.layout.LoginLayoutView;
+import org.angkorteam.mbaas.openshop.layout.LoginLayoutView;
 import org.angkorteam.mbaas.servlet.FormItem;
 import org.angkorteam.mbaas.servlet.HtmlTag;
 import org.angkorteam.mbaas.servlet.QueryString;

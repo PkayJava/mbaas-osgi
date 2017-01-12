@@ -1,6 +1,6 @@
-package org.angkorteam.mbaas.login.page;
+package org.angkorteam.mbaas.openshop.page;
 
-import org.angkorteam.mbaas.login.layout.WebsiteLayoutView;
+import org.angkorteam.mbaas.openshop.layout.WebsiteLayoutView;
 import org.angkorteam.mbaas.servlet.FormItem;
 import org.angkorteam.mbaas.servlet.HtmlTag;
 import org.angkorteam.mbaas.servlet.QueryString;
@@ -22,7 +22,7 @@ import java.util.Map;
 public class IndexPageView extends View {
 
     public static final String TEMPLATE = "/page/index.vm";
-    public static final String ID = LoginPageView.class.getName();
+    public static final String ID = IndexPageView.class.getName();
 
     public IndexPageView(Bundle bundle) {
         super(WebsiteLayoutView.ID, bundle, ID, TEMPLATE);
