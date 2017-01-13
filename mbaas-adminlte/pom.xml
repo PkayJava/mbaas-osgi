@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-adminlte</artifactId>
-    <version>1.0</version>
+    <version>5.0.5</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-adminlte</name>
@@ -65,7 +65,7 @@
         <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-servlet</artifactId>
-            <version>1.0</version>
+            <version>5.0.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.osgi</groupId>

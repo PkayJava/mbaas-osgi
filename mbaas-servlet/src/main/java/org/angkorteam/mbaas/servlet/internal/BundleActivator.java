@@ -21,8 +21,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
 
     private BundleContext context;
 
-    private ServiceRegistration<Servlet> assetServlet;
-
     private ServiceRegistration<Servlet> mainServlet;
 
     private DataSource dataSource;
@@ -138,8 +136,6 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
     }
 
     public void stop(BundleContext context) throws Exception {
-        this.assetServlet.unregister();
-        this.assetServlet = null;
         this.mainServlet.unregister();
         this.mainServlet = null;
     }

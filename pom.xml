@@ -23,9 +23,12 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-parent</artifactId>
-    <version>1.0</version>
+    <version>5.0.5</version>
     <name>mbaas</name>
     <packaging>pom</packaging>
+
+    <properties>
+    </properties>
 
     <modules>
         <module>mbaas-velocity</module>

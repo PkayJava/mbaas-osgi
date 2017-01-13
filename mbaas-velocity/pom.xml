@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-velocity</artifactId>
-    <version>1.0</version>
+    <version>5.0.5</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-velocity</name>

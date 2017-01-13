@@ -277,9 +277,7 @@ public class MainServlet extends HttpServlet {
                         return;
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
-                    LOGGER.debug("{} > {} : due to this reason {}", method + StringUtils.repeat(" ", 6 - method.length()), controller.getPath(), e.getMessage());
-                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    throw e;
                 } finally {
                     connection.rollback();
                 }

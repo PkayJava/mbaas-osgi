@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-beanutils</artifactId>
-    <version>1.0</version>
+    <version>5.0.5</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-beanutils</name>
@@ -63,7 +63,7 @@
         <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-collections</artifactId>
-            <version>1.0</version>
+            <version>5.0.5</version>
         </dependency>
 
     </dependencies>

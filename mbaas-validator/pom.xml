@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-validator</artifactId>
-    <version>1.0</version>
+    <version>5.0.5</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-validator</name>
@@ -48,11 +48,25 @@
                             org.apache.commons.validator;
                             org.apache.commons.validator.routines;
                             org.apache.commons.validator.routines.checkdigit;
+                            org.apache.commons.validator.util;
                         </Export-Package>
                         <Import-Package>
                             org.apache.commons.beanutils;
                             org.apache.commons.collections4;
                             org.apache.commons.digester;
+                            org.apache.commons.digester.annotations;
+                            org.apache.commons.digester.annotations.handlers;
+                            org.apache.commons.digester.annotations.internal;
+                            org.apache.commons.digester.annotations.providers;
+                            org.apache.commons.digester.annotations.reflect;
+                            org.apache.commons.digester.annotations.rules;
+                            org.apache.commons.digester.annotations.spi;
+                            org.apache.commons.digester.annotations.utils;
+                            org.apache.commons.digester.parser;
+                            org.apache.commons.digester.plugins;
+                            org.apache.commons.digester.plugins.strategies;
+                            org.apache.commons.digester.substitution;
+                            org.apache.commons.digester.xmlrules;
                         </Import-Package>
                     </instructions>
                 </configuration>
@@ -77,19 +91,19 @@
         <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-digester</artifactId>
-            <version>1.0</version>
+            <version>5.0.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-collections</artifactId>
-            <version>1.0</version>
+            <version>5.0.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-beanutils</artifactId>
-            <version>1.0</version>
+            <version>5.0.5</version>
         </dependency>
 
     </dependencies>

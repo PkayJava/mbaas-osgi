@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-collections</artifactId>
-    <version>1.0</version>
+    <version>5.0.5</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-collections</name>
@@ -51,6 +51,7 @@
                             org.apache.commons.collections4.set;
                             org.apache.commons.collections4.keyvalue;
                             org.apache.commons.collections4.collection;
+                            org.apache.commons.collections4.comparators;
                         </Export-Package>
                         <Import-Package>
                         </Import-Package>
