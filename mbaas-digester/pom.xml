@@ -62,6 +62,12 @@
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-beanutils</artifactId>
             <version>1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.angkorteam.mbaas</groupId>
+                    <artifactId>mbaas-collections</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>

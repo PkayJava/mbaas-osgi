@@ -56,6 +56,8 @@
                             org.angkorteam.mbaas.openshop.internal;
                         </Private-Package>
                         <Import-Package>
+                            com.google.common.base;
+                            com.google.common.collect;
                             org.angkorteam.mbaas.servlet;
                             org.apache.velocity;
                             org.osgi.framework;
@@ -74,12 +76,46 @@
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-servlet</artifactId>
             <version>1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.osgi</groupId>
+                    <artifactId>osgi.cmpn</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.angkorteam.mbaas</groupId>
+                    <artifactId>mbaas-velocity</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-fileupload</groupId>
+                    <artifactId>commons-fileupload</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>20.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.angkorteam.mbaas</groupId>
+            <artifactId>mbaas-velocity</artifactId>
+            <version>1.0</version>
         </dependency>
 
         <dependency>
@@ -92,6 +128,24 @@
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-validator</artifactId>
             <version>1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.angkorteam.mbaas</groupId>
+                    <artifactId>mbaas-digester</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.angkorteam.mbaas</groupId>
+                    <artifactId>mbaas-collections</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.angkorteam.mbaas</groupId>
+                    <artifactId>mbaas-beanutils</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.osgi</groupId>
+                    <artifactId>osgi.cmpn</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>

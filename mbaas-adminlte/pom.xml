@@ -66,6 +66,32 @@
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-servlet</artifactId>
             <version>1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.osgi</groupId>
+                    <artifactId>osgi.cmpn</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.angkorteam.mbaas</groupId>
+                    <artifactId>mbaas-velocity</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-fileupload</groupId>
+                    <artifactId>commons-fileupload</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>javax.servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
