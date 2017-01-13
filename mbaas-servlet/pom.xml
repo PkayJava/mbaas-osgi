@@ -121,5 +121,11 @@
             <version>1.3.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.angkorteam.mbaas</groupId>
+            <artifactId>mbaas-beanutils</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+
     </dependencies>
 </project>

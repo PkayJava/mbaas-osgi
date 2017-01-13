@@ -2,27 +2,22 @@ package org.angkorteam.mbaas.servlet;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.angkorteam.mbaas.servlet.internal.MainServlet;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.Serializable;
 import java.util.*;
 
 /**
  * Created by socheatkhauv on 1/10/17.
  */
-public class QueryString implements Serializable {
-
-    private Map<String, String[]> query;
+public final class QueryString extends HashMap<String, String[]> {
 
     private boolean cached = false;
 
     private String url;
 
     public QueryString(HttpServletRequest request) {
-        this.query = Maps.newHashMap();
         String queryString = request.getQueryString();
         if (!Strings.isNullOrEmpty(queryString)) {
             String[] params = StringUtils.split(queryString, '&');
@@ -41,14 +36,14 @@ public class QueryString implements Serializable {
                             }
                         }
                         if (!Strings.isNullOrEmpty(name) && !MainServlet.CYCLE.equals(name)) {
-                            if (!query.containsKey(name)) {
-                                query.put(name, new String[]{});
+                            if (!containsKey(name)) {
+                                put(name, new String[]{});
                             }
                             if (!Strings.isNullOrEmpty(value)) {
-                                String[] values = query.get(name);
+                                String[] values = get(name);
                                 String[] newValues = Arrays.copyOf(values, values.length + 1);
                                 newValues[newValues.length - 1] = value;
-                                query.put(name, newValues);
+                                put(name, newValues);
                             }
                         }
                     }
@@ -57,22 +52,27 @@ public class QueryString implements Serializable {
         }
     }
 
+    public String put(String key, String value) {
+        put(key, new String[]{value});
+        return value;
+    }
+
     public String getParameter(String name) {
-        String[] values = this.query.get(name);
+        String[] values = get(name);
         return values == null || values.length == 0 ? null : values[0];
     }
 
     public String[] getParameterValues(String name) {
-        String[] values = this.query.get(name);
+        String[] values = get(name);
         return values;
     }
 
     public List<String> getParameterNames() {
-        return Collections.unmodifiableList(new ArrayList<>(this.query.keySet()));
+        return Collections.unmodifiableList(new ArrayList<>(keySet()));
     }
 
     public Map<String, String[]> getParameterMap() {
-        return Collections.unmodifiableMap(this.query);
+        return Collections.unmodifiableMap(this);
     }
 
     public String toQuery() {
@@ -80,7 +80,7 @@ public class QueryString implements Serializable {
             return this.url;
         }
         List<String> items = Lists.newArrayList();
-        for (Map.Entry<String, String[]> item : this.query.entrySet()) {
+        for (Map.Entry<String, String[]> item : entrySet()) {
             for (String value : item.getValue()) {
                 items.add(item.getKey() + "=" + value);
             }

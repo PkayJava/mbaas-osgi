@@ -2,21 +2,22 @@ package org.angkorteam.mbaas.servlet;
 
 import org.apache.commons.fileupload.FileItem;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by socheatkhauv on 1/10/17.
  */
-public class FormFile implements Serializable {
+public final class FormFile extends HashMap<String, FileItem[]> {
 
     private Map<String, FileItem[]> file;
 
     public FormFile(Map<String, FileItem[]> file) {
-        this.file = file;
+        super(file);
+    }
+
+    public FileItem put(String key, FileItem value) {
+        put(key, new FileItem[]{value});
+        return value;
     }
 
     public FileItem getParameter(String name) {

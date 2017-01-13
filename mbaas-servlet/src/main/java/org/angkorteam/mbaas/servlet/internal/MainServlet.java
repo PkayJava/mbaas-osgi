@@ -165,6 +165,7 @@ public class MainServlet extends HttpServlet {
         if (formItem == null) {
             formItem = new FormItem(Maps.newHashMap());
         }
+
         doExecute(LogicController.GET, formItem, null, null, req, resp);
     }
 
@@ -263,10 +264,14 @@ public class MainServlet extends HttpServlet {
                         }
                     } else if (StringUtils.startsWithIgnoreCase(meta, Controller.REDIRECT)) {
                         String redirect = StringUtils.substring(meta, Controller.REDIRECT.length(), meta.length());
-                        HttpSession session = request.getSession(true);
-                        String cycle = RandomStringUtils.randomAlphabetic(20);
-                        session.setAttribute(cycle, formItem);
-                        response.sendRedirect(redirect + "?" + CYCLE + "=" + cycle);
+                        if (formItem != null && !formItem.isEmpty()) {
+                            HttpSession session = request.getSession(true);
+                            String cycle = RandomStringUtils.randomAlphabetic(20);
+                            session.setAttribute(cycle, formItem);
+                            response.sendRedirect(redirect + "?" + CYCLE + "=" + cycle);
+                        } else {
+                            response.sendRedirect(redirect);
+                        }
                     } else {
                         response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                         return;

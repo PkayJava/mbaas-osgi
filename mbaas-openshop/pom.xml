@@ -104,5 +104,11 @@
             <version>3.5</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.angkorteam.mbaas</groupId>
+            <artifactId>mbaas-validator</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+
     </dependencies>
 </project>

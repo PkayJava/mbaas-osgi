@@ -1,38 +1,46 @@
 package org.angkorteam.mbaas.servlet;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by socheatkhauv on 1/10/17.
  */
-public class FormItem implements Serializable {
+public final class FormItem extends HashMap<String, String[]> {
 
-    private Map<String, String[]> item;
+    private boolean error = false;
 
-    public FormItem(Map<String, String[]> item) {
-        this.item = item;
+    public FormItem(Map<String, String[]> items) {
+        super(items);
+    }
+
+    public String put(String key, String value) {
+        put(key, new String[]{value});
+        return value;
     }
 
     public String getParameter(String name) {
-        String[] values = this.item.get(name);
+        String[] values = get(name);
         return values == null || values.length == 0 ? null : values[0];
     }
 
     public String[] getParameterValues(String name) {
-        String[] values = this.item.get(name);
+        String[] values = get(name);
         return values;
     }
 
     public List<String> getParameterNames() {
-        return Collections.unmodifiableList(new ArrayList<>(this.item.keySet()));
+        return Collections.unmodifiableList(new ArrayList<>(keySet()));
     }
 
     public Map<String, String[]> getParameterMap() {
-        return Collections.unmodifiableMap(this.item);
+        return Collections.unmodifiableMap(this);
     }
 
+    public boolean isError() {
+        return error;
+    }
+
+    public void setError(boolean error) {
+        this.error = this.error || error;
+    }
 }

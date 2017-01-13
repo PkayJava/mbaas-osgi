@@ -44,6 +44,9 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
+                        <Export-Package>
+                            org.apache.commons.validator;
+                        </Export-Package>
                     </instructions>
                 </configuration>
             </plugin>
