@@ -31,5 +31,9 @@
         <module>mbaas-adminlte</module>
         <module>mbaas-servlet</module>
         <module>mbaas-openshop</module>
+        <module>mbaas-validator</module>
+        <module>mbaas-beanutils</module>
+        <module>mbaas-collections</module>
+        <module>mbaas-digester</module>
     </modules>
 </project>
