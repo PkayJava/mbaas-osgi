@@ -43,4 +43,13 @@ public final class FormItem extends HashMap<String, String[]> {
     public void setError(boolean error) {
         this.error = this.error || error;
     }
+
+    public boolean hasError(String name) {
+        return containsKey(name + ".error");
+    }
+
+    public String getError(String name) {
+        return getParameter(name + ".error");
+    }
+
 }

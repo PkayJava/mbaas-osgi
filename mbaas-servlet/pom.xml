@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-servlet</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-servlet</name>
@@ -47,9 +47,16 @@
                         <Bundle-Activator>org.angkorteam.mbaas.servlet.internal.BundleActivator</Bundle-Activator>
                         <Export-Package>
                             org.angkorteam.mbaas.servlet;
-                            org.angkorteam.mbaas.servlet.block;
-                            org.angkorteam.mbaas.servlet.layout;
                         </Export-Package>
+                        <Import-Package>
+                            com.google.common.collect;
+                            org.apache.velocity;
+                            org.osgi.framework;
+                            javax.servlet;
+                            org.osgi.service.jdbc;
+                            org.apache.commons.io;
+                            org.apache.commons.fileupload;
+                        </Import-Package>
                         <Private-Package>
                             org.angkorteam.mbaas.servlet.internal;
                         </Private-Package>
@@ -86,18 +93,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.service.component.annotations</artifactId>
-            <version>1.3.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.12</version>
-        </dependency>
-
-        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.5</version>
@@ -110,21 +105,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.5</version>
-        </dependency>
-
-        <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
             <version>1.3.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.angkorteam.mbaas</groupId>
-            <artifactId>mbaas-beanutils</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
     </dependencies>

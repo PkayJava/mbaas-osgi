@@ -241,7 +241,7 @@ public class Parser/*@bgen(jjtree)*/ implements ParserTreeConstants, ParserConst
                 /**
                  * if not a white space return
                  */
-                else if (c != ' ' && c != '\u005cn' && c != '\u005cr' && c != '\u005ct') {
+                else if (c != ' ' && c != '\n' && c != '\r' && c != '\t') {
                     return false;
                 }
             }

@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-beanutils</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-beanutils</name>
@@ -46,7 +46,12 @@
                     <instructions>
                         <Export-Package>
                             org.apache.commons.beanutils;
+                            org.apache.commons.beanutils.expression;
                         </Export-Package>
+                        <Import-Package>
+                            org.apache.commons.collections4.comparators;
+                            org.apache.commons.collections4;
+                        </Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
@@ -56,21 +61,9 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.core</artifactId>
-            <version>6.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.cmpn</artifactId>
-            <version>6.0.0</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-collections</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0</version>
         </dependency>
 
     </dependencies>

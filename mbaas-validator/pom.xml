@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-validator</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-validator</name>
@@ -46,7 +46,14 @@
                     <instructions>
                         <Export-Package>
                             org.apache.commons.validator;
+                            org.apache.commons.validator.routines;
+                            org.apache.commons.validator.routines.checkdigit;
                         </Export-Package>
+                        <Import-Package>
+                            org.apache.commons.beanutils;
+                            org.apache.commons.collections4;
+                            org.apache.commons.digester;
+                        </Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
@@ -70,7 +77,19 @@
         <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-digester</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.angkorteam.mbaas</groupId>
+            <artifactId>mbaas-collections</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.angkorteam.mbaas</groupId>
+            <artifactId>mbaas-beanutils</artifactId>
+            <version>1.0</version>
         </dependency>
 
     </dependencies>

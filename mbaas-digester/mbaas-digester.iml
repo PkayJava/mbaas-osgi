@@ -2,9 +2,10 @@
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
   <component name="FacetManager">
     <facet type="Osmorc" name="OSGi">
-      <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="mbaas-digester.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="org.angkorteam.mbaas.digester" bundleVersion="1.0.0.SNAPSHOT" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
+      <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="mbaas-digester.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="org.angkorteam.mbaas.digester" bundleVersion="1.0.0" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
           <property key="Export-Package" value="org.apache.commons.digester;" />
+          <property key="Import-Package" value="org.apache.commons.beanutils;" />
           <property key="Bundle-Name" value="mbaas-digester" />
           <property key="Include-Resource" value="org/apache/commons/digester/xmlrules/digester-rules.dtd=$MODULE_DIR$/src/main/resources/org/apache/commons/digester/xmlrules/digester-rules.dtd" />
         </additionalProperties>
@@ -24,7 +25,5 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="mbaas-beanutils" />
     <orderEntry type="module" module-name="mbaas-collections" />
-    <orderEntry type="library" name="Maven: org.osgi:osgi.core:6.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.osgi:osgi.cmpn:6.0.0" level="project" />
   </component>
 </module>

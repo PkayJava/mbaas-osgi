@@ -23,7 +23,7 @@
 
     <groupId>org.angkorteam.mbaas</groupId>
     <artifactId>mbaas-collections</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>bundle</packaging>
 
     <name>mbaas-collections</name>
@@ -46,7 +46,14 @@
                     <instructions>
                         <Export-Package>
                             org.apache.commons.collections4;
+                            org.apache.commons.collections4.map;
+                            org.apache.commons.collections4.iterators;
+                            org.apache.commons.collections4.set;
+                            org.apache.commons.collections4.keyvalue;
+                            org.apache.commons.collections4.collection;
                         </Export-Package>
+                        <Import-Package>
+                        </Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
@@ -55,17 +62,6 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.core</artifactId>
-            <version>6.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.cmpn</artifactId>
-            <version>6.0.0</version>
-        </dependency>
-
     </dependencies>
+
 </project>
