@@ -16,27 +16,20 @@
  */
 package org.apache.commons.validator;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Serializable;
+import org.apache.commons.validator.util.ValidatorUtils;
+import org.osgi.framework.Bundle;
+
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import org.apache.commons.validator.util.ValidatorUtils;
+import java.util.*;
 
 /**
  * Contains the information to dynamically create and run a validation
  * method.  This is the class representation of a pluggable validator that can
  * be defined in an xml file with the &lt;validator&gt; element.
- *
+ * <p>
  * <strong>Note</strong>: The validation method is assumed to be thread safe.
  *
  * @version $Revision: 1739361 $
@@ -88,10 +81,10 @@ public class ValidatorAction implements Serializable {
      */
     private String methodParams =
             Validator.BEAN_PARAM
-            + ","
-            + Validator.VALIDATOR_ACTION_PARAM
-            + ","
-            + Validator.FIELD_PARAM;
+                    + ","
+                    + Validator.VALIDATOR_ACTION_PARAM
+                    + ","
+                    + Validator.FIELD_PARAM;
 
     /**
      * The Class objects for each entry in methodParameterList.
@@ -152,6 +145,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Gets the name of the validator action.
+     *
      * @return Validator Action name.
      */
     public String getName() {
@@ -160,6 +154,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Sets the name of the validator action.
+     *
      * @param name Validator Action name.
      */
     public void setName(String name) {
@@ -168,6 +163,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Gets the class of the validator action.
+     *
      * @return Class name of the validator Action.
      */
     public String getClassname() {
@@ -176,6 +172,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Sets the class of the validator action.
+     *
      * @param classname Class name of the validator Action.
      */
     public void setClassname(String classname) {
@@ -184,6 +181,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Gets the name of method being called for the validator action.
+     *
      * @return The method name.
      */
     public String getMethod() {
@@ -192,6 +190,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Sets the name of method being called for the validator action.
+     *
      * @param method The method name.
      */
     public void setMethod(String method) {
@@ -200,6 +199,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Gets the method parameters for the method.
+     *
      * @return Method's parameters.
      */
     public String getMethodParams() {
@@ -208,6 +208,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Sets the method parameters for the method.
+     *
      * @param methodParams A comma separated list of parameters.
      */
     public void setMethodParams(String methodParams) {
@@ -228,6 +229,7 @@ public class ValidatorAction implements Serializable {
     /**
      * Gets the dependencies of the validator action as a comma separated list
      * of validator names.
+     *
      * @return The validator action's dependencies.
      */
     public String getDepends() {
@@ -236,6 +238,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Sets the dependencies of the validator action.
+     *
      * @param depends A comma separated list of validator names.
      */
     public void setDepends(String depends) {
@@ -255,6 +258,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Gets the message associated with the validator action.
+     *
      * @return The message for the validator action.
      */
     public String getMsg() {
@@ -263,6 +267,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Sets the message associated with the validator action.
+     *
      * @param msg The message for the validator action.
      */
     public void setMsg(String msg) {
@@ -273,6 +278,7 @@ public class ValidatorAction implements Serializable {
      * Gets the Javascript function name.  This is optional and can
      * be used instead of validator action name for the name of the
      * Javascript function/object.
+     *
      * @return The Javascript function name.
      */
     public String getJsFunctionName() {
@@ -283,6 +289,7 @@ public class ValidatorAction implements Serializable {
      * Sets the Javascript function name.  This is optional and can
      * be used instead of validator action name for the name of the
      * Javascript function/object.
+     *
      * @param jsFunctionName The Javascript function name.
      */
     public void setJsFunctionName(String jsFunctionName) {
@@ -313,6 +320,7 @@ public class ValidatorAction implements Serializable {
      *         org.apache.commons.validator.javascript.validateTire.js
      *      which is the default javascript definition.
      * </pre>
+     *
      * @param jsFunction The Javascript function's fully qualified class path.
      */
     public void setJsFunction(String jsFunction) {
@@ -326,6 +334,7 @@ public class ValidatorAction implements Serializable {
     /**
      * Gets the Javascript equivalent of the java class and method
      * associated with this action.
+     *
      * @return The Javascript validation.
      */
     public String getJavascript() {
@@ -335,6 +344,7 @@ public class ValidatorAction implements Serializable {
     /**
      * Sets the Javascript equivalent of the java class and method
      * associated with this action.
+     *
      * @param javascript The Javascript validation.
      */
     public void setJavascript(String javascript) {
@@ -357,7 +367,7 @@ public class ValidatorAction implements Serializable {
      * implementation, the <code>jsFunction</code> property should contain a
      * fully qualified package and script name, separated by periods, to be
      * loaded from the class loader that created this instance.
-     *
+     * <p>
      * TODO if the path begins with a '/' the path will be intepreted as
      * absolute, and remain unchanged.  If this fails then it will attempt to
      * treat the path as a file path.  It is assumed the script ends with a
@@ -381,6 +391,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Read a javascript function from a file.
+     *
      * @param javascriptFileName The file containing the javascript.
      * @return The javascript function or null if it could not be loaded.
      */
@@ -407,11 +418,11 @@ public class ValidatorAction implements Serializable {
                 buffer.append(line).append("\n");
             }
 
-        } catch(IOException e) {
+        } catch (IOException e) {
         } finally {
             try {
                 reader.close();
-            } catch(IOException e) {
+            } catch (IOException e) {
             }
         }
 
@@ -456,6 +467,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Checks whether or not the value passed in is in the depends field.
+     *
      * @param validatorName Name of the dependency to check.
      * @return Whether the named validator is a dependant.
      */
@@ -466,6 +478,7 @@ public class ValidatorAction implements Serializable {
     /**
      * Returns the dependent validator names as an unmodifiable
      * <code>List</code>.
+     *
      * @return List of the validator action's depedents.
      */
     public List<String> getDependencyList() {
@@ -474,6 +487,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Returns a string representation of the object.
+     *
      * @return a string representation.
      */
     @Override
@@ -488,27 +502,28 @@ public class ValidatorAction implements Serializable {
     /**
      * Dynamically runs the validation method for this validator and returns
      * true if the data is valid.
+     *
      * @param field
-     * @param params A Map of class names to parameter values.
+     * @param params  A Map of class names to parameter values.
      * @param results
-     * @param pos The index of the list property to validate if it's indexed.
+     * @param pos     The index of the list property to validate if it's indexed.
      * @throws ValidatorException
      */
     boolean executeValidationMethod(
-        Field field,
-        // TODO What is this the correct value type?
-        // both ValidatorAction and Validator are added as parameters
-        Map<String, Object> params,
-        ValidatorResults results,
-        int pos)
-        throws ValidatorException {
+            Field field,
+            // TODO What is this the correct value type?
+            // both ValidatorAction and Validator are added as parameters
+            Map<String, Object> params,
+            ValidatorResults results,
+            int pos)
+            throws ValidatorException {
 
         params.put(Validator.VALIDATOR_ACTION_PARAM, this);
 
         try {
             if (this.validationMethod == null) {
-                synchronized(this) {
-                    ClassLoader loader = this.getClassLoader(params);
+                synchronized (this) {
+                    Bundle loader = this.getClassLoader(params);
                     this.loadValidationClass(loader);
                     this.loadParameterClasses(loader);
                     this.loadValidationMethod();
@@ -524,9 +539,9 @@ public class ValidatorAction implements Serializable {
             Object result = null;
             try {
                 result =
-                    validationMethod.invoke(
-                        getValidationClassInstance(),
-                        paramValues);
+                        validationMethod.invoke(
+                                getValidationClassInstance(),
+                                paramValues);
 
             } catch (IllegalArgumentException e) {
                 throw new ValidatorException(e.getMessage());
@@ -567,6 +582,7 @@ public class ValidatorAction implements Serializable {
 
     /**
      * Load the Method object for the configured validation method name.
+     *
      * @throws ValidatorException
      */
     private void loadValidationMethod() throws ValidatorException {
@@ -576,21 +592,22 @@ public class ValidatorAction implements Serializable {
 
         try {
             this.validationMethod =
-                this.validationClass.getMethod(this.method, this.parameterClasses);
+                    this.validationClass.getMethod(this.method, this.parameterClasses);
 
         } catch (NoSuchMethodException e) {
             throw new ValidatorException("No such validation method: " +
-                e.getMessage());
+                    e.getMessage());
         }
     }
 
     /**
      * Load the Class object for the configured validation class name.
+     *
      * @param loader The ClassLoader used to load the Class object.
      * @throws ValidatorException
      */
-    private void loadValidationClass(ClassLoader loader)
-        throws ValidatorException {
+    private void loadValidationClass(Bundle loader)
+            throws ValidatorException {
 
         if (this.validationClass != null) {
             return;
@@ -608,10 +625,11 @@ public class ValidatorAction implements Serializable {
      * Stores the output in.  This
      * array is in the same order as the given List and is suitable for passing
      * to the validation method.
+     *
      * @throws ValidatorException if a class cannot be loaded.
      */
-    private void loadParameterClasses(ClassLoader loader)
-        throws ValidatorException {
+    private void loadParameterClasses(Bundle loader)
+            throws ValidatorException {
 
         if (this.parameterClasses != null) {
             return;
@@ -636,6 +654,7 @@ public class ValidatorAction implements Serializable {
     /**
      * Converts a List of parameter class names into their values contained in
      * the parameters Map.
+     *
      * @param params A Map of class names to parameter values.
      * @return An array containing the value object for each parameter.  This
      * array is in the same order as the given List and is suitable for passing
@@ -667,19 +686,19 @@ public class ValidatorAction implements Serializable {
                     this.instance = this.validationClass.newInstance();
                 } catch (InstantiationException e) {
                     String msg =
-                        "Couldn't create instance of "
-                            + this.classname
-                            + ".  "
-                            + e.getMessage();
+                            "Couldn't create instance of "
+                                    + this.classname
+                                    + ".  "
+                                    + e.getMessage();
 
                     throw new ValidatorException(msg);
 
                 } catch (IllegalAccessException e) {
                     String msg =
-                        "Couldn't create instance of "
-                            + this.classname
-                            + ".  "
-                            + e.getMessage();
+                            "Couldn't create instance of "
+                                    + this.classname
+                                    + ".  "
+                                    + e.getMessage();
 
                     throw new ValidatorException(msg);
                 }
@@ -697,7 +716,7 @@ public class ValidatorAction implements Serializable {
      * @param paramValues
      */
     private void handleIndexedField(Field field, int pos, Object[] paramValues)
-        throws ValidatorException {
+            throws ValidatorException {
 
         int beanIndex = this.methodParameterList.indexOf(Validator.BEAN_PARAM);
         int fieldIndex = this.methodParameterList.indexOf(Validator.FIELD_PARAM);
@@ -711,10 +730,10 @@ public class ValidatorAction implements Serializable {
         // the current field
         Field indexedField = (Field) field.clone();
         indexedField.setKey(
-            ValidatorUtils.replace(
-                indexedField.getKey(),
-                Field.TOKEN_INDEXED,
-                "[" + pos + "]"));
+                ValidatorUtils.replace(
+                        indexedField.getKey(),
+                        Field.TOKEN_INDEXED,
+                        "[" + pos + "]"));
 
         paramValues[fieldIndex] = indexedField;
     }
@@ -736,7 +755,7 @@ public class ValidatorAction implements Serializable {
      * Returns the ClassLoader set in the Validator contained in the parameter
      * Map.
      */
-    private ClassLoader getClassLoader(Map<String, Object> params) {
+    private Bundle getClassLoader(Map<String, Object> params) {
         Validator v = (Validator) params.get(Validator.VALIDATOR_PARAM);
         return v.getClassLoader();
     }

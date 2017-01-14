@@ -17,11 +17,12 @@
  */
 package org.apache.commons.digester.plugins.strategies;
 
-import java.util.Properties;
 import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.plugins.PluginException;
 import org.apache.commons.digester.plugins.RuleFinder;
 import org.apache.commons.digester.plugins.RuleLoader;
-import org.apache.commons.digester.plugins.PluginException;
+
+import java.util.Properties;
 
 /**
  * A rule-finding algorithm which expects the caller to specify a classname and
@@ -34,11 +35,11 @@ public class FinderFromClass extends RuleFinder {
     public static String DFLT_RULECLASS_ATTR = "ruleclass";
     public static String DFLT_METHOD_ATTR = "method";
     public static String DFLT_METHOD_NAME = "addRules";
-    
+
     private String ruleClassAttr;
     private String methodAttr;
     private String dfltMethodName;
-    
+
     /**
      * See {@link #findLoader}.
      */
@@ -51,21 +52,21 @@ public class FinderFromClass extends RuleFinder {
      * user-specified class whenever dynamic rules for a plugin need to be
      * loaded. See the findRules method for more info.
      *
-     * @param ruleClassAttr must be non-null.
-     * @param methodAttr may be null.
+     * @param ruleClassAttr  must be non-null.
+     * @param methodAttr     may be null.
      * @param dfltMethodName may be null.
      */
-    public FinderFromClass(String ruleClassAttr, String methodAttr, 
-                String dfltMethodName) {
+    public FinderFromClass(String ruleClassAttr, String methodAttr,
+                           String dfltMethodName) {
         this.ruleClassAttr = ruleClassAttr;
         this.methodAttr = methodAttr;
         this.dfltMethodName = dfltMethodName;
     }
-    
+
     /**
      * If there exists a property with the name matching constructor param
-     * ruleClassAttr, then load the specified class, locate the appropriate 
-     * rules-adding method on that class, and return an object encapsulating 
+     * ruleClassAttr, then load the specified class, locate the appropriate
+     * rules-adding method on that class, and return an object encapsulating
      * that info.
      * <p>
      * If there is no matching property provided, then just return null.
@@ -90,8 +91,8 @@ public class FinderFromClass extends RuleFinder {
      * dynamic rules for the plugged-in class.
      */
     @Override
-    public RuleLoader findLoader(Digester digester, Class<?> pluginClass, 
-                        Properties p) throws PluginException {
+    public RuleLoader findLoader(Digester digester, Class<?> pluginClass,
+                                 Properties p) throws PluginException {
 
         String ruleClassName = p.getProperty(ruleClassAttr);
         if (ruleClassName == null) {
@@ -99,10 +100,10 @@ public class FinderFromClass extends RuleFinder {
             // from a specific class.
             return null;
         }
-        
+
         // ok, we are in business
         String methodName = null;
-        if (methodAttr != null) { 
+        if (methodAttr != null) {
             methodName = p.getProperty(methodAttr);
         }
         if (methodName == null) {
@@ -111,15 +112,15 @@ public class FinderFromClass extends RuleFinder {
         if (methodName == null) {
             methodName = DFLT_METHOD_NAME;
         }
-        
+
         Class<?> ruleClass;
         try {
             // load the plugin class object
-            ruleClass = 
-                digester.getClassLoader().loadClass(ruleClassName);
-        } catch(ClassNotFoundException cnfe) {
+            ruleClass =
+                    digester.getClassLoader().loadClass(ruleClassName);
+        } catch (ClassNotFoundException cnfe) {
             throw new PluginException(
-                "Unable to load class " + ruleClassName, cnfe);
+                    "Unable to load class " + ruleClassName, cnfe);
         }
 
         return new LoaderFromClass(ruleClass, methodName);

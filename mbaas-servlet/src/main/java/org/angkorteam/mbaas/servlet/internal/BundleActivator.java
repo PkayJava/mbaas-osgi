@@ -102,6 +102,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
         NUMBERS.add('7');
         NUMBERS.add('8');
         NUMBERS.add('9');
+        org.apache.commons.validator.ValidatorAction.class.getName();
     }
 
     public void start(BundleContext context) throws Exception {
@@ -125,7 +126,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             Dictionary<String, Object> props = new Hashtable<>();
             props.put("alias", "/");
             props.put("servlet-name", "Main Servlet");
-            MainServlet servlet = new MainServlet(this.dataSource, Collections.unmodifiableMap(this.controllerDictionary), Collections.unmodifiableMap(this.viewDictionary), this.cached);
+            MainServlet servlet = new MainServlet(context, this.dataSource, Collections.unmodifiableMap(this.controllerDictionary), Collections.unmodifiableMap(this.viewDictionary), this.cached);
             this.mainServlet = context.registerService(Servlet.class, servlet, props);
         }
 

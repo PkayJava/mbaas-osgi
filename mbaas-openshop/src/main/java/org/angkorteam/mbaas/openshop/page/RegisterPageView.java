@@ -26,12 +26,10 @@ public class RegisterPageView extends View {
     }
 
     @Override
-    public VelocityContext velocityContext(Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
-        VelocityContext velocityContext = new VelocityContext();
-        velocityContext.put("address", address);
-        velocityContext.put("queryString", queryString.toQuery());
-        velocityContext.put("request", request);
-        velocityContext.put("formItem", formItem);
-        return velocityContext;
+    public void velocityContext(VelocityContext context, Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
+        context.put("address", address);
+        context.put("queryString", queryString.toQuery());
+        context.put("request", request);
+        context.put("formItem", formItem);
     }
 }

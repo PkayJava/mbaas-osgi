@@ -29,11 +29,10 @@ public class LoginPageView extends View {
     }
 
     @Override
-    public VelocityContext velocityContext(Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
-        VelocityContext velocityContext = new VelocityContext();
+    public void velocityContext(VelocityContext context, Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
+        context = new VelocityContext();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZZ");
-        velocityContext.put("server", dateFormat.format(new Date()));
-        return velocityContext;
+        context.put("server", dateFormat.format(new Date()));
     }
 
 }

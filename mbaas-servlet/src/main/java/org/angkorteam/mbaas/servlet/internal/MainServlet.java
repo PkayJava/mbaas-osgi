@@ -14,7 +14,9 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.Velocity;
+import org.apache.velocity.VelocityService;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,15 +54,17 @@ public class MainServlet extends HttpServlet {
 
     public static final String CYCLE = "cycle";
 
+    private final BundleContext context;
+
     @Override
     public void init(ServletConfig config) throws ServletException {
-        Velocity.init();
     }
 
-    public MainServlet(DataSource dataSource,
+    public MainServlet(BundleContext context, DataSource dataSource,
                        Map<String, ControllerMapping> controllerDictionary,
                        Map<String, ViewMapping> viewDictionary,
                        Map<String, ControllerMapping> cached) {
+        this.context = context;
         this.factory.setRepository(FileUtils.getTempDirectory());
         this.dataSource = dataSource;
         this.cached = cached;
@@ -258,8 +262,9 @@ public class MainServlet extends HttpServlet {
                             StringWriter writer = processView(header, view, connection, address, pathVariables, queryString, formItem, request, response);
                             response.getWriter().write(writer.getBuffer().toString());
                         } else {
-                            VelocityContext velocityContext = view.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
-                            BundleTemplate template = new BundleTemplate(view.getView());
+                            VelocityContext velocityContext = createVelocityContext();
+                            view.getView().velocityContext(velocityContext, header, connection, address, pathVariables, queryString, formItem, request, response);
+                            Template template = createBundleTemplate(view.getView());
                             template.merge(velocityContext, response.getWriter());
                         }
                     } else if (StringUtils.startsWithIgnoreCase(meta, Controller.REDIRECT)) {
@@ -306,6 +311,18 @@ public class MainServlet extends HttpServlet {
         }
     }
 
+    protected VelocityContext createVelocityContext() {
+        ServiceReference<VelocityService> reference = this.context.getServiceReference(VelocityService.class);
+        VelocityService service = this.context.getService(reference);
+        return service.createVelocityContext();
+    }
+
+    protected Template createBundleTemplate(View view) {
+        ServiceReference<VelocityService> reference = this.context.getServiceReference(VelocityService.class);
+        VelocityService service = this.context.getService(reference);
+        return service.createBundleTemplate(view.getBundle(), view.getTemplate());
+    }
+
     protected StringWriter processView(Map<String, HtmlTag> header, ViewMapping view, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response) {
 
         ViewMapping parentView = null;
@@ -316,32 +333,27 @@ public class MainServlet extends HttpServlet {
             }
         }
 
-        VelocityContext parentVelocityContext = null;
+        VelocityContext parentVelocityContext = createVelocityContext();
         if (parentView != null) {
-            parentVelocityContext = parentView.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
-        }
-        if (parentVelocityContext == null) {
-            parentVelocityContext = new VelocityContext();
+            parentView.getView().velocityContext(parentVelocityContext, header, connection, address, pathVariables, queryString, formItem, request, response);
         }
 
-        VelocityContext childVelocityContext = view.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
-        if (childVelocityContext == null) {
-            childVelocityContext = new VelocityContext();
-        }
+        VelocityContext childVelocityContext = createVelocityContext();
+        view.getView().velocityContext(childVelocityContext, header, connection, address, pathVariables, queryString, formItem, request, response);
 
         if (parentView != null) {
             buildBlock(header, parentVelocityContext, parentView, connection, address, pathVariables, queryString, formItem, request, response);
             String childBlock = RandomStringUtils.randomAlphabetic(20);
             StringWriter parentWriter = new StringWriter();
             {
-                Template template = new BundleTemplate(parentView.getView());
+                Template template = createBundleTemplate(parentView.getView());
                 parentVelocityContext.put("child", childBlock);
                 template.merge(parentVelocityContext, parentWriter);
             }
             StringWriter childWriter = new StringWriter();
             {
                 buildBlock(header, childVelocityContext, view, connection, address, pathVariables, queryString, formItem, request, response);
-                Template template = new BundleTemplate(view.getView());
+                Template template = createBundleTemplate(view.getView());
                 template.merge(childVelocityContext, childWriter);
             }
             int index = parentWriter.getBuffer().indexOf(childBlock);
@@ -353,7 +365,7 @@ public class MainServlet extends HttpServlet {
             StringWriter childWriter = new StringWriter();
             {
                 buildBlock(header, childVelocityContext, view, connection, address, pathVariables, queryString, formItem, request, response);
-                Template template = new BundleTemplate(view.getView());
+                Template template = createBundleTemplate(view.getView());
                 template.merge(childVelocityContext, childWriter);
             }
             return childWriter;
@@ -371,12 +383,10 @@ public class MainServlet extends HttpServlet {
                     LOGGER.debug("block id {} is not found in registry", viewId);
                 } else {
                     LOGGER.info("symbolicName {} template {}", blockView.getView().getBundle().getSymbolicName(), blockView.getTemplate());
-                    VelocityContext blockVelocityContext = blockView.getView().velocityContext(header, connection, address, pathVariables, queryString, formItem, request, response);
-                    if (blockVelocityContext == null) {
-                        blockVelocityContext = new VelocityContext();
-                    }
+                    VelocityContext blockVelocityContext = createVelocityContext();
+                    blockView.getView().velocityContext(blockVelocityContext, header, connection, address, pathVariables, queryString, formItem, request, response);
                     StringWriter blockWriter = new StringWriter();
-                    Template blockTemplate = new BundleTemplate(blockView.getView());
+                    Template blockTemplate = createBundleTemplate(blockView.getView());
                     blockTemplate.merge(blockVelocityContext, blockWriter);
                     velocityContext.put(name, blockWriter.getBuffer());
                 }

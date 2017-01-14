@@ -32,6 +32,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <bundle.namespace>org.apache.velocity</bundle.namespace>
     </properties>
 
     <build>
@@ -44,27 +45,9 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Import-Package>
-                            org.apache.commons.lang3;
-                            org.slf4j;
-                            org.osgi.framework;
-                        </Import-Package>
-                        <Export-Package>
-                            org.apache.velocity;
-                            org.apache.velocity.app;
-                            org.apache.velocity.context;
-                            org.apache.velocity.exception;
-                            org.apache.velocity.runtime;
-                            org.apache.velocity.runtime.resource;
-                            org.apache.velocity.util.introspection;
-                            org.apache.velocity.app.event;
-                            org.apache.velocity.runtime.parser;
-                            org.apache.velocity.util;
-                            org.apache.velocity.runtime.parser.node;
-                            org.apache.velocity.runtime.directive;
-                            org.apache.velocity.runtime.resource.loader;
-                            org.apache.velocity.runtime.resource.util;
-                        </Export-Package>
+                        <Bundle-Activator>org.apache.velocity.internal.BundleActivator</Bundle-Activator>
+                        <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${project.version}"</Export-Package>
+                        <Private-Package>${bundle.namespace}.internal.*</Private-Package>
                     </instructions>
                 </configuration>
             </plugin>

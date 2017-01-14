@@ -16,6 +16,8 @@
  */
 package org.apache.commons.validator;
 
+import org.osgi.framework.Bundle;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Locale;
@@ -101,6 +103,7 @@ public class Validator implements Serializable {
 
     /**
      * The name of the field on the form to validate
+     *
      * @since 1.2.0
      */
     protected String fieldName = null;
@@ -122,7 +125,7 @@ public class Validator implements Serializable {
      * used to load Digester itself, is used, based on the value of the
      * <code>useContextClassLoader</code> variable.
      */
-    protected transient ClassLoader classLoader = null;
+    protected Bundle classLoader = null;
 
     /**
      * Whether or not to use the Context ClassLoader when loading classes
@@ -154,13 +157,22 @@ public class Validator implements Serializable {
      * the different sets of validation rules.
      *
      * @param resources <code>ValidatorResources</code> to use during validation.
-     * @param formName Key used for retrieving the set of validation rules.
+     * @param formName  Key used for retrieving the set of validation rules.
      */
     public Validator(ValidatorResources resources, String formName) {
         if (resources == null) {
             throw new IllegalArgumentException("Resources cannot be null.");
         }
 
+        this.resources = resources;
+        this.formName = formName;
+    }
+
+    public Validator(Bundle bundle, ValidatorResources resources, String formName) {
+        if (resources == null) {
+            throw new IllegalArgumentException("Resources cannot be null.");
+        }
+        this.classLoader = bundle;
         this.resources = resources;
         this.formName = formName;
     }
@@ -172,7 +184,7 @@ public class Validator implements Serializable {
      * the different sets of validation rules.
      *
      * @param resources <code>ValidatorResources</code> to use during validation.
-     * @param formName Key used for retrieving the set of validation rules.
+     * @param formName  Key used for retrieving the set of validation rules.
      * @param fieldName Key used for retrieving the set of validation rules for a field
      * @since 1.2.0
      */
@@ -190,10 +202,9 @@ public class Validator implements Serializable {
      * Set a parameter of a pluggable validation method.
      *
      * @param parameterClassName The full class name of the parameter of the
-     * validation method that corresponds to the value/instance passed in with it.
-     *
-     * @param parameterValue The instance that will be passed into the
-     * validation method.
+     *                           validation method that corresponds to the value/instance passed in with it.
+     * @param parameterValue     The instance that will be passed into the
+     *                           validation method.
      */
     public void setParameter(String parameterClassName, Object parameterValue) {
         this.parameters.put(parameterClassName, parameterValue);
@@ -204,7 +215,7 @@ public class Validator implements Serializable {
      * processing of validations.
      *
      * @param parameterClassName The full class name of the parameter of the
-     * validation method that corresponds to the value/instance passed in with it.
+     *                           validation method that corresponds to the value/instance passed in with it.
      * @return value of the specified parameter.
      */
     public Object getParameterValue(String parameterClassName) {
@@ -213,6 +224,7 @@ public class Validator implements Serializable {
 
     /**
      * Gets the form name which is the key to a set of validation rules.
+     *
      * @return the name of the form.
      */
     public String getFormName() {
@@ -221,6 +233,7 @@ public class Validator implements Serializable {
 
     /**
      * Sets the form name which is the key to a set of validation rules.
+     *
      * @param formName the name of the form.
      */
     public void setFormName(String formName) {
@@ -239,7 +252,7 @@ public class Validator implements Serializable {
 
     /**
      * Gets the page.
-     *
+     * <p>
      * <p>
      * This in conjunction with the page property of
      * a {@code Field} can control the processing of fields. If the field's
@@ -284,6 +297,7 @@ public class Validator implements Serializable {
 
     /**
      * Return the boolean as to whether the context classloader should be used.
+     *
      * @return whether the context classloader should be used.
      */
     public boolean getUseContextClassLoader() {
@@ -309,24 +323,14 @@ public class Validator implements Serializable {
      * <ul>
      * <li>The class loader set by <code>setClassLoader()</code>, if any</li>
      * <li>The thread context class loader, if it exists and the
-     *     <code>useContextClassLoader</code> property is set to true</li>
+     * <code>useContextClassLoader</code> property is set to true</li>
      * <li>The class loader used to load the Digester class itself.
      * </ul>
+     *
      * @return the class loader.
      */
-    public ClassLoader getClassLoader() {
-        if (this.classLoader != null) {
-            return this.classLoader;
-        }
-
-        if (this.useContextClassLoader) {
-            ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
-            if (contextLoader != null) {
-                return contextLoader;
-            }
-        }
-
-        return this.getClass().getClassLoader();
+    public Bundle getClassLoader() {
+        return this.classLoader;
     }
 
     /**
@@ -334,9 +338,9 @@ public class Validator implements Serializable {
      * when required.
      *
      * @param classLoader The new class loader to use, or <code>null</code>
-     *  to revert to the standard rules
+     *                    to revert to the standard rules
      */
-    public void setClassLoader(ClassLoader classLoader) {
+    public void setClassLoader(Bundle classLoader) {
         this.classLoader = classLoader;
     }
 
@@ -361,10 +365,10 @@ public class Validator implements Serializable {
         if (form != null) {
             this.setParameter(FORM_PARAM, form);
             return form.validate(
-                this.parameters,
-                this.resources.getValidatorActions(),
-                this.page,
-                this.fieldName);
+                    this.parameters,
+                    this.resources.getValidatorActions(),
+                    this.page,
+                    this.fieldName);
         }
 
         return new ValidatorResults();
@@ -372,6 +376,7 @@ public class Validator implements Serializable {
 
     /**
      * Returns true if the Validator is only returning Fields that fail validation.
+     *
      * @return whether only failed fields are returned.
      */
     public boolean getOnlyReturnErrors() {
@@ -382,6 +387,7 @@ public class Validator implements Serializable {
      * Configures which Fields the Validator returns from the validate() method.  Set this
      * to true to only return Fields that failed validation.  By default, validate() returns
      * all fields.
+     *
      * @param onlyReturnErrors whether only failed fields are returned.
      */
     public void setOnlyReturnErrors(boolean onlyReturnErrors) {

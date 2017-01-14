@@ -26,7 +26,7 @@ public class BundleActivator extends MBaaSPlugin {
     public void registerController(BundleContext context) {
         context.registerService(Controller.class, new IndexController(), new Hashtable<>());
         context.registerService(Controller.class, new RegisterGetController(), new Hashtable<>());
-        context.registerService(Controller.class, new RegisterPostController(context.getBundle()), new Hashtable<>());
+        context.registerService(Controller.class, new RegisterPostController(context), new Hashtable<>());
     }
 
     @Override

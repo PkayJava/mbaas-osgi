@@ -79,7 +79,6 @@ public final class DigesterLoader {
      */
     public Digester createDigester(final Class<?> target) {
         Digester digester = new Digester();
-        digester.setClassLoader(target.getClassLoader());
         addRules(target, digester);
         return digester;
     }

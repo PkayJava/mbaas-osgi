@@ -32,6 +32,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <bundle.namespace>org.angkorteam.mbaas.openshop</bundle.namespace>
     </properties>
 
     <build>
@@ -45,58 +46,8 @@
                 <configuration>
                     <instructions>
                         <Bundle-Activator>org.angkorteam.mbaas.openshop.internal.BundleActivator</Bundle-Activator>
-                        <Export-Package>
-                            org.angkorteam.mbaas.openshop.block;
-                            org.angkorteam.mbaas.openshop.controller;
-                            org.angkorteam.mbaas.openshop.layout;
-                            org.angkorteam.mbaas.openshop.page;
-                            org.angkorteam.mbaas.openshop.validator;
-                        </Export-Package>
-                        <Private-Package>
-                            org.angkorteam.mbaas.openshop.internal;
-                        </Private-Package>
-                        <Import-Package>
-                            org.apache.commons.collections4.comparators;
-                            org.apache.commons.beanutils;
-                            com.google.common.base;
-                            com.google.common.collect;
-                            org.angkorteam.mbaas.servlet;
-                            org.osgi.framework;
-                            javax.servlet.http;
-                            org.xml.sax;
-                            org.apache.commons.digester;
-                            org.apache.commons.digester.annotations;
-                            org.apache.commons.digester.annotations.handlers;
-                            org.apache.commons.digester.annotations.internal;
-                            org.apache.commons.digester.annotations.providers;
-                            org.apache.commons.digester.annotations.reflect;
-                            org.apache.commons.digester.annotations.rules;
-                            org.apache.commons.digester.annotations.spi;
-                            org.apache.commons.digester.annotations.utils;
-                            org.apache.commons.digester.parser;
-                            org.apache.commons.digester.plugins;
-                            org.apache.commons.digester.plugins.strategies;
-                            org.apache.commons.digester.substitution;
-                            org.apache.commons.digester.xmlrules;
-                            org.apache.commons.validator;
-                            org.apache.commons.validator.util;
-                            org.apache.commons.validator.routines;
-                            org.apache.commons.validator.routines.checkdigit;
-                            org.apache.velocity;
-                            org.apache.velocity.app;
-                            org.apache.velocity.context;
-                            org.apache.velocity.exception;
-                            org.apache.velocity.runtime;
-                            org.apache.velocity.runtime.resource;
-                            org.apache.velocity.util.introspection;
-                            org.apache.velocity.app.event;
-                            org.apache.velocity.runtime.parser;
-                            org.apache.velocity.util;
-                            org.apache.velocity.runtime.parser.node;
-                            org.apache.velocity.runtime.directive;
-                            org.apache.velocity.runtime.resource.loader;
-                            org.apache.velocity.runtime.resource.util;
-                        </Import-Package>
+                        <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${project.version}"</Export-Package>
+                        <Private-Package>${bundle.namespace}.internal.*</Private-Package>
                     </instructions>
                 </configuration>
             </plugin>
@@ -109,28 +60,6 @@
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-servlet</artifactId>
             <version>5.0.5</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.osgi</groupId>
-                    <artifactId>osgi.cmpn</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.angkorteam.mbaas</groupId>
-                    <artifactId>mbaas-velocity</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-fileupload</groupId>
-                    <artifactId>commons-fileupload</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -179,24 +108,6 @@
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-validator</artifactId>
             <version>5.0.5</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.angkorteam.mbaas</groupId>
-                    <artifactId>mbaas-digester</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.angkorteam.mbaas</groupId>
-                    <artifactId>mbaas-collections</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.angkorteam.mbaas</groupId>
-                    <artifactId>mbaas-beanutils</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.osgi</groupId>
-                    <artifactId>osgi.cmpn</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
     </dependencies>

@@ -32,6 +32,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <bundle.namespace>org.angkorteam.mbaas.servlet</bundle.namespace>
     </properties>
 
     <build>
@@ -45,58 +46,8 @@
                 <configuration>
                     <instructions>
                         <Bundle-Activator>org.angkorteam.mbaas.servlet.internal.BundleActivator</Bundle-Activator>
-                        <Export-Package>
-                            org.angkorteam.mbaas.servlet;
-                        </Export-Package>
-                        <Import-Package>
-                            org.slf4j;
-                            org.osgi.framework;
-                            org.osgi.service.jdbc;
-                            com.google.common.base;
-                            com.google.common.collect;
-                            org.apache.commons.lang3;
-                            javax.servlet;
-                            javax.sql;
-                            javax.servlet.http;
-                            org.apache.commons.io;
-                            org.apache.commons.fileupload;
-                            org.apache.commons.fileupload.disk;
-                            org.apache.velocity;
-                            org.apache.velocity.app;
-                            org.apache.velocity.context;
-                            org.apache.velocity.exception;
-                            org.apache.velocity.runtime;
-                            org.apache.velocity.runtime.resource;
-                            org.apache.velocity.util.introspection;
-                            org.apache.velocity.app.event;
-                            org.apache.velocity.runtime.parser;
-                            org.apache.velocity.util;
-                            org.apache.velocity.runtime.parser.node;
-                            org.apache.velocity.runtime.directive;
-                            org.apache.velocity.runtime.resource.loader;
-                            org.apache.velocity.runtime.resource.util;
-                            org.apache.commons.digester;
-                            org.apache.commons.digester.annotations;
-                            org.apache.commons.digester.annotations.handlers;
-                            org.apache.commons.digester.annotations.internal;
-                            org.apache.commons.digester.annotations.providers;
-                            org.apache.commons.digester.annotations.reflect;
-                            org.apache.commons.digester.annotations.rules;
-                            org.apache.commons.digester.annotations.spi;
-                            org.apache.commons.digester.annotations.utils;
-                            org.apache.commons.digester.parser;
-                            org.apache.commons.digester.plugins;
-                            org.apache.commons.digester.plugins.strategies;
-                            org.apache.commons.digester.substitution;
-                            org.apache.commons.digester.xmlrules;
-                            org.apache.commons.validator;
-                            org.apache.commons.validator.util;
-                            org.apache.commons.validator.routines;
-                            org.apache.commons.validator.routines.checkdigit;
-                        </Import-Package>
-                        <Private-Package>
-                            org.angkorteam.mbaas.servlet.internal;
-                        </Private-Package>
+                        <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${project.version}"</Export-Package>
+                        <Private-Package>${bundle.namespace}.internal.*</Private-Package>
                     </instructions>
                 </configuration>
             </plugin>
@@ -127,16 +78,6 @@
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-velocity</artifactId>
             <version>5.0.5</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -148,6 +89,12 @@
         <dependency>
             <groupId>org.angkorteam.mbaas</groupId>
             <artifactId>mbaas-beanutils</artifactId>
+            <version>5.0.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.angkorteam.mbaas</groupId>
+            <artifactId>mbaas-validator</artifactId>
             <version>5.0.5</version>
         </dependency>
 

@@ -18,8 +18,9 @@ package org.apache.commons.validator;
 
 import org.apache.commons.collections4.FastHashMap;
 import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.DigesterService;
 import org.apache.commons.digester.Rule;
-import org.apache.commons.digester.xmlrules.DigesterLoader;
+import org.osgi.framework.Bundle;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -127,37 +128,16 @@ public class ValidatorResources implements Serializable {
      */
     protected FormSet defaultFormSet;
 
-    /**
-     * Create a ValidatorResources object from an InputStream.
-     *
-     * @param in InputStream to a validation.xml configuration file.  It's the client's
-     *           responsibility to close this stream.
-     * @throws SAXException if the validation XML files are not valid or well
-     *                      formed.
-     * @throws IOException  if an I/O error occurs processing the XML files
-     * @since Validator 1.1
-     */
-    public ValidatorResources(InputStream in) throws IOException, SAXException {
-        this(new InputStream[]{in});
+    public ValidatorResources(Bundle bundle, DigesterService service, InputStream in) throws IOException, SAXException {
+        this(bundle, service, new InputStream[]{in});
     }
 
-    /**
-     * Create a ValidatorResources object from an InputStream.
-     *
-     * @param streams An array of InputStreams to several validation.xml
-     *                configuration files that will be read in order and merged into this object.
-     *                It's the client's responsibility to close these streams.
-     * @throws SAXException if the validation XML files are not valid or well
-     *                      formed.
-     * @throws IOException  if an I/O error occurs processing the XML files
-     * @since Validator 1.1
-     */
-    public ValidatorResources(InputStream[] streams)
+    public ValidatorResources(Bundle bundle, DigesterService service, InputStream[] streams)
             throws IOException, SAXException {
 
         super();
 
-        Digester digester = initDigester();
+        Digester digester = initDigester(bundle, service);
         for (int i = 0; i < streams.length; i++) {
             if (streams[i] == null) {
                 throw new IllegalArgumentException("Stream[" + i + "] is null");
@@ -169,92 +149,13 @@ public class ValidatorResources implements Serializable {
         this.process();
     }
 
-    /**
-     * Create a ValidatorResources object from an uri
-     *
-     * @param uri The location of a validation.xml configuration file.
-     * @throws SAXException if the validation XML files are not valid or well
-     *                      formed.
-     * @throws IOException  if an I/O error occurs processing the XML files
-     * @since Validator 1.2
-     */
-    public ValidatorResources(String uri) throws IOException, SAXException {
-        this(new String[]{uri});
-    }
-
-    /**
-     * Create a ValidatorResources object from several uris
-     *
-     * @param uris An array of uris to several validation.xml
-     *             configuration files that will be read in order and merged into this object.
-     * @throws SAXException if the validation XML files are not valid or well
-     *                      formed.
-     * @throws IOException  if an I/O error occurs processing the XML files
-     * @since Validator 1.2
-     */
-    public ValidatorResources(String[] uris)
-            throws IOException, SAXException {
-
-        super();
-
-        Digester digester = initDigester();
-        for (int i = 0; i < uris.length; i++) {
-            digester.push(this);
-            digester.parse(uris[i]);
-        }
-
-        this.process();
-    }
-
-    /**
-     * Create a ValidatorResources object from a URL.
-     *
-     * @param url The URL for the validation.xml
-     *            configuration file that will be read into this object.
-     * @throws SAXException if the validation XML file are not valid or well
-     *                      formed.
-     * @throws IOException  if an I/O error occurs processing the XML files
-     * @since Validator 1.3.1
-     */
-    public ValidatorResources(URL url)
-            throws IOException, SAXException {
-        this(new URL[]{url});
-    }
-
-    /**
-     * Create a ValidatorResources object from several URL.
-     *
-     * @param urls An array of URL to several validation.xml
-     *             configuration files that will be read in order and merged into this object.
-     * @throws SAXException if the validation XML files are not valid or well
-     *                      formed.
-     * @throws IOException  if an I/O error occurs processing the XML files
-     * @since Validator 1.3.1
-     */
-    public ValidatorResources(URL[] urls)
-            throws IOException, SAXException {
-
-        super();
-
-        Digester digester = initDigester();
-        for (int i = 0; i < urls.length; i++) {
-            digester.push(this);
-            digester.parse(urls[i]);
-        }
-
-        this.process();
-    }
-
-    /**
-     * Initialize the digester.
-     */
-    private Digester initDigester() {
+    private Digester initDigester(Bundle bundle, DigesterService service) {
         URL rulesUrl = this.getClass().getResource(VALIDATOR_RULES);
         if (rulesUrl == null) {
             // Fix for Issue# VALIDATOR-195
             rulesUrl = ValidatorResources.class.getResource(VALIDATOR_RULES);
         }
-        Digester digester = DigesterLoader.createDigester(rulesUrl);
+        Digester digester = service.createDigester(bundle, rulesUrl);
         digester.setNamespaceAware(true);
         digester.setValidating(true);
         digester.setUseContextClassLoader(true);

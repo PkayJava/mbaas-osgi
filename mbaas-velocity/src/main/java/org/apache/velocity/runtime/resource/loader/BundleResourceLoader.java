@@ -1,8 +1,7 @@
-package org.angkorteam.mbaas.servlet.internal;
+package org.apache.velocity.runtime.resource.loader;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
-import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.util.ExtProperties;
 import org.osgi.framework.Bundle;
 

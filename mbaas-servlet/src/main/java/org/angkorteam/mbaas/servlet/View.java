@@ -59,6 +59,6 @@ public abstract class View {
         return Collections.unmodifiableMap(this.blocks);
     }
 
-    public abstract VelocityContext velocityContext(Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response);
+    public abstract void velocityContext(VelocityContext context, Map<String, HtmlTag> header, Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, HttpServletRequest request, HttpServletResponse response);
 
 }

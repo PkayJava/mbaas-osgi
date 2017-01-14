@@ -20,16 +20,16 @@
 package org.apache.commons.digester.xmlrules;
 
 
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.RuleSet;
+import org.osgi.framework.Bundle;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
-
-import org.apache.commons.digester.Digester;
-import org.apache.commons.digester.RuleSet;
-
-import org.xml.sax.SAXException;
-import org.xml.sax.InputSource;
 
 
 /**
@@ -43,6 +43,7 @@ public class DigesterLoader {
 
     /**
      * Creates a new digester and initializes it from the specified InputSource
+     *
      * @param rulesSource load the xml rules from this InputSource
      * @return a new Digester initialized with the rules
      */
@@ -58,7 +59,7 @@ public class DigesterLoader {
      * This constructor allows the digester to be used to load the rules to be specified.
      * This allows properties to be configured on the Digester instance before it is used.
      *
-     * @param rulesSource load the xml rules from this InputSource
+     * @param rulesSource   load the xml rules from this InputSource
      * @param rulesDigester digester to load the specified XML file.
      * @return a new Digester initialized with the rules
      */
@@ -71,12 +72,21 @@ public class DigesterLoader {
 
     /**
      * Creates a new digester and initializes it from the specified XML file
+     *
      * @param rulesXml URL to the XML file defining the digester rules
      * @return a new Digester initialized with the rules
      */
     public static Digester createDigester(URL rulesXml) {
         RuleSet ruleSet = new FromXmlRuleSet(rulesXml);
         Digester digester = new Digester();
+        digester.addRuleSet(ruleSet);
+        return digester;
+    }
+
+    public static Digester createDigester(Bundle bundle, URL rulesXml) {
+        RuleSet ruleSet = new FromXmlRuleSet(rulesXml);
+        Digester digester = new Digester();
+        digester.setClassloader(bundle);
         digester.addRuleSet(ruleSet);
         return digester;
     }
@@ -88,7 +98,7 @@ public class DigesterLoader {
      * ear, the rulesDigester can always find the XML files with properly set
      * ClassLoader.
      *
-     * @param rulesXml URL to the XML file defining the digester rules
+     * @param rulesXml      URL to the XML file defining the digester rules
      * @param rulesDigester digester to load the specified XML file.
      * @return a new Digester initialized with the rules
      */
@@ -103,13 +113,14 @@ public class DigesterLoader {
      * Given the digester rules XML file, a class loader, and an XML input file,
      * this method parses the input file into Java objects. The class loader
      * is used by the digester to create the Java objects.
+     *
      * @param digesterRules URL to the XML document defining the digester rules
-     * @param classLoader the ClassLoader to register with the digester
-     * @param fileURL URL to the XML file to parse into Java objects
+     * @param classLoader   the ClassLoader to register with the digester
+     * @param fileURL       URL to the XML file to parse into Java objects
      * @return an Object which is the root of the network of Java objects
      * created by digesting fileURL
      */
-    public static Object load(URL digesterRules, ClassLoader classLoader,
+    public static Object load(URL digesterRules, Bundle classLoader,
                               URL fileURL) throws IOException, SAXException, DigesterLoadingException {
         return load(digesterRules, classLoader, fileURL.openStream());
     }
@@ -118,16 +129,17 @@ public class DigesterLoader {
      * Given the digester rules XML file, a class loader, and an input stream,
      * this method parses the input into Java objects. The class loader
      * is used by the digester to create the Java objects.
+     *
      * @param digesterRules URL to the XML document defining the digester rules
-     * @param classLoader the ClassLoader to register with the digester
-     * @param input InputStream over the XML file to parse into Java objects
+     * @param classLoader   the ClassLoader to register with the digester
+     * @param input         InputStream over the XML file to parse into Java objects
      * @return an Object which is the root of the network of Java objects
      * created by digesting fileURL
      */
-    public static Object load(URL digesterRules, ClassLoader classLoader,
+    public static Object load(URL digesterRules, Bundle classLoader,
                               InputStream input) throws IOException, SAXException, DigesterLoadingException {
         Digester digester = createDigester(digesterRules);
-        digester.setClassLoader(classLoader);
+        digester.setClassloader(classLoader);
         try {
             return digester.parse(input);
         } catch (XmlLoadException ex) {
@@ -137,27 +149,28 @@ public class DigesterLoader {
             throw new DigesterLoadingException(ex.getMessage(), ex);
         }
     }
-    
+
     /**
      * Given the digester rules XML file, a class loader, and an input stream,
      * this method parses the input into Java objects. The class loader
      * is used by the digester to create the Java objects.
+     *
      * @param digesterRules URL to the XML document defining the digester rules
-     * @param classLoader the ClassLoader to register with the digester
-     * @param reader Reader over the XML file to parse into Java objects
+     * @param classLoader   the ClassLoader to register with the digester
+     * @param reader        Reader over the XML file to parse into Java objects
      * @return an Object which is the root of the network of Java objects
      * created by digesting fileURL
      */
     public static Object load(
-                                URL digesterRules, 
-                                ClassLoader classLoader,
-                                Reader reader) 
-                                    throws 
-                                        IOException, 
-                                        SAXException, 
-                                        DigesterLoadingException {
+            URL digesterRules,
+            Bundle classLoader,
+            Reader reader)
+            throws
+            IOException,
+            SAXException,
+            DigesterLoadingException {
         Digester digester = createDigester(digesterRules);
-        digester.setClassLoader(classLoader);
+        digester.setClassloader(classLoader);
         try {
             return digester.parse(reader);
         } catch (XmlLoadException ex) {
@@ -173,16 +186,17 @@ public class DigesterLoader {
      * Given the digester rules XML file, a class loader, and an XML input file,
      * this method parses the input file into Java objects. The class loader
      * is used by the digester to create the Java objects.
+     *
      * @param digesterRules URL to the XML document defining the digester rules
-     * @param classLoader the ClassLoader to register with the digester
-     * @param fileURL URL to the XML file to parse into Java objects
-     * @param rootObject an Object to push onto the digester's stack, prior
-     * to parsing the input
+     * @param classLoader   the ClassLoader to register with the digester
+     * @param fileURL       URL to the XML file to parse into Java objects
+     * @param rootObject    an Object to push onto the digester's stack, prior
+     *                      to parsing the input
      * @return an Object which is the root of the network of Java objects.
      * Usually, this will be the same object as rootObject
      * created by digesting fileURL
      */
-    public static Object load(URL digesterRules, ClassLoader classLoader,
+    public static Object load(URL digesterRules, Bundle classLoader,
                               URL fileURL, Object rootObject) throws IOException, SAXException,
             DigesterLoadingException {
         return load(digesterRules, classLoader, fileURL.openStream(), rootObject);
@@ -192,19 +206,20 @@ public class DigesterLoader {
      * Given the digester rules XML file, a class loader, and an input stream,
      * this method parses the input into Java objects. The class loader
      * is used by the digester to create the Java objects.
+     *
      * @param digesterRules URL to the XML document defining the digester rules
-     * @param classLoader the ClassLoader to register with the digester
-     * @param input InputStream over the XML file to parse into Java objects
-     * @param rootObject an Object to push onto the digester's stack, prior
-     * to parsing the input
+     * @param bundle        the ClassLoader to register with the digester
+     * @param input         InputStream over the XML file to parse into Java objects
+     * @param rootObject    an Object to push onto the digester's stack, prior
+     *                      to parsing the input
      * @return an Object which is the root of the network of Java objects
      * created by digesting fileURL
      */
-    public static Object load(URL digesterRules, ClassLoader classLoader,
+    public static Object load(URL digesterRules, Bundle bundle,
                               InputStream input, Object rootObject) throws IOException, SAXException,
             DigesterLoadingException {
         Digester digester = createDigester(digesterRules);
-        digester.setClassLoader(classLoader);
+        digester.setClassloader(bundle);
         digester.push(rootObject);
         try {
             return digester.parse(input);
@@ -215,30 +230,31 @@ public class DigesterLoader {
             throw new DigesterLoadingException(ex.getMessage(), ex);
         }
     }
-    
+
     /**
      * Given the digester rules XML file, a class loader, and an input stream,
      * this method parses the input into Java objects. The class loader
      * is used by the digester to create the Java objects.
+     *
      * @param digesterRules URL to the XML document defining the digester rules
-     * @param classLoader the ClassLoader to register with the digester
-     * @param input Reader over the XML file to parse into Java objects
-     * @param rootObject an Object to push onto the digester's stack, prior
-     * to parsing the input
+     * @param classLoader   the ClassLoader to register with the digester
+     * @param input         Reader over the XML file to parse into Java objects
+     * @param rootObject    an Object to push onto the digester's stack, prior
+     *                      to parsing the input
      * @return an Object which is the root of the network of Java objects
      * created by digesting fileURL
      */
     public static Object load(
-                                URL digesterRules, 
-                                ClassLoader classLoader,
-                                Reader input, 
-                                Object rootObject) 
-                                    throws 
-                                        IOException, 
-                                        SAXException,
-                                        DigesterLoadingException {
+            URL digesterRules,
+            Bundle classLoader,
+            Reader input,
+            Object rootObject)
+            throws
+            IOException,
+            SAXException,
+            DigesterLoadingException {
         Digester digester = createDigester(digesterRules);
-        digester.setClassLoader(classLoader);
+        digester.setClassloader(classLoader);
         digester.push(rootObject);
         try {
             return digester.parse(input);

@@ -7,7 +7,10 @@ import org.angkorteam.mbaas.servlet.QueryString;
 import org.apache.commons.validator.Validator;
 import org.apache.commons.validator.ValidatorException;
 import org.apache.commons.validator.ValidatorResources;
+import org.apache.commons.validator.ValidatorService;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletException;
@@ -15,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
 import java.util.Map;
@@ -25,20 +27,19 @@ import java.util.Map;
  */
 public class RegisterPostController extends LogicController {
 
-    private final Bundle bundle;
+    private final BundleContext bundle;
 
-    public RegisterPostController(Bundle bundle) {
+    public RegisterPostController(BundleContext bundle) {
         super(POST, "/register");
         this.bundle = bundle;
     }
 
     @Override
     public String execute(Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, FormFile formFile, File fileBody, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        URL url = bundle.getResource("/validation/register.xml");
-        InputStream inputStream = url.openStream();
+        URL url = bundle.getBundle().getResource("/validation/register.xml");
         try {
-            ValidatorResources resources = new ValidatorResources(inputStream);
-            Validator validator = new Validator(resources, "register");
+            ValidatorResources resources = createValidatorResources(url);
+            Validator validator = createValidator(bundle.getBundle(), resources, "register");
             validator.setParameter(Validator.BEAN_PARAM, formItem);
             validator.validate();
             if (formItem.isError()) {
@@ -51,4 +52,17 @@ public class RegisterPostController extends LogicController {
             throw new IOException(e);
         }
     }
+
+    protected ValidatorResources createValidatorResources(URL url) throws IOException, SAXException {
+        ServiceReference<ValidatorService> reference = bundle.getServiceReference(ValidatorService.class);
+        ValidatorService service = bundle.getService(reference);
+        return service.createValidatorResources(url);
+    }
+
+    protected Validator createValidator(Bundle bundle, ValidatorResources resources, String form) throws IOException, SAXException {
+        ServiceReference<ValidatorService> reference = bundle.getBundleContext().getServiceReference(ValidatorService.class);
+        ValidatorService service = bundle.getBundleContext().getService(reference);
+        return service.createValidator(bundle, resources, form);
+    }
+
 }
