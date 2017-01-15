@@ -1,11 +1,10 @@
 package org.angkorteam.mbaas.openshop.internal;
 
 import org.angkorteam.mbaas.openshop.block.MenuBlockView;
-import org.angkorteam.mbaas.openshop.controller.IndexController;
-import org.angkorteam.mbaas.openshop.controller.RegisterGetController;
-import org.angkorteam.mbaas.openshop.controller.RegisterPostController;
+import org.angkorteam.mbaas.openshop.controller.*;
 import org.angkorteam.mbaas.openshop.layout.*;
 import org.angkorteam.mbaas.openshop.page.IndexPageView;
+import org.angkorteam.mbaas.openshop.page.LockScreenPageView;
 import org.angkorteam.mbaas.openshop.page.LoginPageView;
 import org.angkorteam.mbaas.openshop.page.RegisterPageView;
 import org.angkorteam.mbaas.servlet.Controller;
@@ -27,6 +26,9 @@ public class BundleActivator extends MBaaSPlugin {
         context.registerService(Controller.class, new IndexController(), new Hashtable<>());
         context.registerService(Controller.class, new RegisterGetController(), new Hashtable<>());
         context.registerService(Controller.class, new RegisterPostController(context), new Hashtable<>());
+        context.registerService(Controller.class, new RegisterPostController(context), new Hashtable<>());
+        context.registerService(Controller.class, new LockScreenGetController(), new Hashtable<>());
+        context.registerService(Controller.class, new LockScreenPostController(), new Hashtable<>());
     }
 
     @Override
@@ -37,10 +39,12 @@ public class BundleActivator extends MBaaSPlugin {
         context.registerService(View.class, new VendorLayoutView(context.getBundle()), new Hashtable<>());
         context.registerService(View.class, new WebsiteLayoutView(context.getBundle()), new Hashtable<>());
         context.registerService(View.class, new RegisterLayoutView(context.getBundle()), new Hashtable<>());
+        context.registerService(View.class, new LockScreenLayoutView(context.getBundle()), new Hashtable<>());
 
         context.registerService(View.class, new IndexPageView(context.getBundle()), new Hashtable<>());
         context.registerService(View.class, new LoginPageView(context.getBundle()), new Hashtable<>());
         context.registerService(View.class, new RegisterPageView(context.getBundle()), new Hashtable<>());
+        context.registerService(View.class, new LockScreenPageView(context.getBundle()), new Hashtable<>());
     }
 
     @Override

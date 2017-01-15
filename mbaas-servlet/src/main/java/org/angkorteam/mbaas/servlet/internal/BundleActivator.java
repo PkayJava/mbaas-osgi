@@ -116,7 +116,7 @@ public final class BundleActivator implements org.osgi.framework.BundleActivator
             ServiceReference<DataSourceFactory> reference = context.getServiceReference(DataSourceFactory.class);
             DataSourceFactory service = context.getService(reference);
             Properties properties = new Properties();
-            properties.setProperty(DataSourceFactory.JDBC_URL, "jdbc:mysql://localhost/goldenbird_demo?createDatabaseIfNotExist=true&autoReconnect=true&useSSL=false&serverTimezone=UTC");
+            properties.setProperty(DataSourceFactory.JDBC_URL, "jdbc:mysql://localhost/mbaas_osgi?createDatabaseIfNotExist=true&autoReconnect=true&useSSL=false&serverTimezone=UTC");
             properties.setProperty(DataSourceFactory.JDBC_USER, "root");
             properties.setProperty(DataSourceFactory.JDBC_PASSWORD, "password");
             this.dataSource = service.createDataSource(properties);

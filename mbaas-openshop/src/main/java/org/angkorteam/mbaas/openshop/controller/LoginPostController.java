@@ -18,20 +18,20 @@ import java.sql.Connection;
 import java.util.Map;
 
 /**
- * Created by socheatkhauv on 1/12/17.
+ * Created by socheatkhauv on 1/14/17.
  */
-public class RegisterPostController extends LogicController {
+public class LoginPostController extends LogicController {
 
     private final BundleContext bundle;
 
-    public RegisterPostController(BundleContext bundle) {
-        super(POST, "/register");
+    public LoginPostController(BundleContext bundle) {
+        super(POST, "/login");
         this.bundle = bundle;
     }
 
     @Override
     public String execute(Connection connection, String address, Map<String, String> pathVariables, QueryString queryString, FormItem formItem, FormFile formFile, File fileBody, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        URL url = bundle.getBundle().getResource("/validation/register.xml");
+        URL url = bundle.getBundle().getResource("/validation/login.xml");
         ValidatorResources resources = createValidatorResources(this.bundle, url);
         Validator validator = createValidator(bundle.getBundle(), resources, "register");
         validator.setParameter(Validator.BEAN_PARAM, formItem);
@@ -43,5 +43,4 @@ public class RegisterPostController extends LogicController {
             return redirect("/");
         }
     }
-
 }

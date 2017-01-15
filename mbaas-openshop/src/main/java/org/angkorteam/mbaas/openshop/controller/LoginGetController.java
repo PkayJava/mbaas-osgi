@@ -17,9 +17,9 @@ import java.util.Map;
 /**
  * Created by socheatkhauv on 1/7/17.
  */
-public class LoginController extends LogicController {
+public class LoginGetController extends LogicController {
 
-    public LoginController() {
+    public LoginGetController() {
         super(GET, "/login");
     }
 

@@ -21,11 +21,15 @@ public class ValidatorServiceImpl implements ValidatorService {
     }
 
     @Override
-    public ValidatorResources createValidatorResources(URL url) throws IOException, SAXException {
+    public ValidatorResources createValidatorResources(URL url) throws IOException {
         ServiceReference<DigesterService> reference = context.getServiceReference(DigesterService.class);
         DigesterService service = context.getService(reference);
-        ValidatorResources validatorResources = new ValidatorResources(context.getBundle(), service, url.openStream());
-        return validatorResources;
+        try {
+            ValidatorResources validatorResources = new ValidatorResources(context.getBundle(), service, url.openStream());
+            return validatorResources;
+        } catch (SAXException e) {
+            throw new IOException(e);
+        }
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.apache.commons.validator;
 
 import org.osgi.framework.Bundle;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Locale;
@@ -352,26 +353,30 @@ public class Validator implements Serializable {
      * field had.
      * @throws ValidatorException If an error occurs during validation
      */
-    public ValidatorResults validate() throws ValidatorException {
-        Locale locale = (Locale) this.getParameterValue(LOCALE_PARAM);
+    public ValidatorResults validate() throws IOException {
+        try {
+            Locale locale = (Locale) this.getParameterValue(LOCALE_PARAM);
 
-        if (locale == null) {
-            locale = Locale.getDefault();
+            if (locale == null) {
+                locale = Locale.getDefault();
+            }
+
+            this.setParameter(VALIDATOR_PARAM, this);
+
+            Form form = this.resources.getForm(locale, this.formName);
+            if (form != null) {
+                this.setParameter(FORM_PARAM, form);
+                return form.validate(
+                        this.parameters,
+                        this.resources.getValidatorActions(),
+                        this.page,
+                        this.fieldName);
+            }
+
+            return new ValidatorResults();
+        } catch (ValidatorException e) {
+            throw new IOException(e);
         }
-
-        this.setParameter(VALIDATOR_PARAM, this);
-
-        Form form = this.resources.getForm(locale, this.formName);
-        if (form != null) {
-            this.setParameter(FORM_PARAM, form);
-            return form.validate(
-                    this.parameters,
-                    this.resources.getValidatorActions(),
-                    this.page,
-                    this.fieldName);
-        }
-
-        return new ValidatorResults();
     }
 
     /**

@@ -1,7 +1,6 @@
 package org.apache.commons.validator;
 
 import org.osgi.framework.Bundle;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.net.URL;
@@ -11,7 +10,7 @@ import java.net.URL;
  */
 public interface ValidatorService {
 
-    ValidatorResources createValidatorResources(URL url) throws IOException, SAXException;
+    ValidatorResources createValidatorResources(URL url) throws IOException;
 
     Validator createValidator(Bundle bundle, ValidatorResources resources, String form);
 }
